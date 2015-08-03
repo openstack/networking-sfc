@@ -13,6 +13,7 @@ Contents:
 
    api
    port_chain_system_and_flow
+   portchain-ovs-driver-agent
    readme
    installation
    usage
