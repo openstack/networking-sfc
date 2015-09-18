@@ -11,17 +11,17 @@ Service Port Chain Workflow
 
 Problem Description
 ===================
-The Port chain specification [1]_. and [2]_. propose a Neutron port based API for
+The Port chain specification [1]_ proposes a Neutron port based API for
 setting up a service chain. A specification on the system architecture
-and related API work flow are needed to guide the code design.
+and related API work flow is needed to guide the code design.
 
 System Architecture
 ============================
 The following figure shows the generic architecture of the Port Chain
 Plugin. As shown in the diagram, Port Chain Plugin can be backed by
-different service providers, such as OVS Driver, different types of
+different service providers such as OVS Driver and/or different types of
 SDN Controller Drivers. Through the "Common Driver API", these
-different drivers can provide different implementation for the service
+different drivers can provide different implementations for the service
 chain path rendering. In the first release and deployment based on this
 release, we will only deliver codes for the OVS driver. In the next release,
 we can add codes to support multiple active drivers::
@@ -59,7 +59,7 @@ tenant's traffic flow can be steered through the user defined sequence
 of Neutron ports to get the desired service treatment from the Service
 Function running on the VMs.
 
-A separate "OVS Driver and Agent" specification [3]_. will describe in more
+A separate "OVS Driver and Agent" specification [2]_ will describe in more
 detail on the design consideration of the Driver, Agent, and how to set up the
 classification rules on the OVS to identify different flows and how to
 set up the OVS forwarding table. In the reference implementation, the OVS Driver
@@ -225,11 +225,10 @@ request. The service chain flow packets will be tunneled through the
 connecting type/technology (e.g. VXLAN or GRE) between the two
 vSwitches. For our reference code implementation, we will use VXLAN to
 show a complete data path setup. Please refer to the OVS Driver and OVS
-Agent spec [3]_. for more detail info.
+Agent spec [2]_ for more detail info.
 
 References
 ==========
 
-.. [1] https://review.openstack.org/#/c/192933/
-.. [2] https://review.openstack.org/#/c/204695/
-.. [3] https://review.openstack.org/#/c/208663/
+.. [1] http://docs.openstack.org/developer/networking-sfc/api.html
+.. [2] http://docs.openstack.org/developer/networking-sfc/portchain-ovs-driver-agent.html
