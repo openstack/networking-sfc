@@ -3,8 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to networking-sfc's documentation!
-========================================================
+Welcome to the Service Function Chaining Documentation!
+=======================================================
+.. include:: ../../README.rst
+
 
 Contents:
 
@@ -14,7 +16,6 @@ Contents:
    api
    port_chain_system_and_flow
    portchain-ovs-driver-agent
-   readme
    installation
    usage
    contributing
