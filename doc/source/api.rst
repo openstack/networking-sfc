@@ -135,11 +135,11 @@ with a port chain, with each classifier identifying a flow. If the flow-classifi
 specified, then no traffic will be steered through the chain.
 
 One chain parameter option is currently defined. More parameter options can be added
-in future extensions to accomodate new requirements.
+in future extensions to accommodate new requirements.
 The "correlation" parameter is used to specify the type of chain correlation mechanism.
 This parameter allows different correlation mechanim to be selected.
 This will be set to "mpls" for now to be consistent with current OVS capability.
-If this parameter is not specifed, it will default to "mpls".
+If this parameter is not specified, it will default to "mpls".
 
 The port-chain-create command returns the ID of a Port chain.
 
@@ -162,12 +162,12 @@ egress port of the service function may be specified.  If a service function
 has one bidirectional port, the ingress port has the same value as the egress port.
 The "service-function-parameter" option allows the passing of SF specific parameter
 information to the data path. One parameter option is currently defined. More parameter
-options can be added in future extensions to accomodate new requirements.
+options can be added in future extensions to accommodate new requirements.
 The "correlation" parameter is used to specify the type of chain correlation mechanism
 supported by a specific SF. This is needed by the data plane switch to determine
 how to associate a packet with a chain. This will be set to "none" for now since
 there is no correlation mechanism supported by the SF. In the future, it can be extended
-to include "mpls", "nsh", etc.. If this parameter is not specifed, it will default to "none".
+to include "mpls", "nsh", etc.. If this parameter is not specified, it will default to "none".
 
 The port-pair-create command returns the ID of a Port Pair.
 
@@ -175,7 +175,7 @@ The port-pair-create command returns the ID of a Port Pair.
 A combination of the "source" options defines the source of the flow.
 A combination of the "destination" options defines the destination of the flow.
 The l7_parameter is a place-holder that may be used to support flow classification
-using L7 fields, such as URL. If an option is not specifed, it will default to wildcard value
+using L7 fields, such as URL. If an option is not specified, it will default to wildcard value
 except that for ip-version, it will default to IPv4, for the source-port-id, it will default
 to none, and for the destination-port-id, it will default to none.
 
@@ -254,37 +254,36 @@ Port Chain Operations:
 |POST        |/networking_sfc/port_chains  |Create a Port Chain                       |
 +------------+-----------------------------+------------------------------------------+
 |PUT         |/networking_sfc/port_chains/ |Update a specific Port Chain              |
-|            | {chain_id}                  |                                          |
+|            |{chain_id}                   |                                          |
 +------------+-----------------------------+------------------------------------------+
-|DEL         |/networking_sfc/port_chains/ |Delete a specific Port Chain              |
-|            | {chain_id}                  |                                          |
+|DELETE      |/networking_sfc/port_chains/ |Delete a specific Port Chain              |
+|            |{chain_id}                   |                                          |
 +------------+-----------------------------+------------------------------------------+
-|GET         |/networking_sfc/port_chains/ |List all Port Chains for specified tenant |
+|GET         |/networking_sfc/port_chains  |List all Port Chains for specified tenant |
 +------------+-----------------------------+------------------------------------------+
 |GET         |/networking_sfc/port_chains/ |Show information for a specific Port Chain|
-|            | {chain_id}                  |                                          |
+|            |{chain_id}                   |                                          |
 +------------+-----------------------------+------------------------------------------+
 
 Port Pair Group Operations:
 
-+------------+-----------------------------+------------------------------------------+
-|Operation   |URL                          |Description                               |
-+============+=============================+==========================================+
-|POST        |/networking_sfc/             |Create a Port Pair Group                  |
-|            | port_pair_groups/           |                                          |
-+------------+-----------------------------+------------------------------------------+
-|PUT         |/networking_sfc/             |Update a specific Port Pair Group         |
-|            | port_pair_groups/{group_id} |                                          |
-+------------+-----------------------------+------------------------------------------+
-|DEL         |/networking_sfc/             |Delete a specific Port Pair Group         |
-|            | port_pair_groups/{group_id} |                                          |
-+------------+-----------------------------+------------------------------------------+
-|GET         |/networking_sfc/             |List all Port Pair Groups for specified   |
-|            | port_pair_groups/           |tenant                                    |
-+------------+-----------------------------+------------------------------------------+
-|GET         |/networking_sfc/             |Show information for a specific Port Pair |
-|            | port_pair_groups/{group_id} |Group                                     |
-+------------+-----------------------------+------------------------------------------+
++------------+----------------------------------+------------------------------------------+
+|Operation   |URL                               |Description                               |
++============+==================================+==========================================+
+|POST        |/networking_sfc/port_pair_groups  |Create a Port Pair Group                  |
++------------+----------------------------------+------------------------------------------+
+|PUT         |/networking_sfc/port_pair_groups/ |Update a specific Port Pair Group         |
+|            |{group_id}                        |                                          |
++------------+----------------------------------+------------------------------------------+
+|DELETE      |/networking_sfc/port_pair_groups/ |Delete a specific Port Pair Group         |
+|            |{group_id}                        |                                          |
++------------+----------------------------------+------------------------------------------+
+|GET         |/networking_sfc/port_pair_groups  |List all Port Pair Groups for specified   |
+|            |                                  |tenant                                    |
++------------+----------------------------------+------------------------------------------+
+|GET         |/networking_sfc/port_pair_groups/ |Show information for a specific Port Pair |
+|            |{group_id}                        |Group                                     |
++------------+----------------------------------+------------------------------------------+
 
 Port Pair Operations:
 
@@ -294,15 +293,15 @@ Port Pair Operations:
 |POST        |/networking_sfc/port_pairs   |Create a Port Pair                        |
 +------------+-----------------------------+------------------------------------------+
 |PUT         |/networking_sfc/port_pairs/  |Update a specific Port Pair               |
-|            | {pair_id}                   |                                          |
+|            |{pair_id}                    |                                          |
 +------------+-----------------------------+------------------------------------------+
-|DEL         |/networking_sfc/port_pairs/  |Delete a specific Port Pair               |
-|            | {pair_id}                   |                                          |
+|DELETE      |/networking_sfc/port_pairs/  |Delete a specific Port Pair               |
+|            |{pair_id}                    |                                          |
 +------------+-----------------------------+------------------------------------------+
-|GET         |/networking_sfc/port_pairs/  |List all Port Pairs for specified tenant  |
+|GET         |/networking_sfc/port_pairs   |List all Port Pairs for specified tenant  |
 +------------+-----------------------------+------------------------------------------+
 |GET         |/networking_sfc/port_pairs/  |Show information for a specific Port Pair |
-|            | {pair_id}                   |                                          |
+|            |{pair_id}                    |                                          |
 +------------+-----------------------------+------------------------------------------+
 
 Flow Classifier Operations:
@@ -313,15 +312,15 @@ Flow Classifier Operations:
 |POST        |/networking_sfc/flow_classifiers  |Create a Flow-classifier                        |
 +------------+----------------------------------+------------------------------------------------+
 |PUT         |/networking_sfc/flow_classifiers/ |Update a specific Flow-classifier               |
-|            | {flow_id}                        |                                                |
+|            |{flow_id}                         |                                                |
 +------------+----------------------------------+------------------------------------------------+
-|DEL         |/networking_sfc/flow_classifiers/ |Delete a specific Flow-classifier               |
-|            | {flow_id}                        |                                                |
+|DELETE      |/networking_sfc/flow_classifiers/ |Delete a specific Flow-classifier               |
+|            |{flow_id}                         |                                                |
 +------------+----------------------------------+------------------------------------------------+
-|GET         |/networking_sfc/flow_classifiers/ |List all Flow-classifiers for specified tenant  |
+|GET         |/networking_sfc/flow_classifiers  |List all Flow-classifiers for specified tenant  |
 +------------+----------------------------------+------------------------------------------------+
 |GET         |/networking_sfc/flow_classifiers/ |Show information for a specific Flow-classifier |
-|            | {flow_id}                        |                                                |
+|            |{flow_id}                         |                                                |
 +------------+----------------------------------+------------------------------------------------+
 
 REST API Impact
@@ -417,34 +416,34 @@ Flow Classifier resource:
 |             |        |         |         |    |field in IP header  |
 +-------------+--------+---------+---------+----+--------------------+
 |source_port  |integer |RW, all  |Any      |CR  |Min. source         |
-|_range_min   |        |         |         |    | protocol port      |
+|_range_min   |        |         |         |    |protocol port       |
 +-------------+--------+---------+---------+----+--------------------+
 |source_port  |integer |RW, all  |Any      |CR  |Max. source         |
-|_range_max   |        |         |         |    | protocol port      |
+|_range_max   |        |         |         |    |protocol port       |
 +-------------+--------+---------+---------+----+--------------------+
 |destination  |integer |RW, all  |Any      |CR  |Min. destination    |
-|_port_range  |        |         |         |    | protocol port      |
+|_port_range  |        |         |         |    |protocol port       |
 |_min         |        |         |         |    |                    |
 +-------------+--------+---------+---------+----+--------------------+
 |destination  |integer |RW, all  |Any      |CR  |Max. destination    |
-|_range_range |        |         |         |    | protocol port      |
+|_range_range |        |         |         |    |protocol port       |
 |_max         |        |         |         |    |                    |
 +-------------+--------+---------+---------+----+--------------------+
-|source       |CIDR    |RW, all  |Any      |CR  |Source IP address or|
-|_ip_prefix   |        |         |         |    |prefix, IPV4 or IPV6|
+|source       |CIDR    |RW, all  |Any      |CR  |Source IP prefix    |
+|_ip_prefix   |        |         |         |    |IPV4 or IPV6        |
 +-------------+--------+---------+---------+----+--------------------+
 |destination  |CIDR    |RW, all  |Any      |CR  |Destination IP      |
-|_ip_prefix   |        |         |         |    | address or prefix  |
-|             |        |         |         |    | IPV4 or IPV6       |
+|_ip_prefix   |        |         |         |    |prefix              |
+|             |        |         |         |    |IPV4 or IPV6        |
 +-------------+--------+---------+---------+----+--------------------+
 |source       |uuid    |RW, all  |None     |CR  |Source Neutron      |
-|_port_id     |        |         |         |    | port ID            |
+|_port_id     |        |         |         |    |port ID             |
 +-------------+--------+---------+---------+----+--------------------+
 |destination  |uuid    |RW, all  |None     |CR  |Destination Neutron |
-|_port_id     |        |         |         |    | port ID            |
+|_port_id     |        |         |         |    |port ID             |
 +-------------+--------+---------+---------+----+--------------------+
 |l7_parameters|dict    |RW, all  |Any      |CR  |Dict. of            |
-|             |        |         |         |    | L7 parameters      |
+|             |        |         |         |    |L7 parameters       |
 +-------------+--------+---------+---------+----+--------------------+
 
 Json Port-pair create request example::
