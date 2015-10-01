@@ -1,53 +1,29 @@
-*.py[cod]
-
-# C extensions
-*.so
-
-# Packages
-*.egg
-*.egg-info
-dist
-build
-eggs
-parts
-bin
-var
-sdist
-develop-eggs
-.installed.cfg
-lib
-lib64
-
-# Installer logs
-pip-log.txt
-
-# Unit test / coverage reports
-.coverage
-.tox
-nosetests.xml
-.testrepository
-.venv
-
-# Translations
-*.mo
-
-# Mr Developer
-.mr.developer.cfg
-.project
-.pydevproject
-
-# Complexity
-output/*.html
-output/*/index.html
-
-# Sphinx
-doc/build
-
-# pbr generates these
 AUTHORS
+build/*
+build-stamp
 ChangeLog
-
-# Editors
+cover/
+covhtml/
+dist/
+doc/build
+*.DS_Store
+*.pyc
+neutron.egg-info/
+networking_sfc.egg-info/
+neutron/vcsversion.py
+neutron/versioninfo
+pbr*.egg/
+run_tests.err.log
+run_tests.log
+setuptools*.egg/
+subunit.log
+*.mo
+*.sw?
 *~
-.*.swp
-.*sw?
+/.*
+!/.coveragerc
+!/.gitignore
+!/.gitreview
+!/.mailmap
+!/.pylintrc
+!/.testr.conf

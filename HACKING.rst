@@ -1,4 +1,7 @@
-networking-sfc Style Commandments
-===============================================
+Networking SFC Style Commandments
+=================================
 
-Read the OpenStack Style Commandments http://docs.openstack.org/developer/hacking/
+Please see the Neutron HACKING.rst file for style commandments for
+networking-sfc:
+
+`Neutron HACKING.rst <http://git.openstack.org/cgit/openstack/neutron/tree/HACKING.rst>`_

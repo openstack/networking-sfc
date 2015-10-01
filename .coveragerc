@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = networking_sfc
+# omit = networking_sfc/tests/*
+
+[report]
+ignore_errors = True
