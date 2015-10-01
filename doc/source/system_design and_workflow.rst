@@ -1,13 +1,31 @@
 ..
- This work is licensed under a Creative Commons Attribution 3.0 Unported
- License.
+      Copyright 2015 Futurewei. All rights reserved.
 
- http://creativecommons.org/licenses/by/3.0/legalcode
+      Licensed under the Apache License, Version 2.0 (the "License"); you may
+      not use this file except in compliance with the License. You may obtain
+      a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+      Unless required by applicable law or agreed to in writing, software
+      distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+      WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+      License for the specific language governing permissions and limitations
+      under the License.
 
 
-===========================
-Service Port Chain Workflow
-===========================
+      Convention for heading levels in Neutron devref:
+      =======  Heading 0 (reserved for the title in a document)
+      -------  Heading 1
+      ~~~~~~~  Heading 2
+      +++++++  Heading 3
+      '''''''  Heading 4
+      (Avoid deeper levels because they do not render well.)
+
+
+==========================
+System Design and Workflow
+==========================
 
 Problem Description
 ===================
@@ -114,7 +132,7 @@ through existing Neutron API and ML2. The built-in OVS backend
 implements tunneling the original flow packets over VXLAN tunnel. The detailed
 outer VXLAN tunnel transport format and inner SFC flow format including
 how to leverage existing OVS's support for MPLS label to carry chain ID
-will be described in the "Port Chain OVS Driver and Agent" specification [3]_.
+will be described in the "Port Chain OVS Driver and Agent" specification [2]_.
 In the future we can add implementation of tunneling the SFC flow packets over
 flat L2 Ethernet or L3 IP network or GRE tunnel etc.
 
