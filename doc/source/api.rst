@@ -99,29 +99,29 @@ Syntax::
          [--description <description>]
          --ingress <port-id>
          --egress <port-id>
-         [--service-function-parameter <parameter>] PORT-PAIR-NAME
+         [--service-function-parameters <parameter>] PORT-PAIR-NAME
 
  neutron port-pair-group-create [-h]
          [--description <description>]
-         --port-pair <port-pair-id> PORT-PAIR-GROUP-NAME
+         --port-pairs <port-pair-id> PORT-PAIR-GROUP-NAME
 
  neutron flow-classifier-create [-h]
          [--description <description>]
          [--protocol <protocol>]
-         [--ip-version <IP version>]
+         [--ethertype <Ethertype>]
          [--source-port <Minimum source protocol port>:<Maximum source protocol port>]
          [--destination-port <Minimum destination protocol port>:<Maximum destination protocol port>]
          [--source-ip-prefix <Source IP prefix>]
          [--destination-ip-prefix <Destination IP prefix>]
-         [--source-port-id <Source Neutron port ID>]
-         [--destination-port-id <Destination Neutron port ID>]
-         [--l7-parameter <L7 parameter>] FLOW-CLASSIFIER-NAME
+         [--logical-source-port <Neutron source port>]
+         [--logical-destination-port <Neutron destination port>]
+         [--l7-parameters <L7 parameter>] FLOW-CLASSIFIER-NAME
 
  neutron port-chain-create [-h]
          [--description <description>]
           --port-pair-group <port-pair-group-id>
          [--flow-classifier <classifier-id>]
-         [--chain-parameter <chain-parameter>] PORT-CHAIN-NAME
+         [--chain-parameters <chain-parameter>] PORT-CHAIN-NAME
 
 1. neutron port-chain-create
 The port-chain-create returns the ID of the Port Chain.
@@ -176,8 +176,8 @@ A combination of the "source" options defines the source of the flow.
 A combination of the "destination" options defines the destination of the flow.
 The l7_parameter is a place-holder that may be used to support flow classification
 using L7 fields, such as URL. If an option is not specified, it will default to wildcard value
-except that for ip-version, it will default to IPv4, for the source-port-id, it will default
-to none, and for the destination-port-id, it will default to none.
+except for ethertype which defaults to 'IPv4', for logical-source-port and
+logical-destination-port which defaults to none.
 
 The flow-classifier-create command returns the ID of a flow classifier.
 
@@ -205,7 +205,7 @@ Port Chain
   * id - Port chain ID.
   * tenant_id - Tenant ID.
   * name - Readable name.
-  * description - Description.
+  * description - Readable description.
   * port_pair_groups - List of port-pair-group IDs.
   * flow_classifiers - List of flow-classifier IDs.
   * chain_parameters - Dict. of chain parameters.
@@ -214,14 +214,14 @@ Port Pair Group
   * id - Port pair group ID.
   * tenant_id - Tenant ID.
   * name - Readable name.
-  * description - Description.
+  * description - Readable description.
   * port_pairs - List of service function (Neutron) port-pairs.
 
 Port Pair
   * id - Port pair ID.
   * tenant_id - Tenant ID.
   * name - Readable name.
-  * description - Description.
+  * description - Readable description.
   * ingress - Ingress port.
   * egress - Egress port.
   * service_function_parameters - Dict. of service function parameters
@@ -230,8 +230,8 @@ Flow Classifier
   * id - Flow classifier ID.
   * tenant_id - Tenant ID.
   * name - Readable name.
-  * description - Description.
-  * ip_version - IP version.
+  * description - Readable description.
+  * ethertype - Ethertype ('IPv4'/'IPv6').
   * protocol - IP protocol.
   * source_port_range_min - Minimum source protocol port.
   * source_port_range_max - Maximum source protocol port.
@@ -239,89 +239,76 @@ Flow Classifier
   * destination_port_range_max - Maximum destination protocol port.
   * source_ip_prefix - Source IP address or prefix.
   * destination_ip_prefix - Destination IP address or prefix.
-  * source_port_id - Source Neutron port ID.
-  * destination_port_id - Destination Neutron port ID.
-  * l7_parameter - Dict. of L7 parameters.
+  * logical_source_port - Neutron source port.
+  * logical_destination_port - Neutron destination port.
+  * l7_parameters - Dictionary of L7 parameters.
 
 REST API
 --------
 
 Port Chain Operations:
 
-+------------+-----------------------------+------------------------------------------+
-|Operation   |URL                          |Description                               |
-+============+=============================+==========================================+
-|POST        |/networking_sfc/port_chains  |Create a Port Chain                       |
-+------------+-----------------------------+------------------------------------------+
-|PUT         |/networking_sfc/port_chains/ |Update a specific Port Chain              |
-|            |{chain_id}                   |                                          |
-+------------+-----------------------------+------------------------------------------+
-|DELETE      |/networking_sfc/port_chains/ |Delete a specific Port Chain              |
-|            |{chain_id}                   |                                          |
-+------------+-----------------------------+------------------------------------------+
-|GET         |/networking_sfc/port_chains  |List all Port Chains for specified tenant |
-+------------+-----------------------------+------------------------------------------+
-|GET         |/networking_sfc/port_chains/ |Show information for a specific Port Chain|
-|            |{chain_id}                   |                                          |
-+------------+-----------------------------+------------------------------------------+
++------------+---------------------------+------------------------------------------+
+|Operation   |URL                        |Description                               |
++============+===========================+==========================================+
+|POST        |/sfc/port_chains           |Create a Port Chain                       |
++------------+---------------------------+------------------------------------------+
+|PUT         |/sfc/port_chains/{chain_id}|Update a specific Port Chain              |
++------------+---------------------------+------------------------------------------+
+|DELETE      |/sfc/port_chains/{chain_id}|Delete a specific Port Chain              |
++------------+---------------------------+------------------------------------------+
+|GET         |/sfc/port_chains           |List all Port Chains for specified tenant |
++------------+---------------------------+------------------------------------------+
+|GET         |/sfc/port_chains/{chain_id}|Show information for a specific Port Chain|
++------------+---------------------------+------------------------------------------+
 
 Port Pair Group Operations:
 
-+------------+----------------------------------+------------------------------------------+
-|Operation   |URL                               |Description                               |
-+============+==================================+==========================================+
-|POST        |/networking_sfc/port_pair_groups  |Create a Port Pair Group                  |
-+------------+----------------------------------+------------------------------------------+
-|PUT         |/networking_sfc/port_pair_groups/ |Update a specific Port Pair Group         |
-|            |{group_id}                        |                                          |
-+------------+----------------------------------+------------------------------------------+
-|DELETE      |/networking_sfc/port_pair_groups/ |Delete a specific Port Pair Group         |
-|            |{group_id}                        |                                          |
-+------------+----------------------------------+------------------------------------------+
-|GET         |/networking_sfc/port_pair_groups  |List all Port Pair Groups for specified   |
-|            |                                  |tenant                                    |
-+------------+----------------------------------+------------------------------------------+
-|GET         |/networking_sfc/port_pair_groups/ |Show information for a specific Port Pair |
-|            |{group_id}                        |Group                                     |
-+------------+----------------------------------+------------------------------------------+
++------------+--------------------------------+-----------------------------------------------+
+|Operation   |URL                             |Description                                    |
++============+================================+===============================================+
+|POST        |/sfc/port_pair_groups           |Create a Port Pair Group                       |
++------------+--------------------------------+-----------------------------------------------+
+|PUT         |/sfc/port_pair_groups/{group_id}|Update a specific Port Pair Group              |
++------------+--------------------------------+-----------------------------------------------+
+|DELETE      |/sfc/port_pair_groups/{group_id}|Delete a specific Port Pair Group              |
++------------+--------------------------------+-----------------------------------------------+
+|GET         |/sfc/port_pair_groups           |List all Port Pair Groups for specified tenant |
++------------+--------------------------------+-----------------------------------------------+
+|GET         |/sfc/port_pair_groups/{group_id}|Show information for a specific Port Pair      |
++------------+--------------------------------+-----------------------------------------------+
 
 Port Pair Operations:
 
-+------------+-----------------------------+------------------------------------------+
-|Operation   |URL                          |Description                               |
-+============+=============================+==========================================+
-|POST        |/networking_sfc/port_pairs   |Create a Port Pair                        |
-+------------+-----------------------------+------------------------------------------+
-|PUT         |/networking_sfc/port_pairs/  |Update a specific Port Pair               |
-|            |{pair_id}                    |                                          |
-+------------+-----------------------------+------------------------------------------+
-|DELETE      |/networking_sfc/port_pairs/  |Delete a specific Port Pair               |
-|            |{pair_id}                    |                                          |
-+------------+-----------------------------+------------------------------------------+
-|GET         |/networking_sfc/port_pairs   |List all Port Pairs for specified tenant  |
-+------------+-----------------------------+------------------------------------------+
-|GET         |/networking_sfc/port_pairs/  |Show information for a specific Port Pair |
-|            |{pair_id}                    |                                          |
-+------------+-----------------------------+------------------------------------------+
++------------+-------------------------+------------------------------------------+
+|Operation   |URL                      |Description                               |
++============+=========================+==========================================+
+|POST        |/sfc/port_pairs          |Create a Port Pair                        |
++------------+-------------------------+------------------------------------------+
+|PUT         |/sfc/port_pairs/{pair_id}|Update a specific Port Pair               |
++------------+-------------------------+------------------------------------------+
+|DELETE      |/sfc/port_pairs/{pair_id}|Delete a specific Port Pair               |
++------------+-------------------------+------------------------------------------+
+|GET         |/sfc/port_pairs          |List all Port Pairs for specified tenant  |
++------------+-------------------------+------------------------------------------+
+|GET         |/sfc/port_pairs/{pair_id}|Show information for a specific Port Pair |
++------------+-------------------------+------------------------------------------+
 
 Flow Classifier Operations:
 
-+------------+----------------------------------+------------------------------------------------+
-|Operation   |URL                               |Description                                     |
-+============+==================================+================================================+
-|POST        |/networking_sfc/flow_classifiers  |Create a Flow-classifier                        |
-+------------+----------------------------------+------------------------------------------------+
-|PUT         |/networking_sfc/flow_classifiers/ |Update a specific Flow-classifier               |
-|            |{flow_id}                         |                                                |
-+------------+----------------------------------+------------------------------------------------+
-|DELETE      |/networking_sfc/flow_classifiers/ |Delete a specific Flow-classifier               |
-|            |{flow_id}                         |                                                |
-+------------+----------------------------------+------------------------------------------------+
-|GET         |/networking_sfc/flow_classifiers  |List all Flow-classifiers for specified tenant  |
-+------------+----------------------------------+------------------------------------------------+
-|GET         |/networking_sfc/flow_classifiers/ |Show information for a specific Flow-classifier |
-|            |{flow_id}                         |                                                |
-+------------+----------------------------------+------------------------------------------------+
++------------+-------------------------------+------------------------------------------------+
+|Operation   |URL                            |Description                                     |
++============+===============================+================================================+
+|POST        |/sfc/flow_classifiers          |Create a Flow-classifier                        |
++------------+-------------------------------+------------------------------------------------+
+|PUT         |/sfc/flow_classifiers/{flow_id}|Update a specific Flow-classifier               |
++------------+-------------------------------+------------------------------------------------+
+|DELETE      |/sfc/flow_classifiers/{flow_id}|Delete a specific Flow-classifier               |
++------------+-------------------------------+------------------------------------------------+
+|GET         |/sfc/flow_classifiers          |List all Flow-classifiers for specified tenant  |
++------------+-------------------------------+------------------------------------------------+
+|GET         |/sfc/flow_classifiers/{flow_id}|Show information for a specific Flow-classifier |
++------------+-------------------------------+------------------------------------------------+
 
 REST API Impact
 ---------------
@@ -330,121 +317,114 @@ The following new resources will be created as a result of the API handling.
 
 Port Chain resource:
 
-+----------------+----------+--------+---------+----+------------------------+
-|Attribute       |Type      |Access  |Default  |CRUD|Description             |
-|Name            |          |        |Value    |    |                        |
-+================+==========+========+=========+====+========================+
-|id              |uuid      |RO, all |generated|R   |identity                |
-+----------------+----------+--------+---------+----+------------------------+
-|tenant_id       |uuid      |RO, all |from auth|CR  |Tenant ID               |
-|                |          |        |token    |    |                        |
-+----------------+----------+--------+---------+----+------------------------+
-|name            |string    |RW, all |''       |CRU |human-readable          |
-|                |          |        |         |    |name                    |
-+----------------+----------+--------+---------+----+------------------------+
-|description     |string    |RW, all |''       |CRU |human-readable          |
-+----------------+----------+--------+---------+----+------------------------+
-|port_pair_groups|list(uuid)|RW, all |N/A      |CR  |List of port-pair-groups|
-+----------------+----------+--------+---------+----+------------------------+
-|flow_classifiers|list(uuid)|RW, all |[]       |CRU |List of flow            |
-|                |          |        |         |    |classifiers             |
-+----------------+----------+--------+---------+----+------------------------+
-|chain_parameters|dict      |RW, all |mpls     |CR  |Dict. of parameters:    |
-|                |          |        |         |    |'correlation':String    |
-+----------------+----------+--------+---------+----+------------------------+
++----------------+----------+--------+---------+----+-------------------------+
+|Attribute       |Type      |Access  |Default  |CRUD|Description              |
+|Name            |          |        |Value    |    |                         |
++================+==========+========+=========+====+=========================+
+|id              |uuid      |RO, all |generated|R   |Port Chain ID.           |
++----------------+----------+--------+---------+----+-------------------------+
+|tenant_id       |uuid      |RO, all |from auth|CR  |Tenant ID.               |
+|                |          |        |token    |    |                         |
++----------------+----------+--------+---------+----+-------------------------+
+|name            |string    |RW, all |''       |CRU |Port Chain name.         |
++----------------+----------+--------+---------+----+-------------------------+
+|description     |string    |RW, all |''       |CRU |Port Chain description.  |
++----------------+----------+--------+---------+----+-------------------------+
+|port_pair_groups|list(uuid)|RW, all |N/A      |CR  |List of port-pair-groups.|
++----------------+----------+--------+---------+----+-------------------------+
+|flow_classifiers|list(uuid)|RW, all |[]       |CRU |List of flow-classifiers.|
++----------------+----------+--------+---------+----+-------------------------+
+|chain_parameters|dict      |RW, all |mpls     |CR  |Dict. of parameters:     |
+|                |          |        |         |    |'correlation':String     |
++----------------+----------+--------+---------+----+-------------------------+
 
 Port Pair Group resource:
 
-+-------------+--------+---------+---------+----+--------------------+
-|Attribute    |Type    |Access   |Default  |CRUD|Description         |
-|Name         |        |         |Value    |    |                    |
-+=============+========+=========+=========+====+====================+
-|id           |uuid    |RO, all  |generated|R   |identity            |
-+-------------+--------+---------+---------+----+--------------------+
-|tenant_id    |uuid    |RO, all  |from auth|CR  |Tenant ID           |
-|             |        |         |token    |    |                    |
-+-------------+--------+---------+---------+----+--------------------+
-|name         |string  |RW, all  |''       |CRU |human-readable name |
-+-------------+--------+---------+---------+----+--------------------+
-|description  |string  |RW, all  |''       |CRU |human-readable      |
-+-------------+--------+---------+---------+----+--------------------+
-|port_pairs   |list    |RW, all  |N/A      |CRU |List of port-pairs  |
-+-------------+--------+---------+---------+----+--------------------+
++-----------+--------+---------+---------+----+---------------------+
+|Attribute  |Type    |Access   |Default  |CRUD|Description          |
+|Name       |        |         |Value    |    |                     |
++===========+========+=========+=========+====+=====================+
+|id         |uuid    |RO, all  |generated|R   |Port pair group ID.  |
++-----------+--------+---------+---------+----+---------------------+
+|tenant_id  |uuid    |RO, all  |from auth|CR  |Tenant ID.           |
+|           |        |         |token    |    |                     |
++-----------+--------+---------+---------+----+---------------------+
+|name       |string  |RW, all  |''       |CRU |Port pair group name.|
++-----------+--------+---------+---------+----+---------------------+
+|description|string  |RW, all  |''       |CRU |Port pair group      |
+|           |        |         |         |    |description.         |
++-----------+--------+---------+---------+----+---------------------+
+|port_pairs |list    |RW, all  |N/A      |CRU |List of port-pairs.  |
++-----------+--------+---------+---------+----+---------------------+
 
 Port Pair resource:
 
-+--------------+--------+---------+---------+----+----------------------+
-|Attribute     |Type    |Access   |Default  |CRUD|Description           |
-|Name          |        |         |Value    |    |                      |
-+==============+========+=========+=========+====+======================+
-|id            |uuid    |RO, all  |generated|R   |identity              |
-+--------------+--------+---------+---------+----+----------------------+
-|tenant_id     |uuid    |RO, all  |from auth|CR  |Tenant ID             |
-|              |        |         |token    |    |                      |
-+--------------+--------+---------+---------+----+----------------------+
-|name          |string  |RW, all  |''       |CRU |human-readable name   |
-+--------------+--------+---------+---------+----+----------------------+
-|description   |string  |RW, all  |''       |CRU |human-readable        |
-+--------------+--------+---------+---------+----+----------------------+
-|ingress       |uuid    |RW, all  |N/A      |CR  |Ingress port UUID     |
-+--------------+--------+---------+---------+----+----------------------+
-|egress        |uuid    |RW, all  |N/A      |CR  |Egress port UUID      |
-+--------------+--------+---------+---------+----+----------------------+
-|service       |dict    |RW, all  |None     |CR  |Dict. of parameters:  |
-|_function     |        |         |         |    |'correlation':String  |
-|_parameters   |        |         |         |    |                      |
-+--------------+--------+---------+---------+----+----------------------+
++---------------------------+--------+---------+---------+----+----------------------+
+|Attribute Name             |Type    |Access   |Default  |CRUD|Description           |
++===========================+========+=========+=========+====+======================+
+|id                         |uuid    |RO, all  |generated|R   |Port pair ID.         |
++---------------------------+--------+---------+---------+----+----------------------+
+|tenant_id                  |uuid    |RO, all  |from auth|CR  |Tenant ID.            |
+|                           |        |         |token    |    |                      |
++---------------------------+--------+---------+---------+----+----------------------+
+|name                       |string  |RW, all  |''       |CRU |Port pair name.       |
++---------------------------+--------+---------+---------+----+----------------------+
+|description                |string  |RW, all  |''       |CRU |Port pair description.|
++---------------------------+--------+---------+---------+----+----------------------+
+|ingress                    |uuid    |RW, all  |N/A      |CR  |Ingress port ID.      |
++---------------------------+--------+---------+---------+----+----------------------+
+|egress                     |uuid    |RW, all  |N/A      |CR  |Egress port ID.       |
++---------------------------+--------+---------+---------+----+----------------------+
+|service_function_parameters|dict    |RW, all  |None     |CR  |Dict. of parameters:  |
+|                           |        |         |         |    |'correlation':String  |
++---------------------------+--------+---------+---------+----+----------------------+
 
 Flow Classifier resource:
 
-+-------------+--------+---------+---------+----+--------------------+
-|Attribute    |Type    |Access   |Default  |CRUD|Description         |
-|Name         |        |         |Value    |    |                    |
-+=============+========+=========+=========+====+====================+
-|id           |uuid    |RO, all  |generated|R   |identity            |
-+-------------+--------+---------+---------+----+--------------------+
-|tenant_id    |uuid    |RO, all  |from auth|CR  |Tenant ID           |
-|             |        |         |token    |    |                    |
-+-------------+--------+---------+---------+----+--------------------+
-|name         |string  |RW, all  |''       |CRU |human-readable name |
-+-------------+--------+---------+---------+----+--------------------+
-|description  |string  |RW, all  |''       |CRU |human-readable      |
-+-------------+--------+---------+---------+----+--------------------+
-|ip_version   |enum    |RW, all  |IPv4     |CR  |IPv4, IPv6          |
-+-------------+--------+---------+---------+----+--------------------+
-|protocol     |string  |RW, all  |Any      |CR  |the protocol        |
-|             |        |         |         |    |field in IP header  |
-+-------------+--------+---------+---------+----+--------------------+
-|source_port  |integer |RW, all  |Any      |CR  |Min. source         |
-|_range_min   |        |         |         |    |protocol port       |
-+-------------+--------+---------+---------+----+--------------------+
-|source_port  |integer |RW, all  |Any      |CR  |Max. source         |
-|_range_max   |        |         |         |    |protocol port       |
-+-------------+--------+---------+---------+----+--------------------+
-|destination  |integer |RW, all  |Any      |CR  |Min. destination    |
-|_port_range  |        |         |         |    |protocol port       |
-|_min         |        |         |         |    |                    |
-+-------------+--------+---------+---------+----+--------------------+
-|destination  |integer |RW, all  |Any      |CR  |Max. destination    |
-|_range_range |        |         |         |    |protocol port       |
-|_max         |        |         |         |    |                    |
-+-------------+--------+---------+---------+----+--------------------+
-|source       |CIDR    |RW, all  |Any      |CR  |Source IP prefix    |
-|_ip_prefix   |        |         |         |    |IPV4 or IPV6        |
-+-------------+--------+---------+---------+----+--------------------+
-|destination  |CIDR    |RW, all  |Any      |CR  |Destination IP      |
-|_ip_prefix   |        |         |         |    |prefix              |
-|             |        |         |         |    |IPV4 or IPV6        |
-+-------------+--------+---------+---------+----+--------------------+
-|source       |uuid    |RW, all  |None     |CR  |Source Neutron      |
-|_port_id     |        |         |         |    |port ID             |
-+-------------+--------+---------+---------+----+--------------------+
-|destination  |uuid    |RW, all  |None     |CR  |Destination Neutron |
-|_port_id     |        |         |         |    |port ID             |
-+-------------+--------+---------+---------+----+--------------------+
-|l7_parameters|dict    |RW, all  |Any      |CR  |Dict. of            |
-|             |        |         |         |    |L7 parameters       |
-+-------------+--------+---------+---------+----+--------------------+
++--------------------------+--------+---------+---------+----+-----------------------+
+|Attribute Name            |Type    |Access   |Default  |CRUD|Description            |
+|                          |        |         |Value    |    |                       |
++==========================+========+=========+=========+====+=======================+
+|id                        |uuid    |RO, all  |generated|R   |Flow-classifier ID.    |
++--------------------------+--------+---------+---------+----+-----------------------+
+|tenant_id                 |uuid    |RO, all  |from auth|CR  |Tenant ID.             |
+|                          |        |         |token    |    |                       |
++--------------------------+--------+---------+---------+----+-----------------------+
+|name                      |string  |RW, all  |''       |CRU |Flow-classifier name.  |
++--------------------------+--------+---------+---------+----+-----------------------+
+|description               |string  |RW, all  |''       |CRU |Flow-classifier        |
+|                          |        |         |         |    |description.           |
++--------------------------+--------+---------+---------+----+-----------------------+
+|ethertype                 |string  |RW, all  |'IPv4'   |CR  |L2 ethertype. Can be   |
+|                          |        |         |         |    |'IPv4' or 'IPv6' only. |
++--------------------------+--------+---------+---------+----+-----------------------+
+|protocol                  |string  |RW, all  |Any      |CR  |IP protocol name.      |
++--------------------------+--------+---------+---------+----+-----------------------+
+|source_port_range_min     |integer |RW, all  |Any      |CR  |Minimum source         |
+|                          |        |         |         |    |protocol port.         |
++--------------------------+--------+---------+---------+----+-----------------------+
+|source_port_range_max     |integer |RW, all  |Any      |CR  |Maximum source         |
+|                          |        |         |         |    |protocol port.         |
++--------------------------+--------+---------+---------+----+-----------------------+
+|destination_port_range_min|integer |RW, all  |Any      |CR  |Minimum destination    |
+|                          |        |         |         |    |protocol port.         |
++--------------------------+--------+---------+---------+----+-----------------------+
+|destination_port_range_max|integer |RW, all  |Any      |CR  |Maximum destination    |
+|                          |        |         |         |    |protocol port.         |
++--------------------------+--------+---------+---------+----+-----------------------+
+|source_ip_prefix          |CIDR    |RW, all  |Any      |CR  |Source IPv4 or IPv6    |
+|                          |        |         |         |    |prefix.                |
++--------------------------+--------+---------+---------+----+-----------------------+
+|destination_ip_prefix     |CIDR    |RW, all  |Any      |CR  |Destination IPv4 or    |
+|                          |        |         |         |    |IPv6 prefix.           |
++--------------------------+--------+---------+---------+----+-----------------------+
+|logical_source_port       |uuid    |RW, all  |None     |CR  |Neutron source port.   |
++--------------------------+--------+---------+---------+----+-----------------------+
+|logical_destination_port  |uuid    |RW, all  |None     |CR  |Neutron destination    |
+|                          |        |         |         |    |port.                  |
++--------------------------+--------+---------+---------+----+-----------------------+
+|l7_parameters             |dict    |RW, all  |Any      |CR  |Dict. of L7 parameters.|
++--------------------------+--------+---------+---------+----+-----------------------+
 
 Json Port-pair create request example::
 
