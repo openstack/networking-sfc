@@ -55,6 +55,7 @@ Networking-SFC Internals
    system_design and_workflow
    ovs_driver_and_agent_workflow
    command_extensions
+   alembic_migration
 
 Indices and tables
 ------------------
