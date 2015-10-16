@@ -29,9 +29,7 @@ System Design and Workflow
 
 Problem Description
 ===================
-The Port chain specification [1]_ proposes a Neutron port based API for
-setting up a service chain. A specification on the system architecture
-and related API work flow is needed to guide the code design.
+The `Service Chaining API specification <http://docs.openstack.org/developer/networking-sfc/api.html>`_ proposes a Neutron port based solution for setting up a service chain. A specification on the system architecture and related API work flow is needed to guide the code design.
 
 System Architecture
 ============================
@@ -77,7 +75,7 @@ tenant's traffic flow can be steered through the user defined sequence
 of Neutron ports to get the desired service treatment from the Service
 Function running on the VMs.
 
-A separate "OVS Driver and Agent" specification [2]_ will describe in more
+A separate `OVS Driver and Agent specification <http://docs.openstack.org/developer/networking-sfc/portchain-ovs-driver-agent.html>`_ will describe in more
 detail on the design consideration of the Driver, Agent, and how to set up the
 classification rules on the OVS to identify different flows and how to
 set up the OVS forwarding table. In the reference implementation, the OVS Driver
@@ -132,7 +130,7 @@ through existing Neutron API and ML2. The built-in OVS backend
 implements tunneling the original flow packets over VXLAN tunnel. The detailed
 outer VXLAN tunnel transport format and inner SFC flow format including
 how to leverage existing OVS's support for MPLS label to carry chain ID
-will be described in the "Port Chain OVS Driver and Agent" specification [2]_.
+will be described in the `Port Chain OVS Driver and Agent specification <http://docs.openstack.org/developer/networking-sfc/portchain-ovs-driver-agent.html>`_.
 In the future we can add implementation of tunneling the SFC flow packets over
 flat L2 Ethernet or L3 IP network or GRE tunnel etc.
 
@@ -242,11 +240,6 @@ vSwitches should already be set up before the user initiates the SFC
 request. The service chain flow packets will be tunneled through the
 connecting type/technology (e.g. VXLAN or GRE) between the two
 vSwitches. For our reference code implementation, we will use VXLAN to
-show a complete data path setup. Please refer to the OVS Driver and OVS
-Agent spec [2]_ for more detail info.
+show a complete data path setup. Please refer to the `OVS Driver and OVS
+Agent specification <http://docs.openstack.org/developer/networking-sfc/portchain-ovs-driver-agent.html>`_ for more detail info.
 
-References
-==========
-
-.. [1] http://docs.openstack.org/developer/networking-sfc/api.html
-.. [2] http://docs.openstack.org/developer/networking-sfc/portchain-ovs-driver-agent.html

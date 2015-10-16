@@ -30,12 +30,11 @@ API Model
 Problem Description
 ===================
 
-Currently Neutron does not support service chaining. To support
-service chaining, Service VMs must be attached at points in the
+Currently Neutron does not support service function chaining. To support
+service function chaining, Service VMs must be attached at points in the
 network and then traffic must be steered between these attachment
-points. Please also refer to the Neutron
-Service Chain BP associated with this specification [1] and the
-Service Chain Bug ID [2][3].
+points. Please refer to `Neutron Service Chain blue-print <https://blueprints.launchpad.net/neutron/+spec/neutron-api-extension-for-service-chaining>`_ and Bugs `[1] <https://bugs.launchpad.net/neutron/+bug/1450617>`_ `[2] <https://bugs.launchpad.net/neutron/+bug/1450625>`_
+releated to this specification for more information.
 
 Proposed Change
 ===============
@@ -74,7 +73,7 @@ For example, [{'p1': 'p2'}, {'p3': 'p4'}, {'p5': 'p6'}] represents::
        +------+     +------+     +------+
        p1|  |p2     p3|  |p4      p5| |P6
          |  |         |  |          | |
-     ----+  +---------+  +----------+-|---->
+    ->---+  +---------+  +----------+ +---->
 
 where P1 is the head of the Port Chain and P6 is the tail of the Port Chain, and
 SF1 has ports p1 and p2, SF2 has ports p3 and p4, and SF3 has ports p5 and p6.
@@ -447,56 +446,101 @@ Flow Classifier resource:
 
 Json Port-pair create request example::
 
- {"port_pair": {"name": "PP1",
+ {"port_pair": {"name": "SF1",
         "tenant_id": "d382007aa9904763a801f68ecf065cf5",
-        "description": "SF-A",
+        "description": "Firewall SF instance",
         "ingress": "dace4513-24fc-4fae-af4b-321c5e2eb3d1",
         "egress": "aef3478a-4a56-2a6e-cd3a-9dee4e2ec345",
+    }
+ }
+
+ {"port_pair":  {"name": "SF2",
+        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "description": "Loadbalancer SF instance",
+        "ingress": "797f899e-73d4-11e5-b392-2c27d72acb4c",
+        "egress": "797f899e-73d4-11e5-b392-2c27d72acb4c",
     }
  }
 
 Json Port-pair create response example::
 
- {"port_pair": {"name": "PP1",
+ {"port_pair": {"name": "SF1",
         "tenant_id": "d382007aa9904763a801f68ecf065cf5",
-        "description": "SF-A",
+        "description": "Firewall SF instance",
         "ingress": "dace4513-24fc-4fae-af4b-321c5e2eb3d1",
         "egress": "aef3478a-4a56-2a6e-cd3a-9dee4e2ec345",
         "id": "78dcd363-fc23-aeb6-f44b-56dc5e2fb3ae",
+    }
+  }
+
+ {"port_pair":  {"name": "SF2",
+        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "description": "Loadbalancer SF instance",
+        "ingress": "797f899e-73d4-11e5-b392-2c27d72acb4c",
+        "egress": "797f899e-73d4-11e5-b392-2c27d72acb4c",
+        "id": "d11e9190-73d4-11e5-b392-2c27d72acb4c"
     }
  }
 
 Json Port Pair Group create request example::
 
- {"port_pair_group": {"name": "PG1",
+ {"port_pair_group": {"name": "Firewall_PortPairGroup",
         "tenant_id": "d382007aa9904763a801f68ecf065cf5",
-        "description": "Two port-pairs",
+        "description": "Grouping Firewall SF instances",
         "port_pairs": [
-            "875dfeda-43ed-23fe-454b-764feab2c342",
             "78dcd363-fc23-aeb6-f44b-56dc5e2fb3ae"
+        ]
+    }
+  }
+
+ {"port_pair_group": {"name": "Loadbalancer_PortPairGroup",
+        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "description": "Grouping Loadbalancer SF instances",
+        "port_pairs": [
+            "d11e9190-73d4-11e5-b392-2c27d72acb4c"
         ]
     }
  }
 
 Json Port Pair Group create response example::
 
- {"port_pair_group": {"name": "PG1",
+ {"port_pair_group": {"name": "Firewall_PortPairGroup",
         "tenant_id": "d382007aa9904763a801f68ecf065cf5",
-        "description": "Two port-pairs",
+        "description": "Grouping Firewall SF instances",
         "port_pairs": [
-            "875dfeda-43ed-23fe-454b-764feab2c342",
-            "78dcd363-fc23-aeb6-f44b-56dc5e2fb3ae"
+            "78dcd363-fc23-aeb6-f44b-56dc5e2fb3ae
         ],
          "id": "4512d643-24fc-4fae-af4b-321c5e2eb3d1",
     }
  }
 
+ {"port_pair_group":  {"name": "Loadbalancer_PortPairGroup",
+        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "description": "Grouping Loadbalancer SF instances",
+        "port_pairs": [
+            "d11e9190-73d4-11e5-b392-2c27d72acb4c"
+        ],
+         "id": "4a634d49-76dc-4fae-af4b-321c5e23d651",
+    }
+ }
+
 Json Flow Classifier create request example::
 
- {"flow_classifier": {"name": "flow1",
+ {"flow_classifier": {"name": "FC1",
         "tenant_id": "1814726e2d22407b8ca76db5e567dcf1",
-        "protocol": "tcp",
+        "description": "Flow rule for classifying TCP traffic",
+        "protocol": "TCP",
         "source_port_range_min": 22, "source_port_range_max": 4000,
+        "destination_port_range_min": 80, "destination_port_range_max": 80,
+        "source_ip_prefix": null, "destination_ip_prefix": "22.12.34.45"
+    }
+ }
+
+ {"flow_classifier": {"name": "FC2",
+        "tenant_id": "1814726e2d22407b8ca76db5e567dcf1",
+        "description": "Flow rule for classifying UDP traffic",
+        "protocol": "UDP",
+        "source_port_range_min": 22, "source_port_range_max": 22,
         "destination_port_range_min": 80, "destination_port_range_max": 80,
         "source_ip_prefix": null, "destination_ip_prefix": "22.12.34.45"
     }
@@ -504,9 +548,10 @@ Json Flow Classifier create request example::
 
 Json Flow Classifier create response example::
 
- {"flow_classifier": {"name": "flow1",
+ {"flow_classifier": {"name": "FC1",
         "tenant_id": "1814726e2d22407b8ca76db5e567dcf1",
-        "protocol": "tcp",
+        "description": "Flow rule for classifying TCP traffic",
+        "protocol": "TCP",
         "source_port_range_min": 22, "source_port_range_max": 4000,
         "destination_port_range_min": 80, "destination_port_range_max": 80,
         "source_ip_prefix": null , "destination_ip_prefix": "22.12.34.45",
@@ -514,14 +559,25 @@ Json Flow Classifier create response example::
     }
  }
 
+ {"flow_classifier": {"name": "FC2",
+        "tenant_id": "1814726e2d22407b8ca76db5e567dcf1",
+        "description": "Flow rule for classifying UDP traffic",
+        "protocol": "UDP",
+        "source_port_range_min": 22, "source_port_range_max": 22,
+        "destination_port_range_min": 80, "destination_port_range_max": 80,
+        "source_ip_prefix": null , "destination_ip_prefix": "22.12.34.45",
+        "id": "105a4b0a-73d6-11e5-b392-2c27d72acb4c"
+    }
+ }
+
 Json Port Chain create request example::
 
- {"port_chain": {"name": "PC2",
+ {"port_chain": {"name": "PC1",
         "tenant_id": "d382007aa9904763a801f68ecf065cf5",
-        "description": "Two flows and two port-pair-groups",
+        "description": "Steering TCP and UDP traffic first to Firewall and then to Loadbalancer",
         "flow_classifiers": [
-            "456a4a34-2e9c-14ae-37fb-765feae2eb05",
-            "4a334cd4-fe9c-4fae-af4b-321c5e2eb051"
+            "4a334cd4-fe9c-4fae-af4b-321c5e2eb051",
+            "105a4b0a-73d6-11e5-b392-2c27d72acb4c"
         ],
         "port_pair_groups": [
             "4512d643-24fc-4fae-af4b-321c5e2eb3d1",
@@ -534,10 +590,10 @@ Json Port Chain create response example::
 
  {"port_chain": {"name": "PC2",
         "tenant_id": "d382007aa9904763a801f68ecf065cf5",
-        "description": "Two flows and two port-pair-groups",
+        "description": "Steering TCP and UDP traffic first to Firewall and then to Loadbalancer",
         "flow_classifiers": [
-            "456a4a34-2e9c-14ae-37fb-765feae2eb05",
-            "4a334cd4-fe9c-4fae-af4b-321c5e2eb051"
+            "4a334cd4-fe9c-4fae-af4b-321c5e2eb051",
+            "105a4b0a-73d6-11e5-b392-2c27d72acb4c"
         ],
         "port_pair_groups": [
             "4512d643-24fc-4fae-af4b-321c5e2eb3d1",
@@ -546,6 +602,7 @@ Json Port Chain create response example::
          "id": "1278dcd4-459f-62ed-754b-87fc5e4a6751"
     }
  }
+
 
 Implementation
 ==============
@@ -564,10 +621,6 @@ Other contributors:
  * Ramanjaneya (ramanjieee@gmail.com)
  * Stephen Wong (stephen.kf.wong@gmail.com)
  * Nicolas Bouthors (Nicolas.BOUTHORS@qosmos.com)
+ * Akihiro Motoki <amotoki@gmail.com>
+ * Paul Carver <pcarver@att.com>
 
-References
-==========
-
-.. [1] https://blueprints.launchpad.net/neutron/+spec/neutron-api-extension-for-service-chaining
-.. [2] https://bugs.launchpad.net/neutron/+bug/1450617
-.. [3] https://bugs.launchpad.net/neutron/+bug/1450625

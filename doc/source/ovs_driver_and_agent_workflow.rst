@@ -27,11 +27,7 @@
 OVS Driver and Agent Workflow
 =============================
 
-Launchpad blueprint:
-
-https://blueprints.launchpad.net/neutron/+spec/common-service-chaining-driver-api
-
-This blueprint describes the OVS driver and agent for service chaining.
+Blueprint about `Common Service chaining driver <https://blueprints.launchpad.net/neutron/+spec/common-service-chaining-driver-api>`_ describes the OVS driver and agent necessity for realizing service function chaining.
 
 Problem Description
 ===================
@@ -76,7 +72,7 @@ The OVS Driver is extended to support service chaining. The driver interfaces
 with the OVS agents that reside on each Compute node. The OVS driver is responsible
 for the following:
 
-* Identify the OVS agents that directly connecting to the SF instances and establish
+* Identify the OVS agents that directly connects to the SF instances and establish
   communication with OVS agents on the Compute nodes.
 * Send commands to the OVS agents to create bridges, flow tables and flows to steer
   chain traffic to the SF instances.
@@ -107,9 +103,9 @@ to perform the following functions:
   packets to the next-hop Compute node via tunnels, or to the next Service VM port
   on that Compute node. Integration bridge will terminate a Service Function Path.
 
-The OVS Agent will use the mpls header to transport the chain path identifier
-and chain hop index. The mpls label will transport the chain path identifier,
-and the mpls ttl will transport the chain hop index. The following packet encapsulation
+The OVS Agent will use the MPLS header to transport the chain path identifier
+and chain hop index. The MPLS label will transport the chain path identifier,
+and the MPLS ttl will transport the chain hop index. The following packet encapsulation
 will be used::
 
     IPv4 Packet:
@@ -120,6 +116,14 @@ will be used::
     Original Ethernet, ET=0x8847 | MPLS header   | Original IP Packet |
     -----------------------------+---------------+--------------------+
 
+This is not intended as a general purpose MPLS implementation but rather as a
+temporary internal mechanism. It is anticipated that the MPLS label will be
+replaced with an NSH encapsulation
+(https://datatracker.ietf.org/doc/draft-ietf-sfc-nsh/) once NSH support is
+available upstream in Open vSwitch. If the service function does not support
+the header, then the vSwitch will act as Service Function Forwarder (SFF)
+Proxy which will strip off the header when forwarding the packet to the SF
+and re-add the header when receiving the packet from the SF.
 
 OVS Bridge and Tunnel
 ---------------------
@@ -280,8 +284,7 @@ Work Items
 Dependencies
 ============
 
-Neutron blueprint for Neutron API extensions for service chaining:
-https://blueprints.launchpad.net/neutron/+spec/neutron-API-extension-for-service-chaining
+This design depends upon the proposed `Neutron Service Chaining API extensions <https://blueprints.launchpad.net/neutron/+spec/neutron-api-extension-for-service-chaining>`_
 
 Openvswitch.
 
@@ -306,8 +309,3 @@ Developer Documentation
 
 None
 
-References
-==========
-
-[1] Neutron API Extension for Service Chaining
-   https://blueprints.launchpad.net/neutron/+spec/neutron-API-extension-for-service-chaining

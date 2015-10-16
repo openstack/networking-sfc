@@ -29,14 +29,11 @@ Command extension
 
 Networking-sfc uses python-neutronclient's existing command extension framework
 for adding required command lines for realizing service function chaining
-functionality.
-
-Full document about python-neutronclient can be found at:
-http://docs.openstack.org/developer/python-neutronclient/devref/client_command_extensions.html
+functionality. Refer to `Python-neutronclient command extension <http://docs.openstack.org/developer/python-neutronclient/devref/client_command_extensions.html>`_ for further details.
 
 
-Word about new Command Lines:
------------------------------
+List of New Neutron CLI Commands:
+---------------------------------
 Below listed command lines are introduced for realizing service function chaining.
 
 ::
