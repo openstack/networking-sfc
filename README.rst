@@ -2,6 +2,16 @@
 Service Function Chaining Extension for OpenStack Networking
 ============================================================
 
+Service Function Chaining API Status
+------------------------------------
+
+This project has not been released yet, and as such, the API should be
+considered experimental. This means the SFC API could undergo changes which
+could be backwards incompatible while it is under development. The goal is to
+allow backend implementations to experiment with the API at the same time as
+it is being developed. Once a release is made, this documentation will be
+updated to remove this warning.
+
 This project provides APIs and implementations to support
 Service Function Chaining in Neutron.
 
