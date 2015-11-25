@@ -21,6 +21,8 @@ from oslo_db.sqlalchemy import session
 import sqlalchemy as sa
 from sqlalchemy import event
 
+from networking_sfc.db.migration.models import head  # noqa
+
 
 MYSQL_ENGINE = None
 SFC_VERSION_TABLE = 'alembic_version_sfc'
