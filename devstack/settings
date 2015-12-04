@@ -1,0 +1,8 @@
+# settings for networking-sfc devstack plugin
+
+NETWORKING_SFC_DIR=${NETWORKING_SFC_DIR:-"$DEST/networking-sfc"}
+
+NEUTRON_FLOWCLASSIFIER_PLUGIN=${NEUTRON_FLOWCLASSIFIER_PLUGIN:="networking_sfc.services.flowclassifier.plugin.FlowClassifierPlugin"}
+NEUTRON_SFC_PLUGIN=${NEUTRON_SFC_PLUGIN:-"networking_sfc.services.sfc.plugin.SfcPlugin"}
+
+NEUTRON_SFC_DRIVERS=${NEUTRON_SFC_DRIVERS:-"ovs"}
