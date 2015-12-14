@@ -25,6 +25,7 @@ elif [ -x "$ZUUL_CLONER" ]; then
     echo "ZUUL CLONER" > /tmp/tox_install.txt
     cwd=$(/bin/pwd)
     cd /tmp
+    export ZUUL_BRANCH=${ZUUL_BRANCH-$BRANCH}
     $ZUUL_CLONER --cache-dir \
         /opt/git \
         git://git.openstack.org \
