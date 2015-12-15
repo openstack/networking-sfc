@@ -17,7 +17,15 @@ where
 
 For example
 
-    enable_plugin networking-sfc http://10.145.105.11/portchain
+ If you have already cloned the networking-sfc repository (which is
+ useful when testing unmerged changes)
+
+    enable_plugin networking-sfc /opt/stack/networking-sfc
+
+ Or, if you want to pull the networking-sfc repository from Github
+ and use a particular branch (for example Liberty, here)
+
+    enable_plugin networking-sfc git://git.openstack.org/openstack/networking-sfc stable/liberty
 
 For more information, see the "Externally Hosted Plugins" section of
 http://docs.openstack.org/developer/devstack/plugins.html.
