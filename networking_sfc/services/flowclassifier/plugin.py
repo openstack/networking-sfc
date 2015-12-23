@@ -1,0 +1,113 @@
+# Copyright 2015 Futurewei.  All rights reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+from oslo_log import helpers as log_helpers
+from oslo_log import log as logging
+from oslo_utils import excutils
+
+from neutron.i18n import _LE
+from neutron import manager
+
+from networking_sfc.db import flowclassifier_db as fc_db
+from networking_sfc.extensions import flowclassifier as fc_ext
+from networking_sfc.services.flowclassifier.common import context as fc_ctx
+from networking_sfc.services.flowclassifier.common import exceptions as fc_exc
+from networking_sfc.services.flowclassifier import driver_manager as fc_driver
+
+
+LOG = logging.getLogger(__name__)
+
+
+class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
+
+    """Implementation of the Plugin."""
+    supported_extension_aliases = [fc_ext.FLOW_CLASSIFIER_EXT]
+    path_prefix = fc_ext.FLOW_CLASSIFIER_PREFIX
+
+    def __init__(self):
+        self.driver_manager = fc_driver.FlowClassifierDriverManager()
+        super(FlowClassifierPlugin, self).__init__()
+        self.driver_manager.initialize()
+
+    def _get_port(self, context, id):
+        port = super(FlowClassifierPlugin, self)._get_port(context, id)
+        core_plugin = manager.NeutronManager.get_plugin()
+        return core_plugin.get_port(context, port['id'])
+
+    def _get_fixed_ip_from_port(self, context, logical_port, ip_prefix):
+        if logical_port is not None:
+            port = self._get_port(context, logical_port)
+            if (
+                ip_prefix is None and
+                'fixed_ips' in port and
+                port['fixed_ips']
+            ):
+                for fixed_ip in port['fixed_ips']:
+                    ip_prefix = (
+                        '%s/32' % fixed_ip['ip_address']
+                    )
+                    break
+        return ip_prefix
+
+    @log_helpers.log_method_call
+    def create_flow_classifier(self, context, flow_classifier):
+        fc_db = super(FlowClassifierPlugin, self).create_flow_classifier(
+            context, flow_classifier)
+        fc_db_context = fc_ctx.FlowClassifierContext(self, context, fc_db)
+        try:
+            self.driver_manager.create_flow_classifier(fc_db_context)
+        except fc_exc.FlowClassifierDriverError as e:
+            LOG.exception(e)
+            with excutils.save_and_reraise_exception():
+                LOG.error(_LE("Create flow classifier failed, "
+                              "deleting flow_classifier '%s'"),
+                          fc_db['id'])
+                self.delete_flow_classifier(context, fc_db['id'])
+        return fc_db
+
+    @log_helpers.log_method_call
+    def update_flow_classifier(self, context, id, flow_classifier):
+        original_flowclassifier = self.get_flow_classifier(context, id)
+        updated_fc = super(FlowClassifierPlugin, self).update_flow_classifier(
+            context, id, flow_classifier)
+        fc_db_context = fc_ctx.FlowClassifierContext(
+            self, context, updated_fc,
+            original_flowclassifier=original_flowclassifier)
+
+        try:
+            self.driver_manager.update_flow_classifier(fc_db_context)
+        except fc_exc.FlowClassifierDriverError as e:
+            LOG.exception(e)
+            with excutils.save_and_reraise_exception():
+                LOG.error(_LE("Update flow classifier failed, "
+                              "flow_classifier '%s'"),
+                          updated_fc['id'])
+
+        return updated_fc
+
+    @log_helpers.log_method_call
+    def delete_flow_classifier(self, context, fc_id):
+        fc = self.get_flow_classifier(context, fc_id)
+        fc_context = fc_ctx.FlowClassifierContext(self, context, fc)
+        try:
+            self.driver_manager.delete_flow_classifier(fc_context)
+        except fc_exc.FlowClassfierDriverError as e:
+            LOG.exception(e)
+            with excutils.save_and_reraise_exception():
+                LOG.error(_LE("Delete port pair group failed, "
+                              "flow_classifier '%s'"),
+                          fc_id)
+
+        super(FlowClassifierPlugin, self).delete_flow_classifier(
+            context, fc_id)
