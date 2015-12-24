@@ -32,7 +32,7 @@ Problem Description
 The `Service Chaining API specification <http://docs.openstack.org/developer/networking-sfc/api.html>`_ proposes a Neutron port based solution for setting up a service chain. A specification on the system architecture and related API work flow is needed to guide the code design.
 
 System Architecture
-============================
+===================
 The following figure shows the generic architecture of the Port Chain
 Plugin. As shown in the diagram, Port Chain Plugin can be backed by
 different service providers such as OVS Driver and/or different types of
@@ -145,19 +145,19 @@ Create Neutron ports on network net1::
 
 Boot VM1 from Nova with ports p1 and p2 using two --nic options::
 
- nova boot --image xxx --nic port-id=p1 --nic port-id=p2 vm1
+ nova boot --image xxx --nic port-id=p1-id --nic port-id=p2-id vm1 --flavor <image-flavour>
 
 Boot VM2 from Nova with ports p3 and p4 using two --nic options::
 
- nova boot --image yyy --nic port-id=p3 --nic port-id=p4 vm2
+ nova boot --image yyy --nic port-id=p3-id --nic port-id=p4-id vm2 --flavor <image-flavour>
 
 Alternatively, the user can create each VM with one VNIC and then
 attach another Neutron port to the VM::
 
- nova boot --image xxx --nic port-id=p1 vm1
- nova interface-attach --port-id p2 vm1
- nova boot --image yyy --nic port-id=p3 vm2
- nova interface-attach --port-id p4 vm2
+ nova boot --image xxx --nic port-id=p1-id vm1
+ nova interface-attach --port-id p2-id vm1
+ nova boot --image yyy --nic port-id=p3-id vm2
+ nova interface-attach --port-id p4-id vm2
 
 Once the Neutron ports p1 - p4 exist, the Port Chain is created using
 the steps described below.
@@ -169,27 +169,29 @@ Create flow-classifier FC1 that matches on source IP address 22.1.20.1
 direction) with TCP connection, source port 23 and destination port
 100::
 
- neutron flow-classifier-create
-  --ip-version ipv4
-  --source-ip-prefix 22.1.20.1/32
-  --destination-ip-prefix 172.4.5.6/32
-  --protocol tcp
-  --source-port 23:23
+ neutron flow-classifier-create \
+  --ethertype IPv4 \
+  --source-ip-prefix 22.1.20.1/32 \
+  --destination-ip-prefix 172.4.5.6/32 \
+  --protocol tcp \
+  --source-port 23:23 \
   --destination-port 100:100 FC1
 
 Create Port Pair
------------------
+----------------
 Create port-pair PP1 with ports p1 and p2, port-pair PP2 with
 ports p3 and p4, port-pair PP3 with ports P5 and P6::
 
- neutron port-pair-create
-        --ingress=p1
+ neutron port-pair-create \
+        --ingress=p1 \
         --egress=p2 PP1
- neutron port-pair-create
-        --ingress=p3
+
+ neutron port-pair-create \
+        --ingress=p3 \
         --egress=p4 PP2
- neutron port-pair-create
-        --ingress=p5
+
+ neutron port-pair-create \
+        --ingress=p5 \
         --egress=p6 PP3
 
 Create Port Group
@@ -197,9 +199,9 @@ Create Port Group
 Create port-pair-group PG1 with port-pair PP1 and PP2, and
 port-pair-group PG2 with port-pair PP3::
 
- neutron port-pair-group-create
-        --port-pair PP1 --port-pair PP2 PG1
- neutron port-pair-group-create
+ neutron port-pair-group-create \
+        --port-pair PP1 --port-pair PP2 PG1 \
+ neutron port-pair-group-create \
         --port-pair PP3 PG2
 
 Create Port Chain
@@ -208,7 +210,7 @@ Create Port Chain
 Create port-chain PC1 with port-group PG1 and PG2, and flow
 classifier FC1::
 
- neutron port-chain-create
+ neutron port-chain-create \
         --port-pair-group PG1 --port-pair-group PG2 --flow-classifier FC1 PC1
 
 This will result in the Port chain driver being invoked to create the
