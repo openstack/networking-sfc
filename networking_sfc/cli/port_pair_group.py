@@ -46,7 +46,7 @@ def add_common_arguments(parser):
         dest='port_pairs',
         default=[],
         action='append',
-        help=_('ID or name of the Port Pair.'
+        help=_('ID or name of the Port Pair. '
                'This option can be repeated.'))
 
 
