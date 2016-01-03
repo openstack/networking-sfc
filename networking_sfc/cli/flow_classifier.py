@@ -75,6 +75,7 @@ class FlowClassifierCreate(extension.ClientExtensionCreate,
             help=_('Destination IP prefix or subnet.'))
         parser.add_argument(
             '--logical-source-port',
+            required=True,
             help=_('ID or name of the neutron source port.'))
         parser.add_argument(
             '--logical-destination-port',
@@ -103,8 +104,8 @@ class FlowClassifierCreate(extension.ClientExtensionCreate,
                                           parsed_args.destination_port)
         neutronv20.update_dict(parsed_args, body,
                                ['name', 'description', 'protocol',
-                                'ethertype', 'source_ip_prefix',
-                                'destination_ip_prefix', 'l7_parameters'])
+                                'source_ip_prefix', 'destination_ip_prefix',
+                                'ethertype', 'l7_parameters'])
         return {self.resource: body}
 
     def _fill_protocol_port_info(self, body, port_type, port_val):
@@ -182,18 +183,16 @@ class FlowClassifierList(extension.ClientExtensionList,
     def _get_protocol_port_details(self, data, type):
         type_ip_prefix = type + '_ip_prefix'
         ip_prefix = data.get(type_ip_prefix)
-        if ip_prefix is not None:
-            port_info = type + '[port]: ' + str(ip_prefix)
-        else:
-            port_info = type + '[port]: any'
+        if not ip_prefix:
+            ip_prefix = 'any'
         min_port = data.get(type + '_port_range_min')
-        if min_port is not None:
-            max_port = data.get(type + '_port_range_max')
-            port_info = (port_info + '[' + str(min_port) + ':' +
-                         str(max_port) + ']')
-        else:
-            port_info = port_info + '[any:any]'
-        return port_info
+        if min_port is None:
+            min_port = 'any'
+        max_port = data.get(type + '_port_range_max')
+        if max_port is None:
+            max_port = 'any'
+        return '%s[port]: %s[%s:%s]' % (
+            type, ip_prefix, min_port, max_port)
 
 
 class FlowClassifierShow(extension.ClientExtensionShow, FlowClassifier):

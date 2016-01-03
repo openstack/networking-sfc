@@ -31,7 +31,7 @@ destination_port_UUID = str(uuid.uuid4())
 class CLITestV20FCExtensionJSON(test_cli20.CLITestV20Base):
     def setUp(self):
         self._mock_extension_loading()
-        super(CLITestV20FCExtensionJSON, self).setUp(plurals={})
+        super(CLITestV20FCExtensionJSON, self).setUp()
         self.register_non_admin_status_resource('flow_classifier')
 
     def _create_patch(self, name, func=None):
@@ -63,9 +63,14 @@ class CLITestV20FCExtensionJSON(test_cli20.CLITestV20Base):
         myid = 'myid'
         name = 'flow1'
         ethertype = 'IPv4'
-        args = [name, '--ethertype', ethertype]
-        position_names = ['name', 'ethertype']
-        position_values = [name, ethertype]
+        logical_source_port = '4a334cd4-fe9c-4fae-af4b-321c5e2eb051'
+        args = [
+            name,
+            '--ethertype', ethertype,
+            '--logical-source-port', logical_source_port
+        ]
+        position_names = ['name', 'ethertype', 'logical_source_port']
+        position_values = [name, ethertype, logical_source_port]
         self._test_create_resource(resource, cmd, name, myid, args,
                                    position_names, position_values)
 
@@ -111,7 +116,8 @@ class CLITestV20FCExtensionJSON(test_cli20.CLITestV20Base):
         position_values = [name, protocol_name, ethertype,
                            source_port_min, source_port_max,
                            destination_port_min, destination_port_max,
-                           source_ip, destination_ip, logical_source_port,
+                           source_ip, destination_ip,
+                           logical_source_port,
                            logical_destination_port, description,
                            l7_param_expected]
         self._test_create_resource(resource, cmd, name, myid, args,

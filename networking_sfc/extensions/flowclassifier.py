@@ -69,6 +69,11 @@ class FlowClassifierInUse(neutron_exc.InUse):
     message = _("Flow Classifier %(id)s in use.")
 
 
+class FlowClassifierInConflict(neutron_exc.InvalidInput):
+    message = _("Flow Classifier conflicts with "
+                "another Flow Classifier %(id)s.")
+
+
 class FlowClassifierInvalidProtocol(neutron_exc.InvalidInput):
     message = _("Flow Classifier does not support protocol %(protocol)s. "
                 "Supported protocol values are %(values)s.")
@@ -81,6 +86,13 @@ class FlowClassifierInvalidEthertype(neutron_exc.InvalidInput):
 
 class FlowClassifierProtocolRequiredWithPorts(neutron_exc.InvalidInput):
     message = _("IP protocol must be TCP or UDP, if port range is given.")
+
+
+class FlowClassifierIpPrefixFormatConflictWithEthertype(
+    neutron_exc.InvalidInput
+):
+    message = _("IP prefix %(ip_prefix)s format conflicts with "
+                "ethertype %(ethertype)s.")
 
 
 class FlowClassifierInvalidL7Parameter(neutron_exc.InvalidInput):
@@ -199,11 +211,11 @@ RESOURCE_ATTRIBUTE_MAP = {
             'validate': {'type:subnet_or_none': None}},
         'logical_source_port': {
             'allow_post': True, 'allow_put': False,
-            'is_visible': False, 'default': None,
-            'validate': {'type:uuid_or_none': None}},
+            'is_visible': True,
+            'validate': {'type:uuid': []}},
         'logical_destination_port': {
             'allow_post': True, 'allow_put': False,
-            'is_visible': False, 'default': None,
+            'is_visible': True, 'default': None,
             'validate': {'type:uuid_or_none': None}},
         'l7_parameters': {
             'allow_post': True, 'allow_put': False,

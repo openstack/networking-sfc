@@ -45,21 +45,6 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
         core_plugin = manager.NeutronManager.get_plugin()
         return core_plugin.get_port(context, port['id'])
 
-    def _get_fixed_ip_from_port(self, context, logical_port, ip_prefix):
-        if logical_port is not None:
-            port = self._get_port(context, logical_port)
-            if (
-                ip_prefix is None and
-                'fixed_ips' in port and
-                port['fixed_ips']
-            ):
-                for fixed_ip in port['fixed_ips']:
-                    ip_prefix = (
-                        '%s/32' % fixed_ip['ip_address']
-                    )
-                    break
-        return ip_prefix
-
     @log_helpers.log_method_call
     def create_flow_classifier(self, context, flow_classifier):
         fc_db = super(FlowClassifierPlugin, self).create_flow_classifier(

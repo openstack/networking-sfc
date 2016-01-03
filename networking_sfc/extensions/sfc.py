@@ -87,6 +87,12 @@ class PortPairEgressNoHost(neutron_exc.InvalidInput):
                 "belong to a host.")
 
 
+class PortPairIngressEgressInUse(neutron_exc.InvalidInput):
+    message = _("Port pair with ingress port %(ingress)s "
+                "and egress port %(egress)s is already used by "
+                "another Port pair %(id)s.")
+
+
 class PortPairNotFound(neutron_exc.NotFound):
     message = _("Port pair %(id)s not found.")
 
@@ -110,7 +116,7 @@ def normalize_string(value):
 
 
 def normalize_port_pair_groups(port_pair_groups):
-    port_pair_groups = attr.convert_none_to_empty_list(port_pair_groups)
+    port_pair_groups = attr.convert_to_list(port_pair_groups)
     if not port_pair_groups:
         raise PortPairGroupNotSpecified()
     return port_pair_groups
@@ -202,7 +208,7 @@ RESOURCE_ATTRIBUTE_MAP = {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': None,
             'validate': {'type:uuid_list': None},
-            'convert_to': attr.convert_none_to_empty_list},
+            'convert_to': attr.convert_to_list},
         'chain_parameters': {
             'allow_post': True, 'allow_put': False,
             'is_visible': True, 'default': None,

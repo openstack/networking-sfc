@@ -372,6 +372,17 @@ class SfcDbPlugin(
         pp = port_pair['port_pair']
         tenant_id = self._get_tenant_id_for_create(context, pp)
         with context.session.begin(subtransactions=True):
+            query = self._model_query(context, PortPair)
+            pp_in_use = query.filter_by(
+                ingress=pp['ingress'], egress=pp['egress']
+            ).first()
+            if pp_in_use:
+                raise ext_sfc.PortPairIngressEgressInUse(
+                    ingress=pp['ingress'],
+                    egress=pp['egress'],
+                    id=pp_in_use['id']
+                )
+
             service_function_parameters = {
                 key: ServiceFunctionParam(keyword=key, value=val)
                 for key, val in six.iteritems(

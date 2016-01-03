@@ -48,6 +48,14 @@ def upgrade():
         sa.Column('source_ip_prefix', sa.String(length=255), nullable=True),
         sa.Column('destination_ip_prefix', sa.String(length=255),
                   nullable=True),
+        sa.Column('logical_source_port', sa.String(length=36),
+                  nullable=False),
+        sa.Column('logical_destination_port', sa.String(length=36),
+                  nullable=True),
+        sa.ForeignKeyConstraint(['logical_source_port'], ['ports.id'],
+                                ondelete='RESTRICT'),
+        sa.ForeignKeyConstraint(['logical_destination_port'], ['ports.id'],
+                                ondelete='RESTRICT'),
         sa.PrimaryKeyConstraint('id')
     )
 

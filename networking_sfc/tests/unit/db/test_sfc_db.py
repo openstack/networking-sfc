@@ -13,6 +13,7 @@
 #    under the License.
 
 import contextlib
+import logging
 import mock
 import six
 import webob.exc
@@ -65,6 +66,7 @@ class SfcDbPluginTestCaseBase(
             fmt = self.fmt
         res = self._create_port_chain(fmt, port_chain, **kwargs)
         if res.status_int >= 400:
+            logging.error('create port chain result: %s', res)
             raise webob.exc.HTTPClientError(code=res.status_int)
         port_chain = self.deserialize(fmt or self.fmt, res)
         yield port_chain
@@ -95,6 +97,7 @@ class SfcDbPluginTestCaseBase(
             fmt = self.fmt
         res = self._create_port_pair_group(fmt, port_pair_group, **kwargs)
         if res.status_int >= 400:
+            logging.error('create port pair group result: %s', res)
             raise webob.exc.HTTPClientError(code=res.status_int)
         port_pair_group = self.deserialize(fmt or self.fmt, res)
         yield port_pair_group
@@ -125,6 +128,7 @@ class SfcDbPluginTestCaseBase(
             fmt = self.fmt
         res = self._create_port_pair(fmt, port_pair, **kwargs)
         if res.status_int >= 400:
+            logging.error('create port pair result: %s', res)
             raise webob.exc.HTTPClientError(code=res.status_int)
         port_pair = self.deserialize(fmt or self.fmt, res)
         yield port_pair
@@ -409,27 +413,37 @@ class SfcDbPluginTestCase(
             })
 
     def test_create_port_chain_with_flow_classifiers(self):
-        with self.flow_classifier(flow_classifier={}) as fc:
-            with self.port_pair_group(port_pair_group={}) as pg:
-                self._test_create_port_chain({
-                    'flow_classifiers': [fc['flow_classifier']['id']],
-                    'port_pair_groups': [pg['port_pair_group']['id']]
-                })
+        with self.port(
+            name='test1'
+        ) as port:
+            with self.flow_classifier(flow_classifier={
+                'logical_source_port': port['port']['id']
+            }) as fc:
+                with self.port_pair_group(port_pair_group={}) as pg:
+                    self._test_create_port_chain({
+                        'flow_classifiers': [fc['flow_classifier']['id']],
+                        'port_pair_groups': [pg['port_pair_group']['id']]
+                    })
 
     def test_create_port_chain_with_multi_flow_classifiers(self):
-        with self.flow_classifier(
-            flow_classifier={}
-        ) as fc1, self.flow_classifier(
-            flow_classifier={}
-        ) as fc2:
-            with self.port_pair_group(port_pair_group={}) as pg:
-                self._test_create_port_chain({
-                    'flow_classifiers': [
-                        fc1['flow_classifier']['id'],
-                        fc2['flow_classifier']['id']
-                    ],
-                    'port_pair_groups': [pg['port_pair_group']['id']]
-                })
+        with self.port(
+            name='test1'
+        ) as port:
+            with self.flow_classifier(flow_classifier={
+                'source_ip_prefix': '192.168.100.0/24',
+                'logical_source_port': port['port']['id']
+            }) as fc1, self.flow_classifier(flow_classifier={
+                'source_ip_prefix': '192.168.101.0/24',
+                'logical_source_port': port['port']['id']
+            }) as fc2:
+                with self.port_pair_group(port_pair_group={}) as pg:
+                    self._test_create_port_chain({
+                        'flow_classifiers': [
+                            fc1['flow_classifier']['id'],
+                            fc2['flow_classifier']['id']
+                        ],
+                        'port_pair_groups': [pg['port_pair_group']['id']]
+                    })
 
     def test_create_port_chain_with_port_pairs(self):
         with self.port(
@@ -614,45 +628,54 @@ class SfcDbPluginTestCase(
         self.assertEqual(res.status_int, 404)
 
     def test_update_port_chain(self):
-        with self.flow_classifier(
-            flow_classifier={}
-        ) as fc1, self.flow_classifier(
-            flow_classifier={}
-        ) as fc2:
-            with self.port_pair_group(
-                port_pair_group={}
-            ) as pg:
-                with self.port_chain(port_chain={
-                    'name': 'test1',
-                    'description': 'desc1',
-                    'port_pair_groups': [pg['port_pair_group']['id']],
-                    'flow_classifiers': [fc1['flow_classifier']['id']]
-                }) as pc:
-                    updates = {
-                        'name': 'test2',
-                        'description': 'desc2',
-                        'flow_classifiers': [fc2['flow_classifier']['id']]
-                    }
-                    req = self.new_update_request(
-                        'port_chains', {'port_chain': updates},
-                        pc['port_chain']['id']
-                    )
-                    res = self.deserialize(
-                        self.fmt,
-                        req.get_response(self.ext_api)
-                    )
-                    expected = pc['port_chain']
-                    expected.update(updates)
-                    for k, v in six.iteritems(expected):
-                        self.assertEqual(res['port_chain'][k], v)
-                    req = self.new_show_request(
-                        'port_chains', pc['port_chain']['id']
-                    )
-                    res = self.deserialize(
-                        self.fmt, req.get_response(self.ext_api)
-                    )
-                    for k, v in six.iteritems(expected):
-                        self.assertEqual(res['port_chain'][k], v)
+        with self.port(
+            name='test1'
+        ) as port:
+            with self.flow_classifier(
+                flow_classifier={
+                    'source_ip_prefix': '192.168.100.0/24',
+                    'logical_source_port': port['port']['id']
+                }
+            ) as fc1, self.flow_classifier(
+                flow_classifier={
+                    'source_ip_prefix': '192.168.101.0/24',
+                    'logical_source_port': port['port']['id']
+                }
+            ) as fc2:
+                with self.port_pair_group(
+                    port_pair_group={}
+                ) as pg:
+                    with self.port_chain(port_chain={
+                        'name': 'test1',
+                        'description': 'desc1',
+                        'port_pair_groups': [pg['port_pair_group']['id']],
+                        'flow_classifiers': [fc1['flow_classifier']['id']]
+                    }) as pc:
+                        updates = {
+                            'name': 'test2',
+                            'description': 'desc2',
+                            'flow_classifiers': [fc2['flow_classifier']['id']]
+                        }
+                        req = self.new_update_request(
+                            'port_chains', {'port_chain': updates},
+                            pc['port_chain']['id']
+                        )
+                        res = self.deserialize(
+                            self.fmt,
+                            req.get_response(self.ext_api)
+                        )
+                        expected = pc['port_chain']
+                        expected.update(updates)
+                        for k, v in six.iteritems(expected):
+                            self.assertEqual(res['port_chain'][k], v)
+                        req = self.new_show_request(
+                            'port_chains', pc['port_chain']['id']
+                        )
+                        res = self.deserialize(
+                            self.fmt, req.get_response(self.ext_api)
+                        )
+                        for k, v in six.iteritems(expected):
+                            self.assertEqual(res['port_chain'][k], v)
 
     def test_update_port_chain_port_pair_groups(self):
         with self.port_pair_group(
@@ -721,19 +744,23 @@ class SfcDbPluginTestCase(
         self.assertEqual(res.status_int, 404)
 
     def test_delete_flow_classifier_port_chain_exist(self):
-        with self.flow_classifier(flow_classifier={
-        }) as fc:
-            with self.port_pair_group(port_pair_group={
-            }) as pg:
-                with self.port_chain(port_chain={
-                    'port_pair_groups': [pg['port_pair_group']['id']],
-                    'flow_classifiers': [fc['flow_classifier']['id']]
-                }):
-                    req = self.new_delete_request(
-                        'flow_classifiers', fc['flow_classifier']['id']
-                    )
-                    res = req.get_response(self.ext_api)
-                    self.assertEqual(res.status_int, 409)
+        with self.port(
+            name='test1'
+        ) as port:
+            with self.flow_classifier(flow_classifier={
+                'logical_source_port': port['port']['id']
+            }) as fc:
+                with self.port_pair_group(port_pair_group={
+                }) as pg:
+                    with self.port_chain(port_chain={
+                        'port_pair_groups': [pg['port_pair_group']['id']],
+                        'flow_classifiers': [fc['flow_classifier']['id']]
+                    }):
+                        req = self.new_delete_request(
+                            'flow_classifiers', fc['flow_classifier']['id']
+                        )
+                        res = req.get_response(self.ext_api)
+                        self.assertEqual(res.status_int, 409)
 
     def test_create_port_pair_group(self):
         self._test_create_port_pair_group({})

@@ -21,6 +21,7 @@ from oslo_utils import uuidutils
 
 from neutron.api.v2 import resource as api_res_log
 from neutron.common import config
+from neutron.common import constants as const
 from neutron import manager
 from neutron.notifiers import nova as nova_log
 
@@ -99,8 +100,8 @@ class FlowClassifierExtensionTestCase(
                 'destination_ip_prefix'),
             'source_ip_prefix': data['flow_classifier'].get(
                 'source_ip_prefix'),
-            'logical_source_port': data['flow_classifier'].get(
-                'logical_source_port'),
+            'logical_source_port': data['flow_classifier'][
+                'logical_source_port'],
             'logical_destination_port': data['flow_classifier'].get(
                 'logical_destination_port'),
             'ethertype': data['flow_classifier'].get(
@@ -109,21 +110,15 @@ class FlowClassifierExtensionTestCase(
                 'protocol')
         }}
 
-    def _clean_expected_flow_classifier(self, expected_flow_classifier):
-        if 'logical_source_port' in expected_flow_classifier:
-            del expected_flow_classifier['logical_source_port']
-        if 'logical_destination_port' in expected_flow_classifier:
-            del expected_flow_classifier['logical_destination_port']
-
     def test_create_flow_classifier(self):
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
+            'logical_source_port': _uuid(),
             'tenant_id': _uuid(),
         }}
         expected_data = self._get_expected_flow_classifier(data)
         return_value = copy.copy(expected_data['flow_classifier'])
         return_value.update({'id': flowclassifier_id})
-        self._clean_expected_flow_classifier(return_value)
         instance = self.plugin.return_value
         instance.create_flow_classifier.return_value = return_value
         res = self.api.post(
@@ -138,104 +133,244 @@ class FlowClassifierExtensionTestCase(
         self.assertIn('flow_classifier', res)
         self.assertEqual(return_value, res['flow_classifier'])
 
-    def test_create_flow_classifier_port_string(self):
-        flowclassifier_id = _uuid()
-        data = {'flow_classifier': {
-            'source_port_range_min': '100',
-            'source_port_range_max': '200',
-            'destination_port_range_min': '100',
-            'destination_port_range_max': '200',
-            'tenant_id': _uuid(),
-        }}
-        expected_data = self._get_expected_flow_classifier(data)
-        return_value = copy.copy(expected_data['flow_classifier'])
-        return_value.update({'id': flowclassifier_id})
-        self._clean_expected_flow_classifier(return_value)
-        instance = self.plugin.return_value
-        instance.create_flow_classifier.return_value = return_value
-        res = self.api.post(
-            _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
-            self.serialize(data),
-            content_type='application/%s' % self.fmt)
-        instance.create_flow_classifier.assert_called_with(
-            mock.ANY,
-            flow_classifier=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
-        res = self.deserialize(res)
-        self.assertIn('flow_classifier', res)
-        self.assertEqual(return_value, res['flow_classifier'])
+    def test_create_flow_classifier_source_port_range(self):
+        for source_port_range_min in [None, 100, '100']:
+            for source_port_range_max in [None, 200, '200']:
+                flowclassifier_id = _uuid()
+                data = {'flow_classifier': {
+                    'source_port_range_min': source_port_range_min,
+                    'source_port_range_max': source_port_range_max,
+                    'logical_source_port': _uuid(),
+                    'tenant_id': _uuid(),
+                }}
+                expected_data = self._get_expected_flow_classifier(data)
+                return_value = copy.copy(expected_data['flow_classifier'])
+                return_value.update({'id': flowclassifier_id})
+                instance = self.plugin.return_value
+                instance.create_flow_classifier.return_value = return_value
+                res = self.api.post(
+                    _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
+                    self.serialize(data),
+                    content_type='application/%s' % self.fmt)
+                instance.create_flow_classifier.assert_called_with(
+                    mock.ANY,
+                    flow_classifier=expected_data)
+                self.assertEqual(res.status_int, exc.HTTPCreated.code)
+                res = self.deserialize(res)
+                self.assertIn('flow_classifier', res)
+                self.assertEqual(return_value, res['flow_classifier'])
 
-    def test_create_flow_classifier_ip_prefix_with_mask(self):
-        flowclassifier_id = _uuid()
-        data = {'flow_classifier': {
-            'source_ip_prefix': '10.0.0.0/8',
-            'tenant_id': _uuid(),
-        }}
-        expected_data = self._get_expected_flow_classifier(data)
-        return_value = copy.copy(expected_data['flow_classifier'])
-        return_value.update({'id': flowclassifier_id})
-        self._clean_expected_flow_classifier(return_value)
-        instance = self.plugin.return_value
-        instance.create_flow_classifier.return_value = return_value
-        res = self.api.post(
-            _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
-            self.serialize(data),
-            content_type='application/%s' % self.fmt)
-        instance.create_flow_classifier.assert_called_with(
-            mock.ANY,
-            flow_classifier=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
-        res = self.deserialize(res)
-        self.assertIn('flow_classifier', res)
-        self.assertEqual(return_value, res['flow_classifier'])
+    def test_create_flow_classifier_destination_port_range(self):
+        for destination_port_range_min in [None, 100, '100']:
+            for destination_port_range_max in [None, 200, '200']:
+                flowclassifier_id = _uuid()
+                data = {'flow_classifier': {
+                    'destination_port_range_min': destination_port_range_min,
+                    'destination_port_range_max': destination_port_range_max,
+                    'logical_source_port': _uuid(),
+                    'tenant_id': _uuid(),
+                }}
+                expected_data = self._get_expected_flow_classifier(data)
+                return_value = copy.copy(expected_data['flow_classifier'])
+                return_value.update({'id': flowclassifier_id})
+                instance = self.plugin.return_value
+                instance.create_flow_classifier.return_value = return_value
+                res = self.api.post(
+                    _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
+                    self.serialize(data),
+                    content_type='application/%s' % self.fmt)
+                instance.create_flow_classifier.assert_called_with(
+                    mock.ANY,
+                    flow_classifier=expected_data)
+                self.assertEqual(res.status_int, exc.HTTPCreated.code)
+                res = self.deserialize(res)
+                self.assertIn('flow_classifier', res)
+                self.assertEqual(return_value, res['flow_classifier'])
 
-    def test_create_flow_classifier_non_l7_parameters(self):
-        flowclassifier_id = _uuid()
-        data = {'flow_classifier': {
-            'tenant_id': _uuid(),
-            'l7_parameters': None
-        }}
-        expected_data = self._get_expected_flow_classifier(data)
-        return_value = copy.copy(expected_data['flow_classifier'])
-        return_value.update({'id': flowclassifier_id})
-        self._clean_expected_flow_classifier(return_value)
-        instance = self.plugin.return_value
-        instance.create_flow_classifier.return_value = return_value
-        res = self.api.post(
-            _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
-            self.serialize(data),
-            content_type='application/%s' % self.fmt)
-        instance.create_flow_classifier.assert_called_with(
-            mock.ANY,
-            flow_classifier=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
-        res = self.deserialize(res)
-        self.assertIn('flow_classifier', res)
-        self.assertEqual(return_value, res['flow_classifier'])
+    def test_create_flow_classifier_source_ip_prefix(self):
+        for logical_source_ip_prefix in [
+            None, '10.0.0.0/8'
+        ]:
+            flowclassifier_id = _uuid()
+            data = {'flow_classifier': {
+                'source_ip_prefix': logical_source_ip_prefix,
+                'logical_source_port': _uuid(),
+                'tenant_id': _uuid(),
+            }}
+            expected_data = self._get_expected_flow_classifier(data)
+            return_value = copy.copy(expected_data['flow_classifier'])
+            return_value.update({'id': flowclassifier_id})
+            instance = self.plugin.return_value
+            instance.create_flow_classifier.return_value = return_value
+            res = self.api.post(
+                _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
+                self.serialize(data),
+                content_type='application/%s' % self.fmt)
+            instance.create_flow_classifier.assert_called_with(
+                mock.ANY,
+                flow_classifier=expected_data)
+            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            res = self.deserialize(res)
+            self.assertIn('flow_classifier', res)
+            self.assertEqual(return_value, res['flow_classifier'])
 
-    def test_create_flow_classifier_default_ethertype(self):
-        flowclassifier_id = _uuid()
-        data = {'flow_classifier': {
-            'tenant_id': _uuid(),
-            'ethertype': 'IPv4'
-        }}
-        expected_data = self._get_expected_flow_classifier(data)
-        return_value = copy.copy(expected_data['flow_classifier'])
-        return_value.update({'id': flowclassifier_id})
-        self._clean_expected_flow_classifier(return_value)
-        instance = self.plugin.return_value
-        instance.create_flow_classifier.return_value = return_value
-        res = self.api.post(
-            _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
-            self.serialize(data),
-            content_type='application/%s' % self.fmt)
-        instance.create_flow_classifier.assert_called_with(
-            mock.ANY,
-            flow_classifier=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
-        res = self.deserialize(res)
-        self.assertIn('flow_classifier', res)
-        self.assertEqual(return_value, res['flow_classifier'])
+    def test_create_flow_classifier_destination_ip_prefix(self):
+        for logical_destination_ip_prefix in [
+            None, '10.0.0.0/8'
+        ]:
+            flowclassifier_id = _uuid()
+            data = {'flow_classifier': {
+                'destination_ip_prefix': logical_destination_ip_prefix,
+                'logical_source_port': _uuid(),
+                'tenant_id': _uuid(),
+            }}
+            expected_data = self._get_expected_flow_classifier(data)
+            return_value = copy.copy(expected_data['flow_classifier'])
+            return_value.update({'id': flowclassifier_id})
+            instance = self.plugin.return_value
+            instance.create_flow_classifier.return_value = return_value
+            res = self.api.post(
+                _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
+                self.serialize(data),
+                content_type='application/%s' % self.fmt)
+            instance.create_flow_classifier.assert_called_with(
+                mock.ANY,
+                flow_classifier=expected_data)
+            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            res = self.deserialize(res)
+            self.assertIn('flow_classifier', res)
+            self.assertEqual(return_value, res['flow_classifier'])
+
+    def test_create_flow_classifier_logical_source_port(self):
+        for logical_source_port in [
+            _uuid()
+        ]:
+            flowclassifier_id = _uuid()
+            data = {'flow_classifier': {
+                'logical_source_port': logical_source_port,
+                'tenant_id': _uuid(),
+            }}
+            expected_data = self._get_expected_flow_classifier(data)
+            return_value = copy.copy(expected_data['flow_classifier'])
+            return_value.update({'id': flowclassifier_id})
+            instance = self.plugin.return_value
+            instance.create_flow_classifier.return_value = return_value
+            res = self.api.post(
+                _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
+                self.serialize(data),
+                content_type='application/%s' % self.fmt)
+            instance.create_flow_classifier.assert_called_with(
+                mock.ANY,
+                flow_classifier=expected_data)
+            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            res = self.deserialize(res)
+            self.assertIn('flow_classifier', res)
+            self.assertEqual(return_value, res['flow_classifier'])
+
+    def test_create_flow_classifier_logical_destination_port(self):
+        for logical_destination_port in [
+            None, _uuid()
+        ]:
+            flowclassifier_id = _uuid()
+            data = {'flow_classifier': {
+                'logical_source_port': _uuid(),
+                'logical_destination_port': logical_destination_port,
+                'tenant_id': _uuid(),
+            }}
+            expected_data = self._get_expected_flow_classifier(data)
+            return_value = copy.copy(expected_data['flow_classifier'])
+            return_value.update({'id': flowclassifier_id})
+            instance = self.plugin.return_value
+            instance.create_flow_classifier.return_value = return_value
+            res = self.api.post(
+                _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
+                self.serialize(data),
+                content_type='application/%s' % self.fmt)
+            instance.create_flow_classifier.assert_called_with(
+                mock.ANY,
+                flow_classifier=expected_data)
+            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            res = self.deserialize(res)
+            self.assertIn('flow_classifier', res)
+            self.assertEqual(return_value, res['flow_classifier'])
+
+    def test_create_flow_classifier_l7_parameters(self):
+        for l7_parameters in [None, {}]:
+            flowclassifier_id = _uuid()
+            data = {'flow_classifier': {
+                'logical_source_port': _uuid(),
+                'tenant_id': _uuid(),
+                'l7_parameters': l7_parameters
+            }}
+            expected_data = self._get_expected_flow_classifier(data)
+            return_value = copy.copy(expected_data['flow_classifier'])
+            return_value.update({'id': flowclassifier_id})
+            instance = self.plugin.return_value
+            instance.create_flow_classifier.return_value = return_value
+            res = self.api.post(
+                _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
+                self.serialize(data),
+                content_type='application/%s' % self.fmt)
+            instance.create_flow_classifier.assert_called_with(
+                mock.ANY,
+                flow_classifier=expected_data)
+            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            res = self.deserialize(res)
+            self.assertIn('flow_classifier', res)
+            self.assertEqual(return_value, res['flow_classifier'])
+
+    def test_create_flow_classifier_ethertype(self):
+        for ethertype in [None, 'IPv4', 'IPv6']:
+            flowclassifier_id = _uuid()
+            data = {'flow_classifier': {
+                'logical_source_port': _uuid(),
+                'tenant_id': _uuid(),
+                'ethertype': ethertype
+            }}
+            expected_data = self._get_expected_flow_classifier(data)
+            return_value = copy.copy(expected_data['flow_classifier'])
+            return_value.update({'id': flowclassifier_id})
+            instance = self.plugin.return_value
+            instance.create_flow_classifier.return_value = return_value
+            res = self.api.post(
+                _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
+                self.serialize(data),
+                content_type='application/%s' % self.fmt)
+            instance.create_flow_classifier.assert_called_with(
+                mock.ANY,
+                flow_classifier=expected_data)
+            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            res = self.deserialize(res)
+            self.assertIn('flow_classifier', res)
+            self.assertEqual(return_value, res['flow_classifier'])
+
+    def test_create_flow_classifier_protocol(self):
+        for protocol in [
+            None, const.PROTO_NAME_TCP, const.PROTO_NAME_UDP,
+            const.PROTO_NAME_ICMP
+        ]:
+            flowclassifier_id = _uuid()
+            data = {'flow_classifier': {
+                'logical_source_port': _uuid(),
+                'tenant_id': _uuid(),
+                'protocol': protocol
+            }}
+            expected_data = self._get_expected_flow_classifier(data)
+            return_value = copy.copy(expected_data['flow_classifier'])
+            return_value.update({'id': flowclassifier_id})
+            instance = self.plugin.return_value
+            instance.create_flow_classifier.return_value = return_value
+            res = self.api.post(
+                _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
+                self.serialize(data),
+                content_type='application/%s' % self.fmt)
+            instance.create_flow_classifier.assert_called_with(
+                mock.ANY,
+                flow_classifier=expected_data)
+            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            res = self.deserialize(res)
+            self.assertIn('flow_classifier', res)
+            self.assertEqual(return_value, res['flow_classifier'])
 
     def test_create_flow_classifier_all_fields(self):
         flowclassifier_id = _uuid()
@@ -258,7 +393,6 @@ class FlowClassifierExtensionTestCase(
         expected_data = self._get_expected_flow_classifier(data)
         return_value = copy.copy(expected_data['flow_classifier'])
         return_value.update({'id': flowclassifier_id})
-        self._clean_expected_flow_classifier(return_value)
         instance = self.plugin.return_value
         instance.create_flow_classifier.return_value = return_value
         res = self.api.post(
@@ -275,6 +409,7 @@ class FlowClassifierExtensionTestCase(
 
     def test_create_flow_classifier_invalid_l7_parameters(self):
         data = {'flow_classifier': {
+            'logical_source_port': _uuid(),
             'l7_parameters': {'abc': 'def'},
             'tenant_id': _uuid()
         }}
@@ -287,6 +422,7 @@ class FlowClassifierExtensionTestCase(
 
     def test_create_flow_classifier_invalid_protocol(self):
         data = {'flow_classifier': {
+            'logical_source_port': _uuid(),
             'protocol': 'unknown',
             'tenant_id': _uuid()
         }}
@@ -299,6 +435,7 @@ class FlowClassifierExtensionTestCase(
 
     def test_create_flow_classifier_invalid_ethertype(self):
         data = {'flow_classifier': {
+            'logical_source_port': _uuid(),
             'ethertype': 'unknown',
             'tenant_id': _uuid()
         }}
@@ -311,6 +448,7 @@ class FlowClassifierExtensionTestCase(
 
     def test_create_flow_classifier_port_small(self):
         data = {'flow_classifier': {
+            'logical_source_port': _uuid(),
             'source_port_range_min': -1,
             'tenant_id': _uuid()
         }}
@@ -323,6 +461,7 @@ class FlowClassifierExtensionTestCase(
 
     def test_create_flow_classifier_port_large(self):
         data = {'flow_classifier': {
+            'logical_source_port': _uuid(),
             'source_port_range_min': 65536,
             'tenant_id': _uuid()
         }}
@@ -336,6 +475,7 @@ class FlowClassifierExtensionTestCase(
     def test_create_flow_classifier_ip_prefix_no_cidr(self):
         data = {'flow_classifier': {
             'source_ip_prefix': '10.0.0.0',
+            'logical_source_port': _uuid(),
             'tenant_id': _uuid()
         }}
         self.assertRaises(
@@ -348,6 +488,18 @@ class FlowClassifierExtensionTestCase(
     def test_create_flow_classifier_ip_prefix_invalid_cidr(self):
         data = {'flow_classifier': {
             'source_ip_prefix': '10.0.0.0/33',
+            'logical_source_port': _uuid(),
+            'tenant_id': _uuid()
+        }}
+        self.assertRaises(
+            webtest.app.AppError,
+            self.api.post,
+            _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
+            self.serialize(data),
+            content_type='application/%s' % self.fmt)
+
+    def test_create_flow_classifier_no_logical_source_port(self):
+        data = {'flow_classifier': {
             'tenant_id': _uuid()
         }}
         self.assertRaises(
@@ -391,23 +543,79 @@ class FlowClassifierExtensionTestCase(
         self.assertIn('flow_classifiers', res)
         self.assertEqual(res['flow_classifiers'], return_value)
 
+    def test_flow_classifier_list_all_fields(self):
+        flowclassifier_id = _uuid()
+        return_value = [{
+            'name': 'abc',
+            'description': 'abc',
+            'ethertype': 'IPv4',
+            'protocol': const.PROTO_NAME_TCP,
+            'source_ip_prefix': '10.0.0.0/8',
+            'destination_ip_prefix': '10.0.0.0/8',
+            'source_port_range_min': 100,
+            'source_port_range_max': 200,
+            'destination_port_range_min': 100,
+            'destination_port_range_max': 200,
+            'logical_source_port': _uuid(),
+            'logical_destination_port': _uuid(),
+            'l7_parameters': {},
+            'tenant_id': _uuid(),
+            'id': flowclassifier_id
+        }]
+        instance = self.plugin.return_value
+        instance.get_flow_classifiers.return_value = return_value
+        res = self.api.get(
+            _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt))
+        instance.get_flow_classifiers.assert_called_with(
+            mock.ANY,
+            fields=mock.ANY,
+            filters=mock.ANY
+        )
+        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        res = self.deserialize(res)
+        self.assertIn('flow_classifiers', res)
+        self.assertEqual(res['flow_classifiers'], return_value)
+
+    def test_flow_classifier_list_unknown_fields(self):
+        flowclassifier_id = _uuid()
+        return_value = [{
+            'logical_source_port': _uuid(),
+            'new_key': 'value',
+            'tenant_id': _uuid(),
+            'id': flowclassifier_id
+        }]
+        expected_return = copy.copy(return_value)
+        for item in expected_return:
+            del item['new_key']
+        instance = self.plugin.return_value
+        instance.get_flow_classifiers.return_value = return_value
+        res = self.api.get(
+            _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt))
+        instance.get_flow_classifiers.assert_called_with(
+            mock.ANY,
+            fields=mock.ANY,
+            filters=mock.ANY
+        )
+        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        res = self.deserialize(res)
+        self.assertIn('flow_classifiers', res)
+        self.assertEqual(res['flow_classifiers'], expected_return)
+
     def test_flow_classifier_get(self):
         flowclassifier_id = _uuid()
         return_value = {
+            'logical_source_port': _uuid(),
             'tenant_id': _uuid(),
             'id': flowclassifier_id
         }
-
         instance = self.plugin.return_value
         instance.get_flow_classifier.return_value = return_value
-
         res = self.api.get(
             _get_path(
                 FLOW_CLASSIFIER_PATH,
                 id=flowclassifier_id, fmt=self.fmt
             )
         )
-
         instance.get_flow_classifier.assert_called_with(
             mock.ANY,
             flowclassifier_id,
