@@ -77,7 +77,8 @@ class ChainClassifierAssoc(model_base.BASEV2):
         primary_key=True)
     flow_classifier = orm.relationship(
         fc_db.FlowClassifier,
-        backref='chain_classifier_associations'
+        backref='chain_classifier_association',
+        uselist=False
     )
 
 
@@ -193,21 +194,55 @@ class SfcDbPlugin(
         }
         return self._fields(res, fields)
 
-    def _validate_port_pair_groups(self, context, pg_ids):
+    def _validate_port_pair_groups(self, context, pg_ids, pc_id=None):
         with context.session.begin(subtransactions=True):
+            for pg_id in pg_ids:
+                self._get_port_pair_group(context, pg_id)
             query = self._model_query(context, PortChain)
             for port_chain_db in query.all():
+                if port_chain_db['id'] == pc_id:
+                    continue
                 pc_pg_ids = [
                     assoc['portpairgroup_id']
                     for assoc in port_chain_db.chain_group_associations
                 ]
-                if pc_pg_ids == pg_ids:
+                if pc_pg_ids and pg_ids and pc_pg_ids == pg_ids:
                     raise ext_sfc.InvalidPortPairGroups(
                         port_pair_groups=pg_ids, port_chain=port_chain_db.id)
 
-    def _validate_flow_classifiers(self, context, fc_ids):
-        # TODO(xiaodong): Validate flow classifiers if needed in future.
-        pass
+    def _validate_flow_classifiers(self, context, fc_ids, pc_id=None):
+        with context.session.begin(subtransactions=True):
+            fcs = [
+                self._get_flow_classifier(context, fc_id)
+                for fc_id in fc_ids
+            ]
+            for fc in fcs:
+                fc_assoc = fc.chain_classifier_association
+                if fc_assoc and fc_assoc['portchain_id'] != pc_id:
+                    raise ext_fc.FlowClassifierInUse(id=fc.id)
+
+            query = self._model_query(context, PortChain)
+            for port_chain_db in query.all():
+                if port_chain_db['id'] == pc_id:
+                    continue
+                pc_fc_ids = [
+                    assoc['flowclassifier_id']
+                    for assoc in port_chain_db.chain_classifier_associations
+                ]
+                pc_fcs = [
+                    self._get_flow_classifier(context, pc_fc_id)
+                    for pc_fc_id in pc_fc_ids
+                ]
+                for pc_fc in pc_fcs:
+                    for fc in fcs:
+                        fc_cls = fc_db.FlowClassifierDbPlugin
+                        if fc_cls.flowclassifier_basic_conflict(
+                            pc_fc, fc
+                        ):
+                            raise ext_sfc.PortChainFlowClassifierInConflict(
+                                fc_id=fc['id'], pc_id=port_chain_db['id'],
+                                pc_fc_id=pc_fc['id']
+                            )
 
     def _setup_chain_group_associations(
         self, context, port_chain, pg_ids
@@ -256,17 +291,7 @@ class SfcDbPlugin(
                 for key, val in six.iteritems(pc['chain_parameters'])}
 
             pg_ids = pc['port_pair_groups']
-            for pg_id in pg_ids:
-                self._get_port_pair_group(context, pg_id)
             fc_ids = pc['flow_classifiers']
-            fcs = [
-                self._get_flow_classifier(context, fc_id)
-                for fc_id in fc_ids
-            ]
-            for fc in fcs:
-                if fc.chain_classifier_associations:
-                    raise ext_fc.FlowClassifierInUse(id=fc.id)
-
             self._validate_port_pair_groups(context, pg_ids)
             self._validate_flow_classifiers(context, fc_ids)
             port_chain_db = PortChain(id=uuidutils.generate_uuid(),
@@ -323,17 +348,18 @@ class SfcDbPlugin(
 
     @log_helpers.log_method_call
     def update_port_chain(self, context, id, port_chain):
-        p = port_chain['port_chain']
+        pc = port_chain['port_chain']
         with context.session.begin(subtransactions=True):
-            pc = self._get_port_chain(context, id)
-            for k, v in six.iteritems(p):
+            pc_db = self._get_port_chain(context, id)
+            for k, v in six.iteritems(pc):
                 if k == 'flow_classifiers':
-                    for fc_id in v:
-                        self._get_flow_classifier(context, fc_id)
-                    self._setup_chain_classifier_associations(context, pc, v)
+                    self._validate_flow_classifiers(
+                        context, v, pc_id=id)
+                    self._setup_chain_classifier_associations(
+                        context, pc_db, v)
                 else:
-                    pc[k] = v
-            return self._make_port_chain_dict(pc)
+                    pc_db[k] = v
+            return self._make_port_chain_dict(pc_db)
 
     def _make_port_pair_dict(self, port_pair, fields=None):
         res = {

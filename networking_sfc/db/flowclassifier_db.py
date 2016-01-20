@@ -78,7 +78,8 @@ class FlowClassifier(model_base.BASEV2, models_v2.HasId,
 class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
                              common_db_mixin.CommonDbMixin):
 
-    def _check_port_range_valid(self, port_range_min,
+    @classmethod
+    def _check_port_range_valid(cls, port_range_min,
                                 port_range_max,
                                 protocol):
         if (
@@ -94,7 +95,8 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
             if protocol not in [const.PROTO_NAME_TCP, const.PROTO_NAME_UDP]:
                 raise fc_ext.FlowClassifierProtocolRequiredWithPorts()
 
-    def _check_ip_prefix_valid(self, ip_prefix, ethertype):
+    @classmethod
+    def _check_ip_prefix_valid(cls, ip_prefix, ethertype):
         if ip_prefix is not None:
             ip = netaddr.IPNetwork(ip_prefix)
             if ethertype == 'IPv4' and ip.version == 4:
@@ -108,20 +110,23 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
                     )
                 )
 
-    def _logical_port_conflict(self, first_logical_port, second_logical_port):
+    @classmethod
+    def _logical_port_conflict(cls, first_logical_port, second_logical_port):
         if first_logical_port is None or second_logical_port is None:
             return True
         return first_logical_port == second_logical_port
 
-    def _ip_prefix_conflict(self, first_ip_prefix, second_ip_prefix):
+    @classmethod
+    def _ip_prefix_conflict(cls, first_ip_prefix, second_ip_prefix):
         if first_ip_prefix is None or second_ip_prefix is None:
             return True
         first_ipset = netaddr.IPSet([first_ip_prefix])
         second_ipset = netaddr.IPSet([second_ip_prefix])
         return bool(first_ipset & second_ipset)
 
+    @classmethod
     def _port_range_conflict(
-        self, first_port_range_min, first_port_range_max,
+        cls, first_port_range_min, first_port_range_max,
         second_port_range_min, second_port_range_max
     ):
         first_conflict = True
@@ -138,57 +143,67 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
             second_conflict = second_port_range_min <= first_port_range_max
         return first_conflict & second_conflict
 
-    def _protocol_conflict(self, first_protocol, second_protocol):
+    @classmethod
+    def _protocol_conflict(cls, first_protocol, second_protocol):
         if first_protocol is None or second_protocol is None:
             return True
         return first_protocol == second_protocol
 
-    def _ethertype_conflict(self, first_ethertype, second_ethertype):
+    @classmethod
+    def _ethertype_conflict(cls, first_ethertype, second_ethertype):
         return first_ethertype == second_ethertype
 
-    def _flowclassifier_conflict(
-        self, ethertype, protocol, logical_source_port,
-        logical_destination_port, source_ip_prefix,
-        destination_ip_prefix, source_port_range_min,
-        source_port_range_max, destination_port_range_min,
-        destination_port_range_max, flowclassifier
+    @classmethod
+    def flowclassifier_basic_conflict(
+        cls, first_flowclassifier, second_flowclassifier
     ):
         return all([
-            self._ethertype_conflict(
-                ethertype,
-                flowclassifier['ethertype']
+            cls._ethertype_conflict(
+                first_flowclassifier['ethertype'],
+                second_flowclassifier['ethertype']
             ),
-            self._protocol_conflict(
-                protocol,
-                flowclassifier['protocol']
+            cls._protocol_conflict(
+                first_flowclassifier['protocol'],
+                second_flowclassifier['protocol']
             ),
-            self._logical_port_conflict(
-                logical_source_port,
-                flowclassifier['logical_source_port']
+            cls._ip_prefix_conflict(
+                first_flowclassifier['source_ip_prefix'],
+                second_flowclassifier['source_ip_prefix']
             ),
-            self._logical_port_conflict(
-                logical_destination_port,
-                flowclassifier['logical_destination_port']
+            cls._ip_prefix_conflict(
+                first_flowclassifier['destination_ip_prefix'],
+                second_flowclassifier['destination_ip_prefix']
             ),
-            self._ip_prefix_conflict(
-                source_ip_prefix,
-                flowclassifier['source_ip_prefix']
+            cls._port_range_conflict(
+                first_flowclassifier['source_port_range_min'],
+                first_flowclassifier['source_port_range_max'],
+                second_flowclassifier['source_port_range_min'],
+                second_flowclassifier['source_port_range_max']
             ),
-            self._ip_prefix_conflict(
-                destination_ip_prefix,
-                flowclassifier['destination_ip_prefix']
+            cls._port_range_conflict(
+                first_flowclassifier['destination_port_range_min'],
+                first_flowclassifier['destination_port_range_max'],
+                second_flowclassifier['destination_port_range_min'],
+                second_flowclassifier['destination_port_range_max']
+            )
+        ])
+
+    @classmethod
+    def flowclassifier_conflict(
+        cls, first_flowclassifier, second_flowclassifier
+    ):
+        return all([
+            cls.flowclassifier_basic_conflict(
+                first_flowclassifier,
+                second_flowclassifier
             ),
-            self._port_range_conflict(
-                source_port_range_min,
-                source_port_range_max,
-                flowclassifier['source_port_range_min'],
-                flowclassifier['source_port_range_max']
+            cls._logical_port_conflict(
+                first_flowclassifier['logical_source_port'],
+                second_flowclassifier['logical_source_port']
             ),
-            self._port_range_conflict(
-                destination_port_range_min,
-                destination_port_range_max,
-                flowclassifier['destination_port_range_min'],
-                flowclassifier['destination_port_range_max']
+            cls._logical_port_conflict(
+                first_flowclassifier['logical_destination_port'],
+                second_flowclassifier['logical_destination_port']
             )
         ])
 
@@ -223,18 +238,9 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
                 self._get_port(context, logical_destination_port)
             query = self._model_query(context, FlowClassifier)
             for flow_classifier_db in query.all():
-                if self._flowclassifier_conflict(
-                    ethertype=ethertype,
-                    protocol=protocol,
-                    logical_source_port=logical_source_port,
-                    logical_destination_port=logical_destination_port,
-                    source_ip_prefix=source_ip_prefix,
-                    destination_ip_prefix=destination_ip_prefix,
-                    source_port_range_min=source_port_range_min,
-                    source_port_range_max=source_port_range_max,
-                    destination_port_range_min=destination_port_range_min,
-                    destination_port_range_max=destination_port_range_max,
-                    flowclassifier=flow_classifier_db
+                if self.flowclassifier_conflict(
+                    fc,
+                    flow_classifier_db
                 ):
                     raise fc_ext.FlowClassifierInConflict(
                         id=flow_classifier_db['id']
