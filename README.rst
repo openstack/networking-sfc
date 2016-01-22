@@ -37,6 +37,9 @@ multiple VMs, such that traffic must flow through one VM at each hop in the
 chain but the network uses a hashing algorithm to distribute different flows
 across multiple VMs at each hop.
 
+This is an initial release, feedback is requested from users and the API may
+evolve based on that feedback.
+
 * Free software: Apache license
 * Source: http://git.openstack.org/cgit/openstack/networking-sfc
 * Overview: https://launchpad.net/networking-sfc
@@ -51,6 +54,22 @@ Features
 * Flow classification mechanism (ability to select and act on traffic)
 * Vendor neutral API
 * Modular plugin driver architecture
+
+Service Function Chaining Key Contributors
+------------------------------------------
+Cathy Zhang (Project Lead): https://launchpad.net/~cathy-h-zhang
+Louis Fourie: https://launchpad.net/~lfourie
+Paul Carver: https://launchpad.net/~pcarver
+Vikram: https://launchpad.net/~vikschw
+Mohankumar: https://blueprints.launchpad.net/~mohankumar-n
+Rao Fei: https://launchpad.net/~milo-frao
+Xiaodong Wang: https://launchpad.net/~xiaodongwang991481
+Ramanjaneya Reddy Palleti: https://launchpad.net/~ramanjieee
+Stephen Wong: https://launchpad.net/~s3wong
+Igor Duarte Cardoso: https://launchpad.net/~igordcard
+Prithiv: https://launchpad.net/~prithiv
+Akihiro Motoki: https://launchpad.net/~amotoki
+Swaminathan Vasudevan: https://launchpad.net/~swaminathan-vasudevan
 
 Background on the Subject of Service Function Chaining
 ------------------------------------------------------
