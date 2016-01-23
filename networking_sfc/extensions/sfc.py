@@ -45,6 +45,11 @@ class PortChainNotFound(neutron_exc.NotFound):
     message = _("Port chain %(id)s not found.")
 
 
+class PortChainFlowClassifierInConflict(neutron_exc.InvalidInput):
+    message = _("Flow classifier %(fc_id)s conflicts with "
+                "flow classifier %(pc_fc_id)s in port chain %(pc_id)s")
+
+
 class InvalidChainParameter(neutron_exc.InvalidInput):
     message = _(
         "Chain parameter does not support (%%(key)s, %%(value)s). "
