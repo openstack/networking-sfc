@@ -12,12 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import signal
 import six
 import sys
-
-from neutron.agent.common import config
-from neutron.agent.linux import ip_lib
 
 from networking_sfc.services.sfc.agent import br_int
 from networking_sfc.services.sfc.agent import br_phys
@@ -53,6 +49,8 @@ agent_opts = [
 ]
 
 cfg.CONF.register_opts(agent_opts, "AGENT")
+cfg.CONF.import_group('OVS', 'neutron.plugins.ml2.drivers.openvswitch.agent.'
+                      'common.config')
 
 # This table is used to process the traffic across differet subnet scenario.
 # Flow 1: pri=1, ip,dl_dst=nexthop_mac,nw_src=nexthop_subnet. actions=
@@ -114,33 +112,11 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
     +-------------------------------+---------------+--------------------+
     """
 
-    target = oslo_messaging.Target(version='1.0')
-
-    def __init__(self, bridge_classes, integ_br, tun_br, local_ip,
-                 bridge_mappings, polling_interval, tunnel_types=None,
-                 veth_mtu=None, l2_population=False,
-                 enable_distributed_routing=False,
-                 minimize_polling=False,
-                 ovsdb_monitor_respawn_interval=(
-                     ovs_const.DEFAULT_OVSDBMON_RESPAWN),
-                 arp_responder=False,
-                 prevent_arp_spoofing=True,
-                 use_veth_interconnection=False,
-                 quitting_rpc_timeout=None):
+    def __init__(self, bridge_classes, conf=None):
 
         """to get network info from ovs agent."""
         super(OVSSfcAgent, self).__init__(
-            bridge_classes, integ_br, tun_br,
-            local_ip,
-            bridge_mappings, polling_interval, tunnel_types,
-            veth_mtu, l2_population,
-            enable_distributed_routing,
-            minimize_polling,
-            ovsdb_monitor_respawn_interval,
-            arp_responder,
-            prevent_arp_spoofing,
-            use_veth_interconnection,
-            quitting_rpc_timeout)
+            bridge_classes, conf=conf)
 
         self.overlay_encap_mode = cfg.CONF.AGENT.sfc_encap_mode
         self._sfc_setup_rpc()
@@ -764,10 +740,7 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
                 self.conf.host
             )
         )
-        if devices_details_list.get('failed_devices'):
-            # TODO(rossella_s): handle better the resync in next patches,
-            # this is just to preserve the current behavior
-            raise ovs_neutron_agent.DeviceListRetrievalError(devices=devices)
+        failed_devices = set(devices_details_list.get('failed_devices'))
 
         devices = devices_details_list.get('devices')
         vif_by_id = self.int_br.get_vifs_by_ids(
@@ -811,7 +784,8 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
                 LOG.warn(_LW("Device %s not defined on plugin"), device)
                 if (port and port.ofport != -1):
                     self.port_dead(port)
-        return skipped_devices, need_binding_devices, security_disabled_devices
+        return (skipped_devices, need_binding_devices,
+                security_disabled_devices, failed_devices)
 
     def process_deleted_ports(self, port_info):
         # don't try to process removed ports as deleted ports since
@@ -840,39 +814,28 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
 
 
 def main():
-    cfg.CONF.register_opts(ip_lib.OPTS)
-    config.register_root_helper(cfg.CONF)
     common_config.init(sys.argv[1:])
     common_config.setup_logging()
     q_utils.log_opt_values(LOG)
-
-    try:
-        agent_config = ovs_neutron_agent.create_agent_config_map(cfg.CONF)
-    except ValueError as e:
-        LOG.exception(e)
-        LOG.error(_LE('Agent terminated!'))
-        sys.exit(1)
-
-    is_xen_compute_host = 'rootwrap-xen-dom0' in cfg.CONF.AGENT.root_helper
-    if is_xen_compute_host:
-        # Force ip_lib to always use the root helper to ensure that ip
-        # commands target xen dom0 rather than domU.
-        cfg.CONF.set_default('ip_lib_force_root', True)
-
     bridge_classes = {
         'br_int': br_int.OVSIntegrationBridge,
         'br_phys': br_phys.OVSPhysicalBridge,
         'br_tun': br_tun.OVSTunnelBridge,
     }
-    try:
-        agent = OVSSfcAgent(bridge_classes, **agent_config)
-    except RuntimeError as e:
-        LOG.exception(e)
-        LOG.error(_LE("Agent terminated!"))
-        sys.exit(1)
-    signal.signal(signal.SIGTERM, agent._handle_sigterm)
 
-    # Start everything.
+    ovs_neutron_agent.prepare_xen_compute()
+    ovs_neutron_agent.validate_tunnel_config(
+        cfg.CONF.AGENT.tunnel_types,
+        cfg.CONF.OVS.local_ip
+    )
+
+    try:
+        agent = OVSSfcAgent(bridge_classes, cfg.CONF)
+    except (RuntimeError, ValueError) as e:
+        LOG.exception(e)
+        LOG.error(_LE('Agent terminated!'))
+        sys.exit(1)
+
     LOG.info(_LI("Agent initialized successfully, now running... "))
     agent.daemon_loop()
 

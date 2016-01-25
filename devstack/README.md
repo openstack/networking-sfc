@@ -25,7 +25,7 @@ For example
  Or, if you want to pull the networking-sfc repository from Github
  and use a particular branch (for example Liberty, here)
 
-    enable_plugin networking-sfc git://git.openstack.org/openstack/networking-sfc stable/liberty
+    enable_plugin networking-sfc git://git.openstack.org/openstack/networking-sfc master
 
 For more information, see the "Externally Hosted Plugins" section of
 http://docs.openstack.org/developer/devstack/plugins.html.
