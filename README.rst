@@ -5,13 +5,6 @@ Service Function Chaining Extension for OpenStack Networking
 Service Function Chaining API Status
 ------------------------------------
 
-This project has not been released yet, and as such, the API should be
-considered experimental. This means the SFC API could undergo changes which
-could be backwards incompatible while it is under development. The goal is to
-allow backend implementations to experiment with the API at the same time as
-it is being developed. Once a release is made, this documentation will be
-updated to remove this warning.
-
 This project provides APIs and implementations to support
 Service Function Chaining in Neutron.
 
@@ -57,19 +50,19 @@ Features
 
 Service Function Chaining Key Contributors
 ------------------------------------------
-Cathy Zhang (Project Lead): https://launchpad.net/~cathy-h-zhang
-Louis Fourie: https://launchpad.net/~lfourie
-Paul Carver: https://launchpad.net/~pcarver
-Vikram: https://launchpad.net/~vikschw
-Mohankumar: https://blueprints.launchpad.net/~mohankumar-n
-Rao Fei: https://launchpad.net/~milo-frao
-Xiaodong Wang: https://launchpad.net/~xiaodongwang991481
-Ramanjaneya Reddy Palleti: https://launchpad.net/~ramanjieee
-Stephen Wong: https://launchpad.net/~s3wong
-Igor Duarte Cardoso: https://launchpad.net/~igordcard
-Prithiv: https://launchpad.net/~prithiv
-Akihiro Motoki: https://launchpad.net/~amotoki
-Swaminathan Vasudevan: https://launchpad.net/~swaminathan-vasudevan
+* Cathy Zhang (Project Lead): https://launchpad.net/~cathy-h-zhang
+* Louis Fourie: https://launchpad.net/~lfourie
+* Paul Carver: https://launchpad.net/~pcarver
+* Vikram: https://launchpad.net/~vikschw
+* Mohankumar: https://blueprints.launchpad.net/~mohankumar-n
+* Rao Fei: https://launchpad.net/~milo-frao
+* Xiaodong Wang: https://launchpad.net/~xiaodongwang991481
+* Ramanjaneya Reddy Palleti: https://launchpad.net/~ramanjieee
+* Stephen Wong: https://launchpad.net/~s3wong
+* Igor Duarte Cardoso: https://launchpad.net/~igordcard
+* Prithiv: https://launchpad.net/~prithiv
+* Akihiro Motoki: https://launchpad.net/~amotoki
+* Swaminathan Vasudevan: https://launchpad.net/~swaminathan-vasudevan
 
 Background on the Subject of Service Function Chaining
 ------------------------------------------------------
