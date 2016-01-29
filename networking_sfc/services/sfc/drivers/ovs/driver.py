@@ -18,6 +18,7 @@ import netaddr
 
 from neutron.common import constants as nc_const
 from neutron.common import rpc as n_rpc
+from neutron import context as n_context
 from neutron.db import api as db_api
 from neutron import manager
 
@@ -25,7 +26,8 @@ from neutron.i18n import _LE
 from neutron.i18n import _LW
 
 from neutron.plugins.common import constants as np_const
-
+from neutron.plugins.ml2.drivers.l2pop import db as l2pop_db
+from neutron.plugins.ml2.drivers.l2pop import rpc as l2pop_rpc
 
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -59,6 +61,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         )
 
         self.id_pool = ovs_sfc_db.IDAllocation(self.admin_context)
+        self.rpc_ctx = n_context.get_admin_context_without_session()
         self._setup_rpc()
 
     def _setup_rpc(self):
@@ -117,16 +120,16 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         return subnet
 
-    def _get_port_infos(self, driver, port, segment, agent_host):
+    def _get_port_infos(self, port, segment, agent_host):
         if not agent_host:
             return
 
         session = db_api.get_session()
-        agent = driver.get_agent_by_host(session, agent_host)
+        agent = l2pop_db.get_agent_by_host(session, agent_host)
         if not agent:
             return
 
-        agent_ip = driver.get_agent_ip(agent)
+        agent_ip = l2pop_db.get_agent_ip(agent)
         if not agent_ip:
             LOG.warning(_LW("Unable to retrieve the agent ip, check the agent "
                             "configuration."))
@@ -138,28 +141,26 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                         {'port': port['id'], 'agent': agent})
             return
 
-        network_types = driver.get_agent_l2pop_network_types(agent)
+        network_types = l2pop_db.get_agent_l2pop_network_types(agent)
         if network_types is None:
-            network_types = driver.get_agent_tunnel_types(agent)
+            network_types = l2pop_db.get_agent_tunnel_types(agent)
         if segment['network_type'] not in network_types:
             return
 
-        fdb_entries = driver._get_port_fdb_entries(port)
-
-        return agent, agent_ip, fdb_entries
+        fdb_entries = [l2pop_rpc.PortInfo(mac_address=port['mac_address'],
+                                          ip_address=ip['ip_address'])
+                       for ip in port['fixed_ips']]
+        return agent_ip, fdb_entries
 
     @log_helpers.log_method_call
-    def _get_agent_fdb(self, driver, port, segment, agent_host):
-        port_infos = self._get_port_infos(driver,
-                                          port,
-                                          segment,
-                                          agent_host)
-        if not port_infos:
+    def _get_agent_fdb(self, port, segment, agent_host):
+        agent_ip, port_fdb_entries = self._get_port_infos(port,
+                                                          segment,
+                                                          agent_host)
+        if not port_fdb_entries:
             return
-        agent, agent_ip, port_fdb_entries = port_infos
 
         network_id = port['network_id']
-
         other_fdb_entries = {network_id:
                              {'segment_id': segment['segmentation_id'],
                               'network_type': segment['network_type'],
@@ -179,20 +180,18 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     @log_helpers.log_method_call
     def _get_remote_pop_ports(self, flow_rule):
         pop_ports = []
-        l2pop_driver = None
         if not flow_rule.get('next_hops', None):
-            return l2pop_driver, pop_ports
+            return pop_ports
         pop_host = flow_rule['host_id']
         core_plugin = manager.NeutronManager.get_plugin()
         drivers = core_plugin.mechanism_manager.mech_drivers
-        driver = drivers.get('l2population', None)
-        if driver is None:
-            return l2pop_driver, pop_ports
-        l2pop_driver = driver.obj
+        l2pop_driver = drivers.get('l2population', None)
+        if l2pop_driver is None:
+            return pop_ports
         session = db_api.get_session()
         for next_hop in flow_rule['next_hops']:
             agent_active_ports = \
-                l2pop_driver.get_agent_network_active_port_count(
+                l2pop_db.get_agent_network_active_port_count(
                     session,
                     pop_host,
                     next_hop['net_uuid'])
@@ -208,7 +207,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 segment['segmentation_id'] = next_hop['segment_id']
                 pop_ports.append((ports[0], segment))
 
-        return l2pop_driver, pop_ports
+        return pop_ports
 
     @log_helpers.log_method_call
     def _get_network_other_active_entry_count(self, host, remote_port_id):
@@ -230,7 +229,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         return agent_active_ports
 
-    def _update_agent_fdb_entries(self, flow_rule):
+    def _call_on_l2pop_driver(self, flow_rule, method_name):
         pop_host = flow_rule['host_id']
         l2pop_driver, pop_ports = self._get_remote_pop_ports(flow_rule)
         if l2pop_driver is None:
@@ -249,29 +248,14 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     segment,
                     host_id)
 
-                l2pop_driver.L2populationAgentNotify.add_fdb_entries(
-                    l2pop_driver.rpc_ctx, fdb_entry, pop_host)
+                getattr(l2pop_rpc.L2populationAgentNotifyAPI(), method_name)(
+                    self.rpc_ctx, fdb_entry, pop_host)
+
+    def _update_agent_fdb_entries(self, flow_rule):
+        self._call_on_l2pop_driver(flow_rule, "add_fdb_entries")
 
     def _delete_agent_fdb_entries(self, flow_rule):
-        pop_host = flow_rule['host_id']
-        l2pop_driver, pop_ports = self._get_remote_pop_ports(flow_rule)
-        if l2pop_driver is None:
-            return
-        for (port, segment) in pop_ports:
-            port_id = port['id']
-            host_id = port['binding:host_id']
-            active_entry_count = self._get_network_other_active_entry_count(
-                pop_host,
-                port_id)
-
-            if active_entry_count == 1:
-                fdb_entry = self._get_agent_fdb(
-                    l2pop_driver,
-                    port,
-                    segment,
-                    host_id)
-                l2pop_driver.L2populationAgentNotify.remove_fdb_entries(
-                    l2pop_driver.rpc_ctx, fdb_entry, pop_host)
+        self._call_on_l2pop_driver(flow_rule, "remove_fdb_entries")
 
     @log_helpers.log_method_call
     def _get_portgroup_members(self, context, pg_id):
@@ -575,6 +559,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     pd,
                     port_chain['flow_classifiers']
                 )
+            for pd in pds:
                 self.delete_path_node(pd['id'])
 
         # delete the ports on the traffic classifier
