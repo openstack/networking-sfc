@@ -2,7 +2,7 @@
 Service Function Chaining Extension for OpenStack Networking
 ============================================================
 
-Service Function Chaining API Status
+Service Function Chaining API
 ------------------------------------
 
 This project provides APIs and implementations to support
@@ -38,6 +38,7 @@ evolve based on that feedback.
 * Overview: https://launchpad.net/networking-sfc
 * Bugs: http://bugs.launchpad.net/networking-sfc
 * Blueprints: https://blueprints.launchpad.net/networking-sfc
+* Wiki: https://wiki.openstack.org/wiki/Neutron/ServiceInsertionAndChaining
 
 Features
 --------
@@ -63,6 +64,8 @@ Service Function Chaining Key Contributors
 * Prithiv: https://launchpad.net/~prithiv
 * Akihiro Motoki: https://launchpad.net/~amotoki
 * Swaminathan Vasudevan: https://launchpad.net/~swaminathan-vasudevan
+* Armando Migliaccio https://launchpad.net/~armando-migliaccio
+* Kyle Mestery https://launchpad.net/~mestery
 
 Background on the Subject of Service Function Chaining
 ------------------------------------------------------
