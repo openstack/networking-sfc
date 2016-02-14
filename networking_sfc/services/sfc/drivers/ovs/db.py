@@ -82,7 +82,7 @@ class IDAllocation(object):
 
         # Find the first one from the available range that
         # is not in allocated_int_ids
-        start, end = self.conf_obj[type_][0], self.conf_obj[type_][1]+1
+        start, end = self.conf_obj[type_][0], self.conf_obj[type_][1] + 1
         for init_id in six.moves.range(start, end):
             if init_id not in allocated_int_ids:
                 with self.session.begin(subtransactions=True):
