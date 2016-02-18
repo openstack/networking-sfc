@@ -227,9 +227,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
     def _call_on_l2pop_driver(self, flow_rule, method_name):
         pop_host = flow_rule['host_id']
-        l2pop_driver, pop_ports = self._get_remote_pop_ports(flow_rule)
-        if l2pop_driver is None:
-            return
+        pop_ports = self._get_remote_pop_ports(flow_rule)
         for (port, segment) in pop_ports:
             port_id = port['id']
             host_id = port['binding:host_id']
@@ -239,7 +237,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
             if active_entry_count == 1:
                 fdb_entry = self._get_agent_fdb(
-                    l2pop_driver,
                     port,
                     segment,
                     host_id)
