@@ -709,7 +709,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 flowclassifier.FLOW_CLASSIFIER_EXT)
         )
         if not fc_plugin:
-            LOG.warn(_LW("Not found the flow classifier service plugin"))
+            LOG.warning(_LW("Not found the flow classifier service plugin"))
             return flow_classifiers
 
         for fc_id in fc_ids:
@@ -915,10 +915,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             segment_id = network_info['provider:segmentation_id']
 
         if network_type != np_const.TYPE_VXLAN:
-            LOG.warn(_LW("Currently only support vxlan network"))
+            LOG.warning(_LW("Currently only support vxlan network"))
             return ((None, ) * 5)
         elif not host_id:
-            LOG.warn(_LW("This port has not been binding"))
+            LOG.warning(_LW("This port has not been binding"))
             return ((None, ) * 5)
         else:
             driver = core_plugin.type_manager.drivers.get(network_type)

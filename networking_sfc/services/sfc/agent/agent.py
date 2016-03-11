@@ -781,7 +781,7 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
                 self.ext_manager.handle_port(self.context, details)
                 self.sfc_treat_devices_added_updated(details['port_id'])
             else:
-                LOG.warn(_LW("Device %s not defined on plugin"), device)
+                LOG.warning(_LW("Device %s not defined on plugin"), device)
                 if (port and port.ofport != -1):
                     self.port_dead(port)
         return (skipped_devices, need_binding_devices,
