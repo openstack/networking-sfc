@@ -42,76 +42,76 @@ DEFAULT_SF_PARAMETER = {'correlation': None}
 
 # Port Chain Exceptions
 class PortChainNotFound(neutron_exc.NotFound):
-    message = _("Port chain %(id)s not found.")
+    message = _("Port Chain %(id)s not found.")
 
 
 class PortChainFlowClassifierInConflict(neutron_exc.InvalidInput):
-    message = _("Flow classifier %(fc_id)s conflicts with "
-                "flow classifier %(pc_fc_id)s in port chain %(pc_id)s")
+    message = _("Flow Classifier %(fc_id)s conflicts with "
+                "Flow Classifier %(pc_fc_id)s in port chain %(pc_id)s.")
 
 
 class InvalidChainParameter(neutron_exc.InvalidInput):
     message = _(
         "Chain parameter does not support (%%(key)s, %%(value)s). "
-        "Supported chain parameters are %(supported_paramters)s"
+        "Supported chain parameters are %(supported_paramters)s."
     ) % {'supported_paramters': SUPPORTED_CHAIN_PARAMETERS}
 
 
 class InvalidServiceFunctionParameter(neutron_exc.InvalidInput):
     message = _(
         "Service function parameter does not support (%%(key)s, %%(value)s). "
-        "Supported service function parameters are %(supported_paramters)s"
+        "Supported service function parameters are %(supported_paramters)s."
     ) % {'supported_paramters': SUPPORTED_SF_PARAMETERS}
 
 
 class PortPairGroupNotSpecified(neutron_exc.InvalidInput):
-    message = _("Port pair group is not specified in port chain")
+    message = _("Port Pair Group is not specified in Port Chain.")
 
 
 class InvalidPortPairGroups(neutron_exc.InUse):
-    message = _("Port pair groups %(port_pair_groups)s in use by "
-                "port chain %(port_chain)s.")
+    message = _("Port Pair Group(s) %(port_pair_groups)s in use by "
+                "Port Chain %(port_chain)s.")
 
 
 class PortPairPortNotFound(neutron_exc.NotFound):
-    message = _("Port pair port %(id)s not found.")
+    message = _("Port Pair port %(id)s not found.")
 
 
 class PortPairIngressEgressDifferentHost(neutron_exc.InvalidInput):
-    message = _("Port pair inegress port %(ingress)s "
+    message = _("Port Pair ingress port %(ingress)s and"
                 "egress port %(egress)s not in the same host.")
 
 
 class PortPairIngressNoHost(neutron_exc.InvalidInput):
-    message = _("Port pair ingress port %(ingress)s does not "
+    message = _("Port Pair ingress port %(ingress)s does not "
                 "belong to a host.")
 
 
 class PortPairEgressNoHost(neutron_exc.InvalidInput):
-    message = _("Port pair egress port %(egress)s does not "
+    message = _("Port Pair egress port %(egress)s does not "
                 "belong to a host.")
 
 
 class PortPairIngressEgressInUse(neutron_exc.InvalidInput):
-    message = _("Port pair with ingress port %(ingress)s "
+    message = _("Port Pair with ingress port %(ingress)s "
                 "and egress port %(egress)s is already used by "
-                "another Port pair %(id)s.")
+                "another Port Pair %(id)s.")
 
 
 class PortPairNotFound(neutron_exc.NotFound):
-    message = _("Port pair %(id)s not found.")
+    message = _("Port Pair %(id)s not found.")
 
 
 class PortPairGroupNotFound(neutron_exc.NotFound):
-    message = _("Port pair group %(id)s not found.")
+    message = _("Port Pair Group %(id)s not found.")
 
 
 class PortPairGroupInUse(neutron_exc.InUse):
-    message = _("Port pair group %(id)s in use.")
+    message = _("Port Pair Group %(id)s in use.")
 
 
 class PortPairInUse(neutron_exc.InUse):
-    message = _("Port pair %(id)s in use.")
+    message = _("Port Pair %(id)s in use.")
 
 
 def normalize_string(value):
@@ -272,7 +272,7 @@ class Sfc(neutron_ext.ExtensionDescriptor):
 
     @classmethod
     def get_name(cls):
-        return SFC_EXT
+        return "Service Function Chaining"
 
     @classmethod
     def get_alias(cls):
@@ -280,7 +280,7 @@ class Sfc(neutron_ext.ExtensionDescriptor):
 
     @classmethod
     def get_description(cls):
-        return "service function chains extension."
+        return "Service Function Chain extension."
 
     @classmethod
     def get_plugin_interface(cls):
@@ -324,7 +324,7 @@ class SfcPluginBase(service_base.ServicePluginBase):
         return SFC_EXT
 
     def get_plugin_description(self):
-        return 'SFC service plugin for service chaining'
+        return 'SFC service plugin for service chaining.'
 
     @abstractmethod
     def create_port_chain(self, context, port_chain):

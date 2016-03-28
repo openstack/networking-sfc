@@ -57,12 +57,12 @@ class FlowClassifierInvalidPortRange(neutron_exc.InvalidInput):
 
 
 class FlowClassifierInvalidPortValue(neutron_exc.InvalidInput):
-    message = _("Flow Classifier has invalid port value %(port)s")
+    message = _("Flow Classifier has invalid port value %(port)s.")
 
 
 class FlowClassiferDuplicateInformation(neutron_exc.InvalidInput):
-    message = _("Flow Classfier has duplicate information: "
-                "Neutron Port id %(port_id)s and ip prefix %(ip_prefix)s")
+    message = _("Flow Classifier has duplicate information: "
+                "Neutron Port id %(port_id)s and ip prefix %(ip_prefix)s.")
 
 
 class FlowClassifierInUse(neutron_exc.InUse):
@@ -97,7 +97,7 @@ class FlowClassifierIpPrefixFormatConflictWithEthertype(
 
 class FlowClassifierInvalidL7Parameter(neutron_exc.InvalidInput):
     message = _(
-        "Flow classifier does not support L7 parameter "
+        "Flow Classifier does not support L7 parameter "
         "(%%(key)s, %%(value)s). Supported L7 parameters are "
         "%(supported_parameters)s."
     ) % {'supported_parameters': SUPPORTED_L7_PARAMETERS}
@@ -228,7 +228,7 @@ RESOURCE_ATTRIBUTE_MAP = {
 flow_classifier_quota_opts = [
     cfg.IntOpt('quota_flow_classifier',
                default=100,
-               help=_('Maximum number of flow classifiers per tenant. '
+               help=_('Maximum number of Flow Classifiers per tenant. '
                       'A negative value means unlimited.')),
 ]
 cfg.CONF.register_opts(flow_classifier_quota_opts, 'QUOTAS')
@@ -239,7 +239,7 @@ class Flowclassifier(neutron_ext.ExtensionDescriptor):
 
     @classmethod
     def get_name(cls):
-        return FLOW_CLASSIFIER_EXT
+        return "Flow Classifier"
 
     @classmethod
     def get_alias(cls):
@@ -291,7 +291,7 @@ class FlowClassifierPluginBase(service_base.ServicePluginBase):
         return FLOW_CLASSIFIER_EXT
 
     def get_plugin_description(self):
-        return 'Flow classifier plugin'
+        return 'Flow Classifier plugin'
 
     @abstractmethod
     def create_flow_classifier(self, context, flow_classifier):
