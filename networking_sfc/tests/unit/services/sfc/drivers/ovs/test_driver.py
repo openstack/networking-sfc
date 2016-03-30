@@ -2395,6 +2395,8 @@ class OVSSfcDriverTestCase(
                         )
                         self.driver.update_port_chain(pc_context)
                         self.wait()
+                        delete_flow_rules = self.map_flow_rules(
+                            self.rpc_calls['delete_flow_rules'])
                         update_flow_rules = self.map_flow_rules(
                             self.rpc_calls['update_flow_rules'])
                         flow1 = self.build_ingress_egress(
@@ -2402,15 +2404,11 @@ class OVSSfcDriverTestCase(
                         flow2 = self.build_ingress_egress(
                             None, src_port2['port']['id'])
                         flow3 = self.build_ingress_egress(
-                            ingress['port']['id'],
-                            egress['port']['id']
-                        )
+                            ingress['port']['id'], egress['port']['id'])
                         self.assertEqual(
-                            set(update_flow_rules.keys()),
-                            set([flow1, flow2, flow3]))
-                        add_fcs = update_flow_rules[flow1]['add_fcs']
-                        self.assertEqual(len(add_fcs), 0)
-                        del_fcs = update_flow_rules[flow1]['del_fcs']
+                            set(delete_flow_rules.keys()),
+                            set([flow1, flow3]))
+                        del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
@@ -2424,17 +2422,42 @@ class OVSSfcDriverTestCase(
                             'source_port_range_min': None
                         }, del_fcs[0])
                         next_hops = self.next_hops_info(
-                            update_flow_rules[flow1].get('next_hops'))
+                            delete_flow_rules[flow1].get('next_hops'))
                         self.assertEqual(
-                            next_hops,
-                            {ingress['port']['mac_address']: '10.0.0.1'})
+                            next_hops, {
+                                ingress['port']['mac_address']: '10.0.0.1',
+                            }
+                        )
                         self.assertEqual(
-                            update_flow_rules[flow1]['node_type'],
+                            delete_flow_rules[flow1]['node_type'],
                             'src_node')
+                        del_fcs = delete_flow_rules[flow3]['del_fcs']
+                        self.assertEqual(len(del_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, del_fcs[0])
+                        next_hops = self.next_hops_info(
+                            delete_flow_rules[flow3].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                            }
+                        )
+                        self.assertEqual(
+                            delete_flow_rules[flow3]['node_type'],
+                            'sf_node')
+                        self.assertEqual(
+                            set(update_flow_rules.keys()),
+                            set([flow2, flow3]))
                         add_fcs = update_flow_rules[flow2]['add_fcs']
                         self.assertEqual(len(add_fcs), 1)
-                        del_fcs = update_flow_rules[flow2]['del_fcs']
-                        self.assertEqual(len(del_fcs), 0)
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
                             'destination_port_range_max': None,
@@ -2450,7 +2473,8 @@ class OVSSfcDriverTestCase(
                             update_flow_rules[flow2].get('next_hops'))
                         self.assertEqual(
                             next_hops,
-                            {ingress['port']['mac_address']: '10.0.0.1'})
+                            {ingress['port']['mac_address']: '10.0.0.1'}
+                        )
                         self.assertEqual(
                             update_flow_rules[flow2]['node_type'],
                             'src_node')
@@ -2467,7 +2491,147 @@ class OVSSfcDriverTestCase(
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
-                        del_fcs = update_flow_rules[flow3]['del_fcs']
+                        next_hops = self.next_hops_info(
+                            update_flow_rules[flow3].get('next_hops'))
+                        self.assertEqual(
+                            next_hops,
+                            {}
+                        )
+                        self.assertEqual(
+                            update_flow_rules[flow3]['node_type'],
+                            'sf_node')
+
+    def test_update_port_chain_add_port_pair_group(self):
+        with self.port(
+            name='port1',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as src_port, self.port(
+            name='port5',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress1, self.port(
+            name='port6',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test6'}
+        ) as egress1, self.port(
+            name='port7',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress2, self.port(
+            name='port8',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test6'}
+        ) as egress2:
+            self.host_endpoint_mapping = {
+                'test': '10.0.0.1'
+            }
+            with self.flow_classifier(flow_classifier={
+                'logical_source_port': src_port['port']['id']
+            }) as fc, self.port_pair(port_pair={
+                'ingress': ingress1['port']['id'],
+                'egress': egress1['port']['id']
+            }) as pp1, self.port_pair(port_pair={
+                'ingress': ingress2['port']['id'],
+                'egress': egress2['port']['id']
+            }) as pp2:
+                pp1_context = sfc_ctx.PortPairContext(
+                    self.sfc_plugin, self.ctx,
+                    pp1['port_pair']
+                )
+                self.driver.create_port_pair(pp1_context)
+                pp2_context = sfc_ctx.PortPairContext(
+                    self.sfc_plugin, self.ctx,
+                    pp2['port_pair']
+                )
+                self.driver.create_port_pair(pp2_context)
+                with self.port_pair_group(port_pair_group={
+                    'port_pairs': [
+                        pp1['port_pair']['id']
+                    ]
+                }) as pg1, self.port_pair_group(port_pair_group={
+                    'port_pairs': [
+                        pp2['port_pair']['id']
+                    ]
+                }) as pg2:
+                    pg1_context = sfc_ctx.PortPairGroupContext(
+                        self.sfc_plugin, self.ctx,
+                        pg1['port_pair_group']
+                    )
+                    self.driver.create_port_pair_group(pg1_context)
+                    pg2_context = sfc_ctx.PortPairGroupContext(
+                        self.sfc_plugin, self.ctx,
+                        pg2['port_pair_group']
+                    )
+                    self.driver.create_port_pair_group(pg2_context)
+                    with self.port_chain(port_chain={
+                        'port_pair_groups': [pg1['port_pair_group']['id']],
+                        'flow_classifiers': [
+                            fc['flow_classifier']['id']
+                        ]
+                    }) as pc:
+                        pc_context = sfc_ctx.PortChainContext(
+                            self.sfc_plugin, self.ctx,
+                            pc['port_chain']
+                        )
+                        self.driver.create_port_chain(pc_context)
+                        self.wait()
+                        self.init_rpc_calls()
+                        updates = {
+                            'port_pair_groups': [
+                                pg1['port_pair_group']['id'],
+                                pg2['port_pair_group']['id']
+                            ]
+                        }
+                        req = self.new_update_request(
+                            'port_chains', {'port_chain': updates},
+                            pc['port_chain']['id']
+                        )
+                        res = req.get_response(self.ext_api)
+                        pc2 = self.deserialize(
+                            self.fmt, res
+                        )
+                        pc_context = sfc_ctx.PortChainContext(
+                            self.sfc_plugin, self.ctx,
+                            pc2['port_chain'],
+                            original_portchain=pc['port_chain']
+                        )
+                        self.driver.update_port_chain(pc_context)
+                        self.wait()
+                        delete_flow_rules = self.map_flow_rules(
+                            self.rpc_calls['delete_flow_rules'])
+                        update_flow_rules = self.map_flow_rules(
+                            self.rpc_calls['update_flow_rules'])
+                        flow1 = self.build_ingress_egress(
+                            None, src_port['port']['id'])
+                        flow2 = self.build_ingress_egress(
+                            ingress1['port']['id'], egress1['port']['id'])
+                        flow3 = self.build_ingress_egress(
+                            ingress2['port']['id'], egress2['port']['id'])
+                        self.assertEqual(
+                            set(delete_flow_rules.keys()),
+                            set([flow1, flow2]))
+                        del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
@@ -2481,10 +2645,577 @@ class OVSSfcDriverTestCase(
                             'source_port_range_min': None
                         }, del_fcs[0])
                         next_hops = self.next_hops_info(
+                            delete_flow_rules[flow1].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                                ingress1['port']['mac_address']: '10.0.0.1',
+                            }
+                        )
+                        self.assertEqual(
+                            delete_flow_rules[flow1]['node_type'],
+                            'src_node')
+                        del_fcs = delete_flow_rules[flow2]['del_fcs']
+                        self.assertEqual(len(del_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, del_fcs[0])
+                        next_hops = self.next_hops_info(
+                            delete_flow_rules[flow2].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                            }
+                        )
+                        self.assertEqual(
+                            delete_flow_rules[flow2]['node_type'],
+                            'sf_node')
+                        self.assertEqual(
+                            set(update_flow_rules.keys()),
+                            set([flow1, flow2, flow3]))
+                        add_fcs = update_flow_rules[flow1]['add_fcs']
+                        self.assertEqual(len(add_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, add_fcs[0])
+                        next_hops = self.next_hops_info(
+                            update_flow_rules[flow1].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                                ingress1['port']['mac_address']: '10.0.0.1'
+                            }
+                        )
+                        self.assertEqual(
+                            update_flow_rules[flow1]['node_type'],
+                            'src_node')
+                        add_fcs = update_flow_rules[flow2]['add_fcs']
+                        self.assertEqual(len(add_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, add_fcs[0])
+                        next_hops = self.next_hops_info(
+                            update_flow_rules[flow2].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                                ingress2['port']['mac_address']: '10.0.0.1'
+                            }
+                        )
+                        self.assertEqual(
+                            update_flow_rules[flow2]['node_type'],
+                            'sf_node')
+                        add_fcs = update_flow_rules[flow3]['add_fcs']
+                        self.assertEqual(len(add_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, add_fcs[0])
+                        next_hops = self.next_hops_info(
                             update_flow_rules[flow3].get('next_hops'))
                         self.assertEqual(
                             next_hops,
-                            {})
+                            {}
+                        )
+                        self.assertEqual(
+                            update_flow_rules[flow3]['node_type'],
+                            'sf_node')
+
+    def test_update_port_chain_delete_port_pair_group(self):
+        with self.port(
+            name='port1',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as src_port, self.port(
+            name='port5',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress1, self.port(
+            name='port6',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test6'}
+        ) as egress1, self.port(
+            name='port7',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress2, self.port(
+            name='port8',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test6'}
+        ) as egress2:
+            self.host_endpoint_mapping = {
+                'test': '10.0.0.1'
+            }
+            with self.flow_classifier(flow_classifier={
+                'logical_source_port': src_port['port']['id']
+            }) as fc, self.port_pair(port_pair={
+                'ingress': ingress1['port']['id'],
+                'egress': egress1['port']['id']
+            }) as pp1, self.port_pair(port_pair={
+                'ingress': ingress2['port']['id'],
+                'egress': egress2['port']['id']
+            }) as pp2:
+                pp1_context = sfc_ctx.PortPairContext(
+                    self.sfc_plugin, self.ctx,
+                    pp1['port_pair']
+                )
+                self.driver.create_port_pair(pp1_context)
+                pp2_context = sfc_ctx.PortPairContext(
+                    self.sfc_plugin, self.ctx,
+                    pp2['port_pair']
+                )
+                self.driver.create_port_pair(pp2_context)
+                with self.port_pair_group(port_pair_group={
+                    'port_pairs': [
+                        pp1['port_pair']['id']
+                    ]
+                }) as pg1, self.port_pair_group(port_pair_group={
+                    'port_pairs': [
+                        pp2['port_pair']['id']
+                    ]
+                }) as pg2:
+                    pg1_context = sfc_ctx.PortPairGroupContext(
+                        self.sfc_plugin, self.ctx,
+                        pg1['port_pair_group']
+                    )
+                    self.driver.create_port_pair_group(pg1_context)
+                    pg2_context = sfc_ctx.PortPairGroupContext(
+                        self.sfc_plugin, self.ctx,
+                        pg2['port_pair_group']
+                    )
+                    self.driver.create_port_pair_group(pg2_context)
+                    with self.port_chain(port_chain={
+                        'port_pair_groups': [
+                            pg1['port_pair_group']['id'],
+                            pg2['port_pair_group']['id']
+                        ],
+                        'flow_classifiers': [
+                            fc['flow_classifier']['id']
+                        ]
+                    }) as pc:
+                        pc_context = sfc_ctx.PortChainContext(
+                            self.sfc_plugin, self.ctx,
+                            pc['port_chain']
+                        )
+                        self.driver.create_port_chain(pc_context)
+                        self.wait()
+                        self.init_rpc_calls()
+                        updates = {
+                            'port_pair_groups': [
+                                pg1['port_pair_group']['id']
+                            ]
+                        }
+                        req = self.new_update_request(
+                            'port_chains', {'port_chain': updates},
+                            pc['port_chain']['id']
+                        )
+                        res = req.get_response(self.ext_api)
+                        pc2 = self.deserialize(
+                            self.fmt, res
+                        )
+                        pc_context = sfc_ctx.PortChainContext(
+                            self.sfc_plugin, self.ctx,
+                            pc2['port_chain'],
+                            original_portchain=pc['port_chain']
+                        )
+                        self.driver.update_port_chain(pc_context)
+                        self.wait()
+                        delete_flow_rules = self.map_flow_rules(
+                            self.rpc_calls['delete_flow_rules'])
+                        update_flow_rules = self.map_flow_rules(
+                            self.rpc_calls['update_flow_rules'])
+                        flow1 = self.build_ingress_egress(
+                            None, src_port['port']['id'])
+                        flow2 = self.build_ingress_egress(
+                            ingress1['port']['id'], egress1['port']['id'])
+                        flow3 = self.build_ingress_egress(
+                            ingress2['port']['id'], egress2['port']['id'])
+                        self.assertEqual(
+                            set(delete_flow_rules.keys()),
+                            set([flow1, flow2, flow3]))
+                        del_fcs = delete_flow_rules[flow1]['del_fcs']
+                        self.assertEqual(len(del_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, del_fcs[0])
+                        next_hops = self.next_hops_info(
+                            delete_flow_rules[flow1].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                                ingress1['port']['mac_address']: '10.0.0.1',
+                            }
+                        )
+                        self.assertEqual(
+                            delete_flow_rules[flow1]['node_type'],
+                            'src_node')
+                        del_fcs = delete_flow_rules[flow2]['del_fcs']
+                        self.assertEqual(len(del_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, del_fcs[0])
+                        next_hops = self.next_hops_info(
+                            delete_flow_rules[flow2].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                                ingress2['port']['mac_address']: '10.0.0.1',
+                            }
+                        )
+                        self.assertEqual(
+                            delete_flow_rules[flow2]['node_type'],
+                            'sf_node')
+                        del_fcs = delete_flow_rules[flow3]['del_fcs']
+                        self.assertEqual(len(del_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, del_fcs[0])
+                        next_hops = self.next_hops_info(
+                            delete_flow_rules[flow3].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                            }
+                        )
+                        self.assertEqual(
+                            delete_flow_rules[flow3]['node_type'],
+                            'sf_node')
+                        self.assertEqual(
+                            set(update_flow_rules.keys()),
+                            set([flow1, flow2]))
+                        add_fcs = update_flow_rules[flow1]['add_fcs']
+                        self.assertEqual(len(add_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, add_fcs[0])
+                        next_hops = self.next_hops_info(
+                            update_flow_rules[flow1].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                                ingress1['port']['mac_address']: '10.0.0.1'
+                            }
+                        )
+                        self.assertEqual(
+                            update_flow_rules[flow1]['node_type'],
+                            'src_node')
+                        add_fcs = update_flow_rules[flow2]['add_fcs']
+                        self.assertEqual(len(add_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, add_fcs[0])
+                        next_hops = self.next_hops_info(
+                            update_flow_rules[flow2].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                            }
+                        )
+                        self.assertEqual(
+                            update_flow_rules[flow2]['node_type'],
+                            'sf_node')
+
+    def test_update_port_chain_replace_port_pair_group(self):
+        with self.port(
+            name='port1',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as src_port, self.port(
+            name='port5',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress1, self.port(
+            name='port6',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test6'}
+        ) as egress1, self.port(
+            name='port7',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress2, self.port(
+            name='port8',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test6'}
+        ) as egress2:
+            self.host_endpoint_mapping = {
+                'test': '10.0.0.1'
+            }
+            with self.flow_classifier(flow_classifier={
+                'logical_source_port': src_port['port']['id']
+            }) as fc, self.port_pair(port_pair={
+                'ingress': ingress1['port']['id'],
+                'egress': egress1['port']['id']
+            }) as pp1, self.port_pair(port_pair={
+                'ingress': ingress2['port']['id'],
+                'egress': egress2['port']['id']
+            }) as pp2:
+                pp1_context = sfc_ctx.PortPairContext(
+                    self.sfc_plugin, self.ctx,
+                    pp1['port_pair']
+                )
+                self.driver.create_port_pair(pp1_context)
+                pp2_context = sfc_ctx.PortPairContext(
+                    self.sfc_plugin, self.ctx,
+                    pp2['port_pair']
+                )
+                self.driver.create_port_pair(pp2_context)
+                with self.port_pair_group(port_pair_group={
+                    'port_pairs': [
+                        pp1['port_pair']['id']
+                    ]
+                }) as pg1, self.port_pair_group(port_pair_group={
+                    'port_pairs': [
+                        pp2['port_pair']['id']
+                    ]
+                }) as pg2:
+                    pg1_context = sfc_ctx.PortPairGroupContext(
+                        self.sfc_plugin, self.ctx,
+                        pg1['port_pair_group']
+                    )
+                    self.driver.create_port_pair_group(pg1_context)
+                    pg2_context = sfc_ctx.PortPairGroupContext(
+                        self.sfc_plugin, self.ctx,
+                        pg2['port_pair_group']
+                    )
+                    self.driver.create_port_pair_group(pg2_context)
+                    with self.port_chain(port_chain={
+                        'port_pair_groups': [pg1['port_pair_group']['id']],
+                        'flow_classifiers': [
+                            fc['flow_classifier']['id']
+                        ]
+                    }) as pc:
+                        pc_context = sfc_ctx.PortChainContext(
+                            self.sfc_plugin, self.ctx,
+                            pc['port_chain']
+                        )
+                        self.driver.create_port_chain(pc_context)
+                        self.wait()
+                        self.init_rpc_calls()
+                        updates = {
+                            'port_pair_groups': [
+                                pg2['port_pair_group']['id']
+                            ]
+                        }
+                        req = self.new_update_request(
+                            'port_chains', {'port_chain': updates},
+                            pc['port_chain']['id']
+                        )
+                        res = req.get_response(self.ext_api)
+                        pc2 = self.deserialize(
+                            self.fmt, res
+                        )
+                        pc_context = sfc_ctx.PortChainContext(
+                            self.sfc_plugin, self.ctx,
+                            pc2['port_chain'],
+                            original_portchain=pc['port_chain']
+                        )
+                        self.driver.update_port_chain(pc_context)
+                        self.wait()
+                        delete_flow_rules = self.map_flow_rules(
+                            self.rpc_calls['delete_flow_rules'])
+                        update_flow_rules = self.map_flow_rules(
+                            self.rpc_calls['update_flow_rules'])
+                        flow1 = self.build_ingress_egress(
+                            None, src_port['port']['id'])
+                        flow2 = self.build_ingress_egress(
+                            ingress1['port']['id'], egress1['port']['id'])
+                        flow3 = self.build_ingress_egress(
+                            ingress2['port']['id'], egress2['port']['id'])
+                        self.assertEqual(
+                            set(delete_flow_rules.keys()),
+                            set([flow1, flow2]))
+                        del_fcs = delete_flow_rules[flow1]['del_fcs']
+                        self.assertEqual(len(del_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, del_fcs[0])
+                        next_hops = self.next_hops_info(
+                            delete_flow_rules[flow1].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                                ingress1['port']['mac_address']: '10.0.0.1',
+                            }
+                        )
+                        self.assertEqual(
+                            delete_flow_rules[flow1]['node_type'],
+                            'src_node')
+                        del_fcs = delete_flow_rules[flow2]['del_fcs']
+                        self.assertEqual(len(del_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, del_fcs[0])
+                        next_hops = self.next_hops_info(
+                            delete_flow_rules[flow2].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                            }
+                        )
+                        self.assertEqual(
+                            delete_flow_rules[flow2]['node_type'],
+                            'sf_node')
+                        self.assertEqual(
+                            set(update_flow_rules.keys()),
+                            set([flow1, flow3]))
+                        add_fcs = update_flow_rules[flow1]['add_fcs']
+                        self.assertEqual(len(add_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, add_fcs[0])
+                        next_hops = self.next_hops_info(
+                            update_flow_rules[flow1].get('next_hops'))
+                        self.assertEqual(
+                            next_hops, {
+                                ingress2['port']['mac_address']: '10.0.0.1'
+                            }
+                        )
+                        self.assertEqual(
+                            update_flow_rules[flow1]['node_type'],
+                            'src_node')
+                        add_fcs = update_flow_rules[flow3]['add_fcs']
+                        self.assertEqual(len(add_fcs), 1)
+                        self.assertDictContainsSubset({
+                            'destination_ip_prefix': None,
+                            'destination_port_range_max': None,
+                            'destination_port_range_min': None,
+                            'ethertype': u'IPv4',
+                            'l7_parameters': {},
+                            'protocol': None,
+                            'source_ip_prefix': None,
+                            'source_port_range_max': None,
+                            'source_port_range_min': None
+                        }, add_fcs[0])
+                        next_hops = self.next_hops_info(
+                            update_flow_rules[flow3].get('next_hops'))
+                        self.assertEqual(
+                            next_hops,
+                            {}
+                        )
                         self.assertEqual(
                             update_flow_rules[flow3]['node_type'],
                             'sf_node')

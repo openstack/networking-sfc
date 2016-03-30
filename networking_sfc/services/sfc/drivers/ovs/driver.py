@@ -527,11 +527,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     node, port, fc_ids)
 
     @log_helpers.log_method_call
-    def _delete_portchain_path(self, context, portchain_id):
-        port_chain = context.current
+    def _delete_portchain_path(self, context, port_chain):
         first = self.get_path_node_by_filter(
             filters={
-                'portchain_id': portchain_id,
+                'portchain_id': port_chain['id'],
                 'nsi': 0xff
             }
         )
@@ -545,7 +544,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             )
 
         pds = self.get_path_nodes_by_filter(
-            dict(portchain_id=portchain_id))
+            dict(portchain_id=port_chain['id']))
         if pds:
             for pd in pds:
                 self._delete_path_node_flowrule(
@@ -563,7 +562,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         # Delete the chainpathpair
         intid = self.id_pool.get_intid_by_uuid(
-            'portchain', portchain_id)
+            'portchain', port_chain['id'])
         self.id_pool.release_intid('portchain', intid)
 
     def _update_path_node_next_hops(self, flow_rule):
@@ -726,9 +725,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     @log_helpers.log_method_call
     def delete_port_chain(self, context):
         port_chain = context.current
-        portchain_id = port_chain['id']
         LOG.debug("to delete portchain path")
-        self._delete_portchain_path(context, portchain_id)
+        self._delete_portchain_path(context, port_chain)
 
     def _get_diff_set(self, orig, cur):
         orig_set = set(item for item in orig)
@@ -743,42 +741,12 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def update_port_chain(self, context):
         port_chain = context.current
         orig = context.original
-
-        del_fc_ids, add_fc_ids = self._get_diff_set(
-            orig['flow_classifiers'],
-            port_chain['flow_classifiers']
-        )
-        path_nodes = self.get_path_nodes_by_filter(
-            dict(portchain_id=port_chain['id'])
-        )
-        if not path_nodes:
-            return
-
-        sort_path_nodes = sorted(path_nodes,
-                                 key=lambda x: x['nsi'],
-                                 reverse=True)
-        if del_fc_ids:
-            self._thread_update_path_nodes(sort_path_nodes,
-                                           None,
-                                           del_fc_ids)
-            self._remove_flowclassifier_port_assoc(del_fc_ids,
-                                                   port_chain['tenant_id'],
-                                                   sort_path_nodes[0],
-                                                   sort_path_nodes[-1],
-                                                   sort_path_nodes[-2])
-
-        if add_fc_ids:
-            self._add_flowclassifier_port_assoc(add_fc_ids,
-                                                port_chain['tenant_id'],
-                                                sort_path_nodes[0],
-                                                sort_path_nodes[-1],
-                                                sort_path_nodes[-2])
-
-            # notify agent with async thread
-            # current we don't use greenthread.spawn
-            self._thread_update_path_nodes(sort_path_nodes,
-                                           add_fc_ids,
-                                           None)
+        self._delete_portchain_path(context, orig)
+        path_nodes = self._create_portchain_path(context, port_chain)
+        self._thread_update_path_nodes(
+            path_nodes,
+            port_chain['flow_classifiers'],
+            None)
 
     @log_helpers.log_method_call
     def create_port_pair_group(self, context):

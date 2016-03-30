@@ -205,7 +205,7 @@ RESOURCE_ATTRIBUTE_MAP = {
             'validate': {'type:string': attr.TENANT_ID_MAX_LEN},
             'required_by_policy': True},
         'port_pair_groups': {
-            'allow_post': True, 'allow_put': False,
+            'allow_post': True, 'allow_put': True,
             'is_visible': True,
             'validate': {'type:uuid_list': None},
             'convert_to': normalize_port_pair_groups},

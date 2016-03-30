@@ -107,15 +107,25 @@ class PortChainUpdate(extension.ClientExtensionUpdate, PortChain):
             '--no-flow-classifier',
             action='store_true',
             help=_('Associate no Flow Classifier with the Port Chain.'))
+        parser.add_argument(
+            '--port-pair-group',
+            metavar='PORT-PAIR-GROUP',
+            dest='port_pair_groups',
+            action='append',
+            help=_('ID or name of the port pair group. '
+                    'This option can be repeated.'))
 
     def args2body(self, parsed_args):
         body = {}
+        client = self.get_client()
         if parsed_args.flow_classifiers:
-            client = self.get_client()
             body['flow_classifiers'] = [fc.get_flowclassifier_id(client, f)
                                         for f in parsed_args.flow_classifiers]
         elif parsed_args.no_flow_classifier:
             body['flow_classifiers'] = []
+        if parsed_args.port_pair_groups:
+            body['port_pair_groups'] = [ppg.get_port_pair_group_id(client, p)
+                                        for p in parsed_args.port_pair_groups]
         neutronv20.update_dict(parsed_args, body, ['name', 'description'])
         return {self.resource: body}
 

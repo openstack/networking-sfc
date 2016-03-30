@@ -152,6 +152,73 @@ class CLITestV20PortChainExtensionJSON(test_cli20.CLITestV20Base):
                                    {'name': 'myname',
                                     'flow_classifiers': []})
 
+    def test_update_port_chain_with_single_port_pair_group(self):
+        """Update port_chain: myid --name myname --port-pair-group uuid."""
+        resource = 'port_chain'
+        cmd = pc.PortChainUpdate(test_cli20.MyApp(sys.stdout), None)
+        self._test_update_resource(resource, cmd, 'myid',
+                                   ['myid', '--name', 'myname',
+                                    '--port-pair-group',
+                                    FAKE_port_pair_group1_UUID,
+                                    '--no-flow-classifier'],
+                                   {'name': 'myname',
+                                    'port_pair_groups': [
+                                        FAKE_port_pair_group1_UUID],
+                                    'flow_classifiers': []})
+
+    def test_update_port_chain_with_multi_port_pair_groups(self):
+        """Update port_chain: myid --name myname --port-pair-group uuid ..."""
+        resource = 'port_chain'
+        cmd = pc.PortChainUpdate(test_cli20.MyApp(sys.stdout), None)
+        self._test_update_resource(resource, cmd, 'myid',
+                                   ['myid', '--name', 'myname',
+                                    '--port-pair-group',
+                                    FAKE_port_pair_group1_UUID,
+                                    '--port-pair-group',
+                                    FAKE_port_pair_group2_UUID,
+                                    '--no-flow-classifier'],
+                                   {'name': 'myname',
+                                    'port_pair_groups': [
+                                        FAKE_port_pair_group1_UUID,
+                                        FAKE_port_pair_group2_UUID],
+                                    'flow_classifiers': []})
+
+    def test_update_port_chain_with_single_classifier(self):
+        """Update port_chain: myid --name myname --flow-classifier uuid."""
+        resource = 'port_chain'
+        cmd = pc.PortChainUpdate(test_cli20.MyApp(sys.stdout), None)
+        self._test_update_resource(resource, cmd, 'myid',
+                                   ['myid', '--name', 'myname',
+                                    '--flow-classifier', FAKE_FC1_UUID],
+                                   {'name': 'myname',
+                                    'flow_classifiers': [FAKE_FC1_UUID]})
+
+    def test_update_port_chain_with_multi_classifiers(self):
+        """Update port_chain: myid --name myname --flow-classifier uuid ..."""
+        resource = 'port_chain'
+        cmd = pc.PortChainUpdate(test_cli20.MyApp(sys.stdout), None)
+        self._test_update_resource(resource, cmd, 'myid',
+                                   ['myid', '--name', 'myname',
+                                    '--flow-classifier', FAKE_FC1_UUID,
+                                    '--flow-classifier', FAKE_FC2_UUID],
+                                   {'name': 'myname',
+                                    'flow_classifiers': [
+                                        FAKE_FC1_UUID, FAKE_FC2_UUID]})
+
+    def test_update_port_chain_with_port_pair_group_classifier(self):
+        """Update port_chain."""
+        resource = 'port_chain'
+        cmd = pc.PortChainUpdate(test_cli20.MyApp(sys.stdout), None)
+        self._test_update_resource(resource, cmd, 'myid',
+                                   ['myid', '--name', 'myname',
+                                    '--flow-classifier', FAKE_FC1_UUID,
+                                    '--port-pair-group',
+                                    FAKE_port_pair_group1_UUID],
+                                   {'name': 'myname',
+                                    'flow_classifiers': [FAKE_FC1_UUID],
+                                    'port_pair_groups': [
+                                        FAKE_port_pair_group1_UUID]})
+
     def test_delete_port_chain(self):
         """Delete port-chain: myid."""
         resource = 'port_chain'

@@ -358,6 +358,11 @@ class SfcDbPlugin(
                         context, v, pc_id=id)
                     self._setup_chain_classifier_associations(
                         context, pc_db, v)
+                elif k == 'port_pair_groups':
+                    self._validate_port_pair_groups(
+                        context, v, pc_id=id)
+                    self._setup_chain_group_associations(
+                        context, pc_db, v)
                 else:
                     pc_db[k] = v
             return self._make_port_chain_dict(pc_db)

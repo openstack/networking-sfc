@@ -270,7 +270,8 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         update_data = {'port_chain': {
             'name': 'new_name',
             'description': 'new_desc',
-            'flow_classifiers': [_uuid()]
+            'flow_classifiers': [_uuid()],
+            'port_pair_groups': [_uuid()]
         }}
         return_value = {
             'tenant_id': _uuid(),
@@ -304,17 +305,18 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             self.serialize(data),
             content_type='application/%s' % self.fmt)
 
-    def test_port_chain_update_port_pair_groups(self):
+    def test_port_chain_update_nonuuid_port_pair_groups(self):
         portchain_id = _uuid()
         update_data = {'port_chain': {
-            'port_pair_groups': [_uuid()]
+            'port_pair_groups': ['nouuid']
         }}
         self.assertRaises(
             webtest.app.AppError,
             self.api.put,
             _get_path(PORT_CHAIN_PATH, id=portchain_id,
                       fmt=self.fmt),
-            self.serialize(update_data)
+            self.serialize(update_data),
+            content_type='application/%s' % self.fmt
         )
 
     def test_port_chain_update_chain_parameters(self):
