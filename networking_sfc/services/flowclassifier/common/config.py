@@ -14,6 +14,7 @@
 
 from oslo_config import cfg
 
+from networking_sfc._i18n import _
 
 FLOWCLASSIFIER_DRIVER_OPTS = [
     cfg.ListOpt('drivers',

@@ -16,8 +16,7 @@ from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from neutron.i18n import _LE
-
+from networking_sfc._i18n import _LE
 from networking_sfc.db import sfc_db
 from networking_sfc.extensions import sfc as sfc_ext
 from networking_sfc.services.sfc.common import context as sfc_ctx

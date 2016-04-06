@@ -16,9 +16,9 @@ from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from neutron.i18n import _LE
 from neutron import manager
 
+from networking_sfc._i18n import _LE
 from networking_sfc.db import flowclassifier_db as fc_db
 from networking_sfc.extensions import flowclassifier as fc_ext
 from networking_sfc.services.flowclassifier.common import context as fc_ctx

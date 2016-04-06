@@ -14,9 +14,9 @@
 #    under the License.
 
 from neutronclient.common import extension
-from neutronclient.i18n import _
 from neutronclient.neutron import v2_0 as neutronv20
 
+from networking_sfc._i18n import _
 from networking_sfc.cli import port_pair as pp
 
 PORT_PAIR_GROUP_RESOURCE = 'port_pair_group'

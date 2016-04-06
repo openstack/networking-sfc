@@ -14,7 +14,9 @@
 
 import netaddr
 
-# from eventlet import greenthread
+from oslo_log import helpers as log_helpers
+from oslo_log import log as logging
+from oslo_serialization import jsonutils
 
 from neutron.common import constants as nc_const
 from neutron.common import rpc as n_rpc
@@ -22,17 +24,11 @@ from neutron import context as n_context
 from neutron.db import api as db_api
 from neutron import manager
 
-from neutron.i18n import _LE
-from neutron.i18n import _LW
-
 from neutron.plugins.common import constants as np_const
 from neutron.plugins.ml2.drivers.l2pop import db as l2pop_db
 from neutron.plugins.ml2.drivers.l2pop import rpc as l2pop_rpc
 
-from oslo_log import helpers as log_helpers
-from oslo_log import log as logging
-from oslo_serialization import jsonutils
-
+from networking_sfc._i18n import _LE, _LW
 from networking_sfc.extensions import flowclassifier
 from networking_sfc.extensions import sfc
 from networking_sfc.services.sfc.common import exceptions as exc
@@ -829,8 +825,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
             before_update_prev_node = prev_node.copy()
             # Update the previous node
-            _, curr_group_members = self._get_portgroup_members(context,
-                                                                current['id'])
+            curr_group_intid, curr_group_members = self._get_portgroup_members(
+                context, current['id'])
             prev_node['next_hop'] = (
                 jsonutils.dumps(curr_group_members)
                 if curr_group_members else None

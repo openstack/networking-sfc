@@ -17,20 +17,20 @@ from abc import abstractmethod
 
 import six
 
+from neutron_lib import exceptions as neutron_exc
 from oslo_config import cfg
 
 from neutron.api import extensions as neutron_ext
 from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
 from neutron.common import constants as const
-from neutron.common import exceptions as neutron_exc
 from neutron.services import service_base
 
-import networking_sfc
-
+from networking_sfc._i18n import _
+from networking_sfc import extensions
 
 cfg.CONF.import_opt('api_extensions_path', 'neutron.common.config')
-neutron_ext.append_api_extensions_path(networking_sfc.extensions.__path__)
+neutron_ext.append_api_extensions_path(extensions.__path__)
 FLOW_CLASSIFIER_EXT = "flow_classifier"
 FLOW_CLASSIFIER_PREFIX = "/sfc"
 

@@ -16,9 +16,7 @@ from oslo_config import cfg
 from oslo_log import log
 import stevedore
 
-from neutron.i18n import _LE
-from neutron.i18n import _LI
-
+from networking_sfc._i18n import _LE, _LI
 from networking_sfc.services.flowclassifier.common import exceptions as fc_exc
 
 

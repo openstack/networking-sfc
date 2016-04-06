@@ -13,7 +13,9 @@
 #    under the License.
 """Exceptions used by SFC plugin and drivers."""
 
-from neutron.common import exceptions
+from neutron_lib import exceptions
+
+from networking_sfc._i18n import _
 
 
 class SfcDriverError(exceptions.NeutronException):

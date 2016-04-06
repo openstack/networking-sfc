@@ -11,13 +11,15 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from networking_sfc.services.sfc.drivers.ovs import rpc_topics as sfc_topics
+from oslo_log import log as logging
+
+import oslo_messaging
+
 from neutron.common import rpc as n_rpc
 from neutron.common import topics
-from neutron.i18n import _LI
 
-from oslo_log import log as logging
-import oslo_messaging
+from networking_sfc._i18n import _LI
+from networking_sfc.services.sfc.drivers.ovs import rpc_topics as sfc_topics
 
 LOG = logging.getLogger(__name__)
 

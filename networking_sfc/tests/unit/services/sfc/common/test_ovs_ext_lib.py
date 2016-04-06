@@ -12,7 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.common import exceptions
+from neutron_lib import exceptions
+
 from neutron.tests import base
 
 from networking_sfc.services.sfc.common import ovs_ext_lib

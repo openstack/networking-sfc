@@ -13,7 +13,9 @@
 #    under the License.
 """Exceptions used by FlowClassifier plugin and drivers."""
 
-from neutron.common import exceptions
+from neutron_lib import exceptions
+
+from networking_sfc._i18n import _
 
 
 class FlowClassifierDriverError(exceptions.NeutronException):

@@ -13,16 +13,18 @@
 #    under the License.
 
 import collections
+import six
+
+from neutron_lib import exceptions
+from oslo_log import log as logging
+
 from neutron.agent.common import ovs_lib
 from neutron.agent.common import utils
-from neutron.common import exceptions
-from neutron.i18n import _LE
 from neutron.plugins.common import constants
 from neutron.plugins.ml2.drivers.openvswitch.agent.openflow.ovs_ofctl import (
     ovs_bridge)
-from oslo_log import log as logging
-import six
 
+from networking_sfc._i18n import _, _LE
 
 # Special return value for an invalid OVS ofport
 INVALID_OFPORT = '-1'

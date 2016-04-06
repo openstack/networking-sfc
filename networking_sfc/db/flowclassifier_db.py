@@ -28,8 +28,8 @@ from neutron.common import constants as const
 from neutron.db import common_db_mixin
 from neutron.db import model_base
 from neutron.db import models_v2
-from neutron.i18n import _LI
 
+from networking_sfc._i18n import _LI
 from networking_sfc.extensions import flowclassifier as fc_ext
 
 LOG = logging.getLogger(__name__)
