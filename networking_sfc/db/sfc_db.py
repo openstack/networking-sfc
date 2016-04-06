@@ -284,7 +284,7 @@ class SfcDbPlugin(
     def create_port_chain(self, context, port_chain):
         """Create a port chain."""
         pc = port_chain['port_chain']
-        tenant_id = self._get_tenant_id_for_create(context, pc)
+        tenant_id = pc['tenant_id']
         with context.session.begin(subtransactions=True):
             chain_parameters = {
                 key: ChainParameter(keyword=key, value=val)
@@ -396,7 +396,7 @@ class SfcDbPlugin(
     def create_port_pair(self, context, port_pair):
         """Create a port pair."""
         pp = port_pair['port_pair']
-        tenant_id = self._get_tenant_id_for_create(context, pp)
+        tenant_id = pp['tenant_id']
         with context.session.begin(subtransactions=True):
             query = self._model_query(context, PortPair)
             pp_in_use = query.filter_by(
@@ -499,7 +499,7 @@ class SfcDbPlugin(
     def create_port_pair_group(self, context, port_pair_group):
         """Create a port pair group."""
         pg = port_pair_group['port_pair_group']
-        tenant_id = self._get_tenant_id_for_create(context, pg)
+        tenant_id = pg['tenant_id']
 
         with context.session.begin(subtransactions=True):
             portpairs_list = [self._get_port_pair(context, pp_id)

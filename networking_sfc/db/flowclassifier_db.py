@@ -210,7 +210,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
     @log_helpers.log_method_call
     def create_flow_classifier(self, context, flow_classifier):
         fc = flow_classifier['flow_classifier']
-        tenant_id = self._get_tenant_id_for_create(context, fc)
+        tenant_id = fc['tenant_id']
         l7_parameters = {
             key: L7Parameter(key, val)
             for key, val in six.iteritems(fc['l7_parameters'])}
