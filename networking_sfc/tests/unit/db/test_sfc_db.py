@@ -204,15 +204,17 @@ class SfcDbPluginTestCaseBase(
                 for k, v in six.iteritems(expected_port_pair_group):
                     self.assertEqual(pg['port_pair_group'][k], v)
 
-    def _get_expected_port_chain(self, port_chain):
+    @staticmethod
+    def _get_expected_port_chain(port_chain):
+        chain_params = port_chain.get('chain_parameters') or dict()
+        chain_params.setdefault('correlation', 'mpls')
+        chain_params.setdefault('symmetric', 'false')
         ret = {
             'name': port_chain.get('name') or '',
             'description': port_chain.get('description') or '',
             'port_pair_groups': port_chain['port_pair_groups'],
             'flow_classifiers': port_chain.get('flow_classifiers') or [],
-            'chain_parameters': port_chain.get(
-                'chain_parameters'
-            ) or {'correlation': 'mpls'}
+            'chain_parameters': chain_params
         }
         if port_chain.get('chain_id'):
             ret['chain_id'] = port_chain['chain_id']

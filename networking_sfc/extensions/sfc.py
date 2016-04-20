@@ -59,6 +59,11 @@ SUPPORTED_CHAIN_PARAMETERS = {
         'allow_post': True,
         'default': 'mpls',
         'validate': {'type:values': ['mpls']}
+    },
+    'symmetric': {
+        'allow_post': True,
+        'default': 'false',
+        'validate': {'type:values': ['true', 'false']}
     }
 }
 SUPPORTED_SF_PARAMETERS = {

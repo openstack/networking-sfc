@@ -65,14 +65,17 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         mock_log_api_res_log_p = mock.patch.object(api_res_log, 'LOG')
         self.mock_log_api_res_log = mock_log_api_res_log_p.start()
 
-    def _get_expected_port_chain(self, data):
+    @staticmethod
+    def _get_expected_port_chain(data):
         port_chain = data['port_chain']
+        chain_params = port_chain.get('chain_parameters') or dict()
+        chain_params.setdefault('correlation', 'mpls')
+        chain_params.setdefault('symmetric', 'false')
         ret = {'port_chain': {
             'description': port_chain.get('description') or '',
             'name': port_chain.get('name') or '',
             'port_pair_groups': port_chain['port_pair_groups'],
-            'chain_parameters': data['port_chain'].get(
-                'chain_parameters') or {'correlation': 'mpls'},
+            'chain_parameters': chain_params,
             'flow_classifiers': port_chain.get(
                 'flow_classifiers') or [],
             'tenant_id': port_chain['tenant_id'],
@@ -81,16 +84,18 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         }}
         return ret
 
-    def test_create_port_chain(self):
-        portchain_id = _uuid()
+    def _test_create_port_chain(self, **kwargs):
         tenant_id = _uuid()
-        data = {'port_chain': {
+        port_chain_data = {
             'port_pair_groups': [_uuid()],
-            'tenant_id': tenant_id, 'project_id': tenant_id
-        }}
+            'tenant_id': tenant_id,
+            'project_id': tenant_id
+        }
+        port_chain_data.update(kwargs)
+        data = {'port_chain': port_chain_data}
         expected_data = self._get_expected_port_chain(data)
         return_value = copy.copy(expected_data['port_chain'])
-        return_value.update({'id': portchain_id})
+        return_value.update({'id': _uuid()})
         instance = self.plugin.return_value
         instance.create_port_chain.return_value = return_value
         res = self.api.post(_get_path(PORT_CHAIN_PATH, fmt=self.fmt),
@@ -103,81 +108,27 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         res = self.deserialize(res)
         self.assertIn('port_chain', res)
         self.assertEqual(return_value, res['port_chain'])
+
+    def test_create_port_chain(self):
+        self._test_create_port_chain()
 
     def test_create_port_chain_all_fields(self):
-        portchain_id = _uuid()
-        tenant_id = _uuid()
-        data = {'port_chain': {
-            'description': 'desc',
-            'name': 'test1',
-            'port_pair_groups': [_uuid()],
-            'chain_parameters': {'correlation': 'mpls'},
-            'flow_classifiers': [],
-            'tenant_id': tenant_id, 'project_id': tenant_id
-        }}
-        expected_data = self._get_expected_port_chain(data)
-        return_value = copy.copy(expected_data['port_chain'])
-        return_value.update({'id': portchain_id})
-        instance = self.plugin.return_value
-        instance.create_port_chain.return_value = return_value
-        res = self.api.post(_get_path(PORT_CHAIN_PATH, fmt=self.fmt),
-                            self.serialize(data),
-                            content_type='application/%s' % self.fmt)
-        instance.create_port_chain.assert_called_with(
-            mock.ANY,
-            port_chain=expected_data)
-        self.assertEqual(exc.HTTPCreated.code, res.status_int)
-        res = self.deserialize(res)
-        self.assertIn('port_chain', res)
-        self.assertEqual(return_value, res['port_chain'])
+        self._test_create_port_chain(description='desc',
+                                     name='test1',
+                                     chain_parameters={'correlation': 'mpls'},
+                                     flow_classifiers=[])
 
     def test_create_port_chain_none_chain_parameters(self):
-        portchain_id = _uuid()
-        tenant_id = _uuid()
-        data = {'port_chain': {
-            'port_pair_groups': [_uuid()],
-            'chain_parameters': None,
-            'tenant_id': tenant_id, 'project_id': tenant_id
-        }}
-        expected_data = self._get_expected_port_chain(data)
-        return_value = copy.copy(expected_data['port_chain'])
-        return_value.update({'id': portchain_id})
-        instance = self.plugin.return_value
-        instance.create_port_chain.return_value = return_value
-        res = self.api.post(_get_path(PORT_CHAIN_PATH, fmt=self.fmt),
-                            self.serialize(data),
-                            content_type='application/%s' % self.fmt)
-        instance.create_port_chain.assert_called_with(
-            mock.ANY,
-            port_chain=expected_data)
-        self.assertEqual(exc.HTTPCreated.code, res.status_int)
-        res = self.deserialize(res)
-        self.assertIn('port_chain', res)
-        self.assertEqual(return_value, res['port_chain'])
+        self._test_create_port_chain(chain_parameters=None)
 
     def test_create_port_chain_empty_chain_parameters(self):
-        portchain_id = _uuid()
-        tenant_id = _uuid()
-        data = {'port_chain': {
-            'port_pair_groups': [_uuid()],
-            'chain_parameters': {},
-            'tenant_id': tenant_id, 'project_id': tenant_id
-        }}
-        expected_data = self._get_expected_port_chain(data)
-        return_value = copy.copy(expected_data['port_chain'])
-        return_value.update({'id': portchain_id})
-        instance = self.plugin.return_value
-        instance.create_port_chain.return_value = return_value
-        res = self.api.post(_get_path(PORT_CHAIN_PATH, fmt=self.fmt),
-                            self.serialize(data),
-                            content_type='application/%s' % self.fmt)
-        instance.create_port_chain.assert_called_with(
-            mock.ANY,
-            port_chain=expected_data)
-        self.assertEqual(exc.HTTPCreated.code, res.status_int)
-        res = self.deserialize(res)
-        self.assertIn('port_chain', res)
-        self.assertEqual(return_value, res['port_chain'])
+        self._test_create_port_chain(chain_parameters={})
+
+    def test_create_port_chain_multiple_chain_parameters(self):
+        self._test_create_port_chain(chain_parameters={
+            'correlation': 'mpls',
+            'symmetric': 'true'
+        })
 
     def test_create_port_chain_empty_port_pair_groups(self):
         tenant_id = _uuid()

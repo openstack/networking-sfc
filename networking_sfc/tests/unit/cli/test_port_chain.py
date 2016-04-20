@@ -119,6 +119,20 @@ class CLITestV20PortChainExtensionJSON(test_cli20.CLITestV20Base):
         self._test_create_resource(resource, cmd, name, myid, args,
                                    position_names, position_values)
 
+    def test_create_port_chain_with_chain_parameters(self):
+        """Create port_chain: myname."""
+        resource = 'port_chain'
+        cmd = pc.PortChainCreate(test_cli20.MyApp(sys.stdout), None)
+        name = 'myname'
+        myid = 'myid'
+        args = [name, '--port-pair-group', FAKE_port_pair_group1_UUID,
+                '--chain-parameters', 'symmetric=true']
+        position_names = ['name', 'port_pair_groups', 'chain_parameters']
+        position_values = [name, [FAKE_port_pair_group1_UUID],
+                           {'symmetric': 'true'}]
+        self._test_create_resource(resource, cmd, name, myid, args,
+                                   position_names, position_values)
+
     def test_create_port_chain_with_multiple_classifiers(self):
         """Create port_chain: myname."""
         resource = 'port_chain'
