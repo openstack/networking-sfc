@@ -17,9 +17,11 @@
 ** OVS agent https://wiki.openstack.org/wiki/Ovs-flow-logic
 """
 
-from networking_sfc.services.sfc.common import ovs_ext_lib
+from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants
 from neutron.plugins.ml2.drivers.openvswitch.agent.openflow.ovs_ofctl import (
     br_tun)
+
+from networking_sfc.services.sfc.common import ovs_ext_lib
 
 
 class OVSTunnelBridge(br_tun.OVSTunnelBridge, ovs_ext_lib.OVSBridgeExt):
@@ -33,3 +35,14 @@ class OVSTunnelBridge(br_tun.OVSTunnelBridge, ovs_ext_lib.OVSBridgeExt):
     def run_ofctl(self, cmd, args, process_input=None):
         return ovs_ext_lib.OVSBridgeExt.run_ofctl(
             self, cmd, args, process_input=process_input)
+
+    def install_flood_to_tun(self, vlan, tun_id, ports, deferred_br=None):
+        br = deferred_br if deferred_br else self
+        br.add_flow(
+            table=constants.FLOOD_TO_TUN,
+            priority=1,
+            dl_vlan=vlan,
+            actions="strip_vlan,set_tunnel:%s,output:%s" % (
+                tun_id, self._ofport_set_to_str(ports)
+            )
+        )
