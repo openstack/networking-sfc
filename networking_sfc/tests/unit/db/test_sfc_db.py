@@ -540,6 +540,41 @@ class SfcDbPluginTestCase(
                             expected_res_status=400
                         )
 
+    def test_create_multi_port_chain_with_same_flow_classifier(self):
+        with self.port(
+            name='test1'
+        ) as port1:
+            with self.flow_classifier(flow_classifier={
+                'source_ip_prefix': '192.168.100.0/24',
+                'logical_source_port': port1['port']['id']
+            }) as fc:
+                with self.port_pair_group(
+                    port_pair_group={}
+                ) as pg1, self.port_pair_group(
+                    port_pair_group={}
+                ) as pg2:
+                    with self.port_chain(
+                        port_chain={
+                            'flow_classifiers': [
+                                fc['flow_classifier']['id']
+                            ],
+                            'port_pair_groups': [
+                                pg1['port_pair_group']['id']
+                            ]
+                        }
+                    ):
+                        self._create_port_chain(
+                            self.fmt, {
+                                'flow_classifiers': [
+                                    fc['flow_classifier']['id']
+                                ],
+                                'port_pair_groups': [
+                                    pg2['port_pair_group']['id']
+                                ]
+                            },
+                            expected_res_status=409
+                        )
+
     def test_create_port_chain_with_port_pairs(self):
         with self.port(
             name='port1',
@@ -722,7 +757,115 @@ class SfcDbPluginTestCase(
         res = req.get_response(self.ext_api)
         self.assertEqual(res.status_int, 404)
 
-    def test_update_port_chain_flow_classifiers(self):
+    def test_update_port_chain_add_flow_classifiers(self):
+        with self.port(
+            name='test1'
+        ) as port:
+            with self.flow_classifier(
+                flow_classifier={
+                    'source_ip_prefix': '192.168.100.0/24',
+                    'logical_source_port': port['port']['id']
+                }
+            ) as fc1, self.flow_classifier(
+                flow_classifier={
+                    'source_ip_prefix': '192.168.101.0/24',
+                    'logical_source_port': port['port']['id']
+                }
+            ) as fc2:
+                with self.port_pair_group(
+                    port_pair_group={}
+                ) as pg:
+                    with self.port_chain(port_chain={
+                        'name': 'test1',
+                        'description': 'desc1',
+                        'port_pair_groups': [pg['port_pair_group']['id']],
+                        'flow_classifiers': [fc1['flow_classifier']['id']]
+                    }) as pc:
+                        updates = {
+                            'name': 'test2',
+                            'description': 'desc2',
+                            'flow_classifiers': [
+                                fc1['flow_classifier']['id'],
+                                fc2['flow_classifier']['id']
+                            ]
+                        }
+                        req = self.new_update_request(
+                            'port_chains', {'port_chain': updates},
+                            pc['port_chain']['id']
+                        )
+                        res = self.deserialize(
+                            self.fmt,
+                            req.get_response(self.ext_api)
+                        )
+                        expected = pc['port_chain']
+                        expected.update(updates)
+                        for k, v in six.iteritems(expected):
+                            self.assertEqual(res['port_chain'][k], v)
+                        req = self.new_show_request(
+                            'port_chains', pc['port_chain']['id']
+                        )
+                        res = self.deserialize(
+                            self.fmt, req.get_response(self.ext_api)
+                        )
+                        for k, v in six.iteritems(expected):
+                            self.assertEqual(res['port_chain'][k], v)
+
+    def test_update_port_chain_remove_flow_classifiers(self):
+        with self.port(
+            name='test1'
+        ) as port:
+            with self.flow_classifier(
+                flow_classifier={
+                    'source_ip_prefix': '192.168.100.0/24',
+                    'logical_source_port': port['port']['id']
+                }
+            ) as fc1, self.flow_classifier(
+                flow_classifier={
+                    'source_ip_prefix': '192.168.101.0/24',
+                    'logical_source_port': port['port']['id']
+                }
+            ) as fc2:
+                with self.port_pair_group(
+                    port_pair_group={}
+                ) as pg:
+                    with self.port_chain(port_chain={
+                        'name': 'test1',
+                        'description': 'desc1',
+                        'port_pair_groups': [pg['port_pair_group']['id']],
+                        'flow_classifiers': [
+                            fc1['flow_classifier']['id'],
+                            fc2['flow_classifier']['id']
+                        ]
+                    }) as pc:
+                        updates = {
+                            'name': 'test2',
+                            'description': 'desc2',
+                            'flow_classifiers': [
+                                fc1['flow_classifier']['id']
+                            ]
+                        }
+                        req = self.new_update_request(
+                            'port_chains', {'port_chain': updates},
+                            pc['port_chain']['id']
+                        )
+                        res = self.deserialize(
+                            self.fmt,
+                            req.get_response(self.ext_api)
+                        )
+                        expected = pc['port_chain']
+                        expected.update(updates)
+                        for k, v in six.iteritems(expected):
+                            self.assertEqual(res['port_chain'][k], v)
+                        req = self.new_show_request(
+                            'port_chains', pc['port_chain']['id']
+                        )
+                        res = self.deserialize(
+                            self.fmt, req.get_response(self.ext_api)
+                        )
+                        for k, v in six.iteritems(expected):
+                            self.assertEqual(res['port_chain'][k], v)
+
+    def test_update_port_chain_replace_flow_classifiers(self):
         with self.port(
             name='test1'
         ) as port:
