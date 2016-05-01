@@ -432,19 +432,18 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
                 add_flow=True,
                 match_inport=match_inport)
 
-    def _get_network_by_port(self, port_id):
+    def _get_vlan_by_port(self, port_id):
         for key, val in six.iteritems(self.network_ports):
             if port_id in val:
-                return key
-
+                lvm = self.local_vlan_map[key]
+                return lvm.vlan
         return None
 
     def _setup_ingress_flow_rules_with_mpls(self, flowrule):
-        network_id = self._get_network_by_port(flowrule['ingress'])
-        if network_id:
+        vif_port = self.int_br.get_vif_port_by_id(flowrule['ingress'])
+        if vif_port:
+            vlan = self._get_vlan_by_port(flowrule['ingress'])
             # install br-int flow rule on table 0 for ingress traffic
-            lvm = self.local_vlan_map[network_id]
-            vif_port = lvm.vif_ports[flowrule['ingress']]
             match_field = {}
 
             actions = ("strip_vlan, pop_mpls:0x0800,"
@@ -453,7 +452,7 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
                 table=INGRESS_TABLE,
                 priority=1,
                 dl_dst=vif_port.vif_mac,
-                dl_vlan=lvm.vlan,
+                dl_vlan=vlan,
                 dl_type=0x8847,
                 mpls_label=flowrule['nsp'] << 8 | (flowrule['nsi'] + 1),
                 actions=actions)
@@ -559,12 +558,10 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
 
             # delete table INGRESS_TABLE ingress match flow rule
             # on br-int(ingress match)
-            network_id = self._get_network_by_port(flowrule['ingress'])
-            if network_id:
+            vif_port = self.int_br.get_vif_port_by_id(flowrule['ingress'])
+            if vif_port:
                 # third, install br-int flow rule on table INGRESS_TABLE
                 # for ingress traffic
-                lvm = self.local_vlan_map[network_id]
-                vif_port = lvm.vif_ports[flowrule['ingress']]
                 self.int_br.delete_flows(
                     table=INGRESS_TABLE,
                     dl_type=0x8847,
