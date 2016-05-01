@@ -21,6 +21,7 @@ from neutron.api import extensions as api_ext
 from neutron.api.rpc.agentnotifiers import dhcp_rpc_agent_api as dhcp_rpc_log
 from neutron.api.v2 import resource as api_res_log
 from neutron.common import config as cfg
+from neutron.common import constants as nc_const
 from neutron.extensions import vlantransparent as vlan_log
 from neutron import manager
 from neutron.notifiers import nova as nova_log
@@ -49,10 +50,10 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
         if not plugin:
             plugin = 'neutron.plugins.ml2.plugin.Ml2Plugin'
-        config.cfg.CONF.set_override('tenant_network_types', ['gre'],
+        config.cfg.CONF.set_override('tenant_network_types', ['vxlan'],
                                      group='ml2')
         config.cfg.CONF.set_override(
-            'tunnel_id_ranges', ['1:1000'], group='ml2_type_gre')
+            'vni_ranges', ['1:1000'], group='ml2_type_vxlan')
         config.cfg.CONF.set_override(
             'mechanism_drivers', ['openvswitch'], group='ml2')
         super(NeutronDbPluginV2TestCase, self).setUp(
@@ -67,6 +68,10 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         self._subnet = self._make_subnet(
             self.fmt, self._network, gateway='10.0.0.1',
             cidr='10.0.0.0/24', ip_version=4
+        )
+        self._gateway = self._create_port(
+            self.fmt, self._network['network']['id'],
+            device_owner=nc_const.DEVICE_OWNER_ROUTER_INTF
         )
 
     def _mock_unncessary_logging(self):
