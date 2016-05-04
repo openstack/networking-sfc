@@ -21,6 +21,7 @@ from oslo_utils import uuidutils
 import sqlalchemy as sa
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy import orm
+from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm import exc
 
@@ -77,7 +78,7 @@ class ChainClassifierAssoc(model_base.BASEV2):
         primary_key=True)
     flow_classifier = orm.relationship(
         fc_db.FlowClassifier,
-        backref='chain_classifier_association',
+        backref=backref('chain_classifier_association', uselist=False),
         uselist=False
     )
 
