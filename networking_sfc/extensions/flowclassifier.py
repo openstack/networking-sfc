@@ -211,8 +211,8 @@ RESOURCE_ATTRIBUTE_MAP = {
             'validate': {'type:subnet_or_none': None}},
         'logical_source_port': {
             'allow_post': True, 'allow_put': False,
-            'is_visible': True,
-            'validate': {'type:uuid': []}},
+            'is_visible': True, 'default': None,
+            'validate': {'type:uuid_or_none': None}},
         'logical_destination_port': {
             'allow_post': True, 'allow_put': False,
             'is_visible': True, 'default': None,

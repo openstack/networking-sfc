@@ -53,6 +53,8 @@ class FlowClassifierPluginTestCase(
     def test_create_flow_classifier_driver_manager_called(self):
         self.fake_driver_manager.create_flow_classifier = mock.Mock(
             side_effect=self._record_context)
+        self.fake_driver_manager.create_flow_classifier_precommit = mock.Mock(
+            side_effect=self._record_context)
         with self.port(
             name='test1'
         ) as port:
@@ -60,6 +62,11 @@ class FlowClassifierPluginTestCase(
                 'logical_source_port': port['port']['id']
             }) as fc:
                 driver_manager = self.fake_driver_manager
+                create_flow_classifier_precommit = (
+                    driver_manager.create_flow_classifier_precommit)
+                create_flow_classifier_precommit.assert_called_once_with(
+                    mock.ANY
+                )
                 driver_manager.create_flow_classifier.assert_called_once_with(
                     mock.ANY
                 )
@@ -82,11 +89,41 @@ class FlowClassifierPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {'logical_source_port': port['port']['id']},
                 expected_res_status=500)
-            self._test_list_resources('flow_classifier', [])
             driver_manager = self.fake_driver_manager
+            create_flow_classifier_precommit = (
+                driver_manager.create_flow_classifier_precommit)
+            create_flow_classifier_precommit.assert_called_once_with(
+                mock.ANY
+            )
+            driver_manager.create_flow_classifier.assert_called_once_with(
+                mock.ANY
+            )
             driver_manager.delete_flow_classifier.assert_called_once_with(
                 mock.ANY
             )
+            self._test_list_resources('flow_classifier', [])
+
+    def test_create_flow_classifier_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.create_flow_classifier_precommit = mock.Mock(
+            side_effect=fc_exc.FlowClassifierDriverError(
+                method='create_flow_classifier_precommit'
+            )
+        )
+        with self.port(
+            name='test1'
+        ) as port:
+            self._create_flow_classifier(
+                self.fmt, {'logical_source_port': port['port']['id']},
+                expected_res_status=500)
+            driver_manager = self.fake_driver_manager
+            create_flow_classifier_precommit = (
+                driver_manager.create_flow_classifier_precommit)
+            create_flow_classifier_precommit.assert_called_once_with(
+                mock.ANY
+            )
+            driver_manager.create_flow_classifier.assert_not_called()
+            driver_manager.delete_flow_classifier.assert_not_called()
+            self._test_list_resources('flow_classifier', [])
 
     def test_update_flow_classifier_driver_manager_called(self):
         self.fake_driver_manager.update_flow_classifier = mock.Mock(
@@ -143,6 +180,10 @@ class FlowClassifierPluginTestCase(
                 updated_flow_classifier['name'] = 'test2'
                 res = req.get_response(self.ext_api)
                 self.assertEqual(res.status_int, 500)
+                driver_manager = self.fake_driver_manager
+                driver_manager.update_flow_classifier.assert_called_once_with(
+                    mock.ANY
+                )
                 res = self._list('flow_classifiers')
                 self.assertIn('flow_classifiers', res)
                 self.assertItemsEqual(
@@ -192,4 +233,8 @@ class FlowClassifierPluginTestCase(
                 )
                 res = req.get_response(self.ext_api)
                 self.assertEqual(res.status_int, 500)
+                driver_manager = self.fake_driver_manager
+                driver_manager.delete_flow_classifier.assert_called_once_with(
+                    mock.ANY
+                )
                 self._test_list_resources('flow_classifier', [fc])

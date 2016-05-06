@@ -63,14 +63,12 @@ class CLITestV20FCExtensionJSON(test_cli20.CLITestV20Base):
         myid = 'myid'
         name = 'flow1'
         ethertype = 'IPv4'
-        logical_source_port = '4a334cd4-fe9c-4fae-af4b-321c5e2eb051'
         args = [
             name,
             '--ethertype', ethertype,
-            '--logical-source-port', logical_source_port
         ]
-        position_names = ['name', 'ethertype', 'logical_source_port']
-        position_values = [name, ethertype, logical_source_port]
+        position_names = ['name', 'ethertype']
+        position_values = [name, ethertype]
         self._test_create_resource(resource, cmd, name, myid, args,
                                    position_names, position_values)
 

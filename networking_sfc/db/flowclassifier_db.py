@@ -64,8 +64,7 @@ class FlowClassifier(model_base.BASEV2, models_v2.HasId,
     destination_ip_prefix = sa.Column(sa.String(255))
     logical_source_port = sa.Column(
         sa.String(UUID_LEN),
-        sa.ForeignKey('ports.id', ondelete='RESTRICT'),
-        nullable=False)
+        sa.ForeignKey('ports.id', ondelete='RESTRICT'))
     logical_destination_port = sa.Column(
         sa.String(UUID_LEN),
         sa.ForeignKey('ports.id', ondelete='RESTRICT'))
@@ -233,7 +232,8 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
         logical_source_port = fc['logical_source_port']
         logical_destination_port = fc['logical_destination_port']
         with context.session.begin(subtransactions=True):
-            self._get_port(context, logical_source_port)
+            if logical_source_port is not None:
+                self._get_port(context, logical_source_port)
             if logical_destination_port is not None:
                 self._get_port(context, logical_destination_port)
             query = self._model_query(context, FlowClassifier)

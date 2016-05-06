@@ -31,3 +31,7 @@ class FlowClassifierDriverBase(object):
     @abc.abstractmethod
     def update_flow_classifier(self, context):
         pass
+
+    @abc.abstractmethod
+    def create_flow_classifier_precommit(self, context):
+        pass

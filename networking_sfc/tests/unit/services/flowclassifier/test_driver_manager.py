@@ -87,6 +87,20 @@ class DriverManagerTestCase(base.BaseTestCase):
             mock_driver2.create_flow_classifier.assert_called_once_with(
                 mocked_context)
 
+    def test_create_flow_classifier_precommit_called(self):
+        driver1 = mock.Mock()
+        driver2 = mock.Mock()
+        with self.driver_manager_context({
+            'dummy1': driver1,
+            'dummy2': driver2
+        }) as manager:
+            mocked_context = mock.Mock()
+            manager.create_flow_classifier_precommit(mocked_context)
+            driver1.create_flow_classifier_precommit.assert_called_once_with(
+                mocked_context)
+            driver2.create_flow_classifier_precommit.assert_called_once_with(
+                mocked_context)
+
     def test_create_flow_classifier_exception(self):
         mock_driver = mock.Mock()
         mock_driver.create_flow_classifier = mock.Mock(
@@ -99,6 +113,20 @@ class DriverManagerTestCase(base.BaseTestCase):
             self.assertRaises(
                 fc_exc.FlowClassifierDriverError,
                 manager.create_flow_classifier, mocked_context
+            )
+
+    def test_create_flow_classifier_precommit_exception(self):
+        mock_driver = mock.Mock()
+        mock_driver.create_flow_classifier_precommit = mock.Mock(
+            side_effect=fc_exc.FlowClassifierException
+        )
+        with self.driver_manager_context({
+            'dummy': mock_driver,
+        }) as manager:
+            mocked_context = mock.Mock()
+            self.assertRaises(
+                fc_exc.FlowClassifierDriverError,
+                manager.create_flow_classifier_precommit, mocked_context
             )
 
     def test_update_flow_classifier_called(self):

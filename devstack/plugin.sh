@@ -9,6 +9,7 @@ function networking_sfc_configure_common {
     _neutron_service_plugin_class_add $NEUTRON_SFC_PLUGIN
     iniset $NEUTRON_CONF DEFAULT service_plugins $Q_SERVICE_PLUGIN_CLASSES
     iniadd $NEUTRON_CONF sfc drivers $NEUTRON_SFC_DRIVERS
+    iniadd $NEUTRON_CONF flowclassifier drivers $NEUTRON_FLOWCLASSIFIER_DRIVERS
     _neutron_deploy_rootwrap_filters $NETWORKING_SFC_DIR
     neutron-db-manage --config-file $NEUTRON_CONF --config-file /$Q_PLUGIN_CONF_FILE --subproject networking-sfc upgrade head
 }
