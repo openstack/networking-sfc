@@ -47,9 +47,13 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
 
     @log_helpers.log_method_call
     def create_flow_classifier(self, context, flow_classifier):
-        fc_db = super(FlowClassifierPlugin, self).create_flow_classifier(
-            context, flow_classifier)
-        fc_db_context = fc_ctx.FlowClassifierContext(self, context, fc_db)
+        with context.session.begin(subtransactions=True):
+            fc_db = super(FlowClassifierPlugin, self).create_flow_classifier(
+                context, flow_classifier)
+            fc_db_context = fc_ctx.FlowClassifierContext(self, context, fc_db)
+            self.driver_manager.create_flow_classifier_precommit(
+                fc_db_context)
+
         try:
             self.driver_manager.create_flow_classifier(fc_db_context)
         except fc_exc.FlowClassifierDriverError as e:
@@ -64,12 +68,13 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
     @log_helpers.log_method_call
     def update_flow_classifier(self, context, id, flow_classifier):
         original_flowclassifier = self.get_flow_classifier(context, id)
-        updated_fc = super(FlowClassifierPlugin, self).update_flow_classifier(
+        updated_fc = super(
+            FlowClassifierPlugin, self
+        ).update_flow_classifier(
             context, id, flow_classifier)
         fc_db_context = fc_ctx.FlowClassifierContext(
             self, context, updated_fc,
             original_flowclassifier=original_flowclassifier)
-
         try:
             self.driver_manager.update_flow_classifier(fc_db_context)
         except fc_exc.FlowClassifierDriverError as e:

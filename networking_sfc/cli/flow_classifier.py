@@ -75,7 +75,6 @@ class FlowClassifierCreate(extension.ClientExtensionCreate,
             help=_('Destination IP prefix or subnet.'))
         parser.add_argument(
             '--logical-source-port',
-            required=True,
             help=_('ID or name of the neutron source port.'))
         parser.add_argument(
             '--logical-destination-port',

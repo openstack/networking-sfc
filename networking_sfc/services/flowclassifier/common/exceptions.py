@@ -30,4 +30,4 @@ class FlowClassifierException(exceptions.NeutronException):
 
 class FlowClassifierBadRequest(exceptions.BadRequest, FlowClassifierException):
     """Base for flow classifier driver bad request exceptions."""
-    pass
+    message = _("%(message)s")

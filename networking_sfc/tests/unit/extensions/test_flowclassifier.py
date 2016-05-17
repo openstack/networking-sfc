@@ -100,8 +100,8 @@ class FlowClassifierExtensionTestCase(
                 'destination_ip_prefix'),
             'source_ip_prefix': data['flow_classifier'].get(
                 'source_ip_prefix'),
-            'logical_source_port': data['flow_classifier'][
-                'logical_source_port'],
+            'logical_source_port': data['flow_classifier'].get(
+                'logical_source_port'),
             'logical_destination_port': data['flow_classifier'].get(
                 'logical_destination_port'),
             'ethertype': data['flow_classifier'].get(
@@ -243,7 +243,7 @@ class FlowClassifierExtensionTestCase(
 
     def test_create_flow_classifier_logical_source_port(self):
         for logical_source_port in [
-            _uuid()
+            None, _uuid()
         ]:
             flowclassifier_id = _uuid()
             data = {'flow_classifier': {
@@ -273,7 +273,6 @@ class FlowClassifierExtensionTestCase(
         ]:
             flowclassifier_id = _uuid()
             data = {'flow_classifier': {
-                'logical_source_port': _uuid(),
                 'logical_destination_port': logical_destination_port,
                 'tenant_id': _uuid(),
             }}
@@ -489,17 +488,6 @@ class FlowClassifierExtensionTestCase(
         data = {'flow_classifier': {
             'source_ip_prefix': '10.0.0.0/33',
             'logical_source_port': _uuid(),
-            'tenant_id': _uuid()
-        }}
-        self.assertRaises(
-            webtest.app.AppError,
-            self.api.post,
-            _get_path(FLOW_CLASSIFIER_PATH, fmt=self.fmt),
-            self.serialize(data),
-            content_type='application/%s' % self.fmt)
-
-    def test_create_flow_classifier_no_logical_source_port(self):
-        data = {'flow_classifier': {
             'tenant_id': _uuid()
         }}
         self.assertRaises(

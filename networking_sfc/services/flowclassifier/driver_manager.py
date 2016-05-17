@@ -100,3 +100,7 @@ class FlowClassifierDriverManager(stevedore.named.NamedExtensionManager):
 
     def delete_flow_classifier(self, context):
         self._call_drivers("delete_flow_classifier", context)
+
+    def create_flow_classifier_precommit(self, context):
+        """Driver precommit before the db transaction committed."""
+        self._call_drivers("create_flow_classifier_precommit", context)
