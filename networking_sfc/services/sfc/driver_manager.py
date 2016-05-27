@@ -70,9 +70,6 @@ class SfcDriverManager(stevedore.named.NamedExtensionManager):
 
         :param method_name: name of the method to call
         :param context: context parameter to pass to each method call
-        :param continue_on_failure: whether or not to continue to call
-        all SFC drivers once one has raised an exception
-        if any SFC driver call fails.
         """
         for driver in self.ordered_drivers:
             try:
