@@ -390,7 +390,7 @@ class SfcDbPlugin(
                 ingress=ingress['id']
             )
         if 'device_id' not in egress or not egress['device_id']:
-            raise ext_sfc.PortpairEgressNoHost(
+            raise ext_sfc.PortPairEgressNoHost(
                 egress=egress['id']
             )
         if ingress['device_id'] != egress['device_id']:
