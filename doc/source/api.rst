@@ -348,7 +348,7 @@ Port Chain resource:
 +----------------+----------+--------+---------+----+-------------------------+
 |description     |string    |RW, all |''       |CRU |Port Chain description.  |
 +----------------+----------+--------+---------+----+-------------------------+
-|port_pair_groups|list(uuid)|RW, all |N/A      |CR  |List of port-pair-groups.|
+|port_pair_groups|list(uuid)|RW, all |N/A      |CRU |List of port-pair-groups.|
 +----------------+----------+--------+---------+----+-------------------------+
 |flow_classifiers|list(uuid)|RW, all |[]       |CRU |List of flow-classifiers.|
 +----------------+----------+--------+---------+----+-------------------------+
