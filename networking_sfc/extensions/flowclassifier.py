@@ -17,6 +17,7 @@ from abc import abstractmethod
 
 import six
 
+from neutron_lib.api import converters
 from neutron_lib import exceptions as neutron_exc
 from oslo_config import cfg
 
@@ -145,7 +146,7 @@ def normalize_port_value(port):
 
 
 def normalize_l7parameters(parameters):
-    parameters = attr.convert_none_to_empty_dict(parameters)
+    parameters = converters.convert_none_to_empty_dict(parameters)
     if not parameters:
         return DEFAULT_L7_PARAMETER
     for key, value in six.iteritems(parameters):
