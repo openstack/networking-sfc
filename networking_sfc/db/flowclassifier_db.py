@@ -15,6 +15,7 @@
 import netaddr
 import six
 
+from neutron_lib import constants as const
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_utils import uuidutils
@@ -24,7 +25,6 @@ from sqlalchemy import orm
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm import exc
 
-from neutron.common import constants as const
 from neutron.db import common_db_mixin
 from neutron.db import model_base
 from neutron.db import models_v2
