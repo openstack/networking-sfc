@@ -95,7 +95,7 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
         except fc_exc.FlowClassfierDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Delete port pair group failed, "
+                LOG.error(_LE("Delete flow classifier failed, "
                               "flow_classifier '%s'"),
                           fc_id)
 
