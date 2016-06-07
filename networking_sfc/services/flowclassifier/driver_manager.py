@@ -68,14 +68,13 @@ class FlowClassifierDriverManager(stevedore.named.NamedExtensionManager):
             self.native_bulk_support &= getattr(driver.obj,
                                                 'native_bulk_support', True)
 
-    def _call_drivers(self, method_name, context):
+    def _call_drivers(self, method_name, context, raise_orig_exc=False):
         """Helper method for calling a method across all drivers.
 
         :param method_name: name of the method to call
         :param context: context parameter to pass to each method call
-        :param continue_on_failure: whether or not to continue to call
-        all SFC drivers once one has raised an exception
-        if any Flow Classifier driver call fails.
+        :param raise_orig_exc: whether or not to raise the original
+        driver exception, or use a general one
         """
         for driver in self.ordered_drivers:
             try:
@@ -88,9 +87,12 @@ class FlowClassifierDriverManager(stevedore.named.NamedExtensionManager):
                         "failed in %(method)s"),
                     {'name': driver.name, 'method': method_name}
                 )
-                raise fc_exc.FlowClassifierDriverError(
-                    method=method_name
-                )
+                if raise_orig_exc:
+                    raise e
+                else:
+                    raise fc_exc.FlowClassifierDriverError(
+                        method=method_name
+                    )
 
     def create_flow_classifier(self, context):
         self._call_drivers("create_flow_classifier", context)
@@ -103,4 +105,5 @@ class FlowClassifierDriverManager(stevedore.named.NamedExtensionManager):
 
     def create_flow_classifier_precommit(self, context):
         """Driver precommit before the db transaction committed."""
-        self._call_drivers("create_flow_classifier_precommit", context)
+        self._call_drivers("create_flow_classifier_precommit", context,
+                           raise_orig_exc=True)
