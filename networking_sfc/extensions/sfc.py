@@ -17,6 +17,7 @@ from abc import abstractmethod
 
 import six
 
+from neutron_lib.api import converters
 from neutron_lib import exceptions as neutron_exc
 from oslo_config import cfg
 
@@ -121,14 +122,14 @@ def normalize_string(value):
 
 
 def normalize_port_pair_groups(port_pair_groups):
-    port_pair_groups = attr.convert_to_list(port_pair_groups)
+    port_pair_groups = converters.convert_to_list(port_pair_groups)
     if not port_pair_groups:
         raise PortPairGroupNotSpecified()
     return port_pair_groups
 
 
 def normalize_chain_parameters(parameters):
-    parameters = attr.convert_none_to_empty_dict(parameters)
+    parameters = converters.convert_none_to_empty_dict(parameters)
     if not parameters:
         return DEFAULT_CHAIN_PARAMETER
     for key, value in six.iteritems(parameters):
@@ -138,7 +139,7 @@ def normalize_chain_parameters(parameters):
 
 
 def normalize_sf_parameters(parameters):
-    parameters = attr.convert_none_to_empty_dict(parameters)
+    parameters = converters.convert_none_to_empty_dict(parameters)
     if not parameters:
         return DEFAULT_SF_PARAMETER
     for key, value in six.iteritems(parameters):
@@ -213,7 +214,7 @@ RESOURCE_ATTRIBUTE_MAP = {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': None,
             'validate': {'type:uuid_list': None},
-            'convert_to': attr.convert_to_list},
+            'convert_to': converters.convert_to_list},
         'chain_parameters': {
             'allow_post': True, 'allow_put': False,
             'is_visible': True, 'default': None,
@@ -245,7 +246,7 @@ RESOURCE_ATTRIBUTE_MAP = {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': None,
             'validate': {'type:uuid_list': None},
-            'convert_to': attr.convert_none_to_empty_list},
+            'convert_to': converters.convert_none_to_empty_list},
     },
 }
 
