@@ -81,11 +81,11 @@ SF1 has ports p1 and p2, SF2 has ports p3 and p4, and SF3 has ports p5 and p6.
 In order to create a chain, the user needs to have the actual port objects.
 The work flow would typically be:
 
-a) create the ports
-b) create the chain
-c) boot the vm's passing the ports as nic's parameters
+1. create the ports
+2. create the chain
+3. boot the vm's passing the ports as nic's parameters
 
-The sequence of b) and c) can be switched.
+The sequence of 2. and 3. can be switched.
 
 A SF's Neutron port may be associated with more than one Port Chain to allow
 a service function to be shared by multiple chains.
