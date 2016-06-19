@@ -84,7 +84,7 @@ class FlowClassifierDriverManager(stevedore.named.NamedExtensionManager):
                 # This is an internal failure.
                 LOG.exception(e)
                 LOG.error(
-                    _LE("Flow Classifier driver '%(name)s'"
+                    _LE("Flow Classifier driver '%(name)s' "
                         "failed in %(method)s"),
                     {'name': driver.name, 'method': method_name}
                 )
