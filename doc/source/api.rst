@@ -71,11 +71,11 @@ For example, [{'p1': 'p2'}, {'p3': 'p4'}, {'p5': 'p6'}] represents::
        +------+     +------+     +------+
        | SF1  |     | SF2  |     | SF3  |
        +------+     +------+     +------+
-       p1|  |p2     p3|  |p4      p5| |P6
+       p1|  |p2     p3|  |p4      p5| |p6
          |  |         |  |          | |
     ->---+  +---------+  +----------+ +---->
 
-where P1 is the head of the Port Chain and P6 is the tail of the Port Chain, and
+where p1 is the head of the Port Chain and p6 is the tail of the Port Chain, and
 SF1 has ports p1 and p2, SF2 has ports p3 and p4, and SF3 has ports p5 and p6.
 
 In order to create a chain, the user needs to have the actual port objects.
