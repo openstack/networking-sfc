@@ -125,7 +125,7 @@ class DriverManagerTestCase(base.BaseTestCase):
         }) as manager:
             mocked_context = mock.Mock()
             self.assertRaises(
-                fc_exc.FlowClassifierDriverError,
+                fc_exc.FlowClassifierException,
                 manager.create_flow_classifier_precommit, mocked_context
             )
 
