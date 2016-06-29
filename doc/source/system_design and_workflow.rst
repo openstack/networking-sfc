@@ -113,8 +113,9 @@ vm2. The user can be an Admin/Tenant or an Application built on top.
 Traffic flow into the Port Chain will be from source IP address
 22.1.20.1 TCP port 23 to destination IP address 171.4.5.6 TCP port 100.
 The flow needs to be treated by SF1 running on VM1 identified by
-Neutron port pair [p1, p2] and SF2 running on VM2 identified by Neutron
-port pair [p3, p4].
+Neutron port pair [p1, p2], SF2 running on VM2 identified by Neutron
+port pair [p3, p4], and SF3 running on VM3 identified by Neutron port
+pair [p5, p6].
 
 The net1 should be created before creating Neutron port using existing
 Neutron API. The design has no restriction on the type of net1, i.e. it
@@ -142,6 +143,8 @@ Create Neutron ports on network net1::
    neutron port-create --name p2 net1
    neutron port-create --name p3 net1
    neutron port-create --name p4 net1
+   neutron port-create --name p5 net1
+   neutron port-create --name p6 net1
 
 Boot VM1 from Nova with ports p1 and p2 using two --nic options::
 
@@ -151,6 +154,10 @@ Boot VM2 from Nova with ports p3 and p4 using two --nic options::
 
  nova boot --image yyy --nic port-id=p3-id --nic port-id=p4-id vm2 --flavor <image-flavour>
 
+Boot VM3 from Nova with ports p5 and p6 using two --nic options::
+
+ nova boot --image zzz --nic port-id=p5-id --nic port-id=p6-id vm3 --flavor <image-flavour>
+
 Alternatively, the user can create each VM with one VNIC and then
 attach another Neutron port to the VM::
 
@@ -158,8 +165,10 @@ attach another Neutron port to the VM::
  nova interface-attach --port-id p2-id vm1
  nova boot --image yyy --nic port-id=p3-id vm2
  nova interface-attach --port-id p4-id vm2
+ nova boot --image zzz --nic port-id=p5-id vm3
+ nova interface-attach --port-id p6-id vm3
 
-Once the Neutron ports p1 - p4 exist, the Port Chain is created using
+Once the Neutron ports p1 - p6 exist, the Port Chain is created using
 the steps described below.
 
 Create Flow Classifier
