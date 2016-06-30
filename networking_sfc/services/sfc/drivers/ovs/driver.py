@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
-
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
@@ -31,7 +29,6 @@ from neutron.plugins.ml2.drivers.l2pop import rpc as l2pop_rpc
 from networking_sfc._i18n import _LE, _LW
 from networking_sfc.extensions import flowclassifier
 from networking_sfc.extensions import sfc
-from networking_sfc.services.sfc.common import exceptions as exc
 from networking_sfc.services.sfc.drivers import base as driver_base
 from networking_sfc.services.sfc.drivers.ovs import(
     rpc_topics as sfc_topics)
@@ -67,54 +64,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         self.conn = n_rpc.create_connection()
         self.conn.create_consumer(self.topic, self.endpoints, fanout=False)
         self.conn.consume_in_threads()
-
-    def _get_subnet(self, core_plugin, tenant_id, cidr):
-        filters = {'tenant_id': [tenant_id]}
-        subnets = core_plugin.get_subnets(self.admin_context, filters=filters)
-        cidr_set = netaddr.IPSet([cidr])
-
-        for subnet in subnets:
-            subnet_cidr_set = netaddr.IPSet([subnet['cidr']])
-            if cidr_set.issubset(subnet_cidr_set):
-                return subnet
-
-    def _get_fc_dst_subnet_gw_port(self, fc):
-        core_plugin = manager.NeutronManager.get_plugin()
-        subnet = self._get_subnet(core_plugin,
-                                  fc['tenant_id'],
-                                  fc['destination_ip_prefix'])
-
-        return self._get_port_subnet_gw_info(core_plugin, subnet)
-
-    def _get_port_subnet_gw_info_by_port_id(self, id):
-        core_plugin = manager.NeutronManager.get_plugin()
-        subnet = self._get_subnet_by_port(core_plugin, id)
-        return self._get_port_subnet_gw_info(core_plugin,
-                                             subnet)
-
-    def _get_port_subnet_gw_info(self, core_plugin, subnet):
-        filters = dict(fixed_ips=dict(subnet_id=[subnet["id"]]),
-                       tenant_id=[subnet['tenant_id']])
-        gw_ports = core_plugin.get_ports(self.admin_context, filters=filters)
-        if gw_ports is not None:
-            for gw_port in gw_ports:
-                if gw_port['device_owner'] in nc_const.ROUTER_INTERFACE_OWNERS:
-                    return (gw_port['mac_address'],
-                            subnet['cidr'],
-                            subnet['network_id'])
-        raise exc.SfcNoSubnetGateway(
-            type='subnet gateway',
-            cidr=subnet['cidr'])
-
-    def _get_subnet_by_port(self, core_plugin, id):
-        port = core_plugin.get_port(self.admin_context, id)
-        for ip in port['fixed_ips']:
-            subnet = core_plugin.get_subnet(self.admin_context,
-                                            ip["subnet_id"])
-            # currently only support one subnet for a port
-            break
-
-        return subnet
 
     def _get_port_infos(self, port, segment, agent_host):
         if not agent_host:
@@ -284,132 +233,61 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
     @log_helpers.log_method_call
     def _add_flowclassifier_port_assoc(self, fc_ids, tenant_id,
-                                       src_node, dst_node,
-                                       last_sf_node=None):
-        dst_ports = []
+                                       src_node):
         for fc in self._get_fcs_by_ids(fc_ids):
-            if fc.get('logical_source_port', ''):
-                need_assoc = True
-                # lookup the source port
-                src_pd_filter = dict(egress=fc['logical_source_port'],
-                                     tenant_id=tenant_id
-                                     )
-                src_pd = self.get_port_detail_by_filter(src_pd_filter)
+            need_assoc = True
+            # lookup the source port
+            src_pd_filter = dict(
+                egress=fc['logical_source_port'],
+                tenant_id=tenant_id
+            )
+            src_pd = self.get_port_detail_by_filter(src_pd_filter)
 
-                if not src_pd:
-                    # Create source port detail
-                    src_pd = self._create_port_detail(src_pd_filter)
-                    LOG.debug('create src port detail: %s', src_pd)
-                else:
-                    for path_node in src_pd['path_nodes']:
-                        if path_node['pathnode_id'] == src_node['id']:
-                            need_assoc = False
-                if need_assoc:
-                    # Create associate relationship
-                    assco_args = {'portpair_id': src_pd['id'],
-                                  'pathnode_id': src_node['id'],
-                                  'weight': 1,
-                                  }
-                    sna = self.create_pathport_assoc(assco_args)
-                    LOG.debug('create assoc src port with node: %s', sna)
-                    src_node['portpair_details'].append(src_pd['id'])
-
-            if fc.get('logical_destination_port', ''):
-                need_assoc = True
-                dst_pd_filter = dict(ingress=fc['logical_destination_port'],
-                                     tenant_id=tenant_id
-                                     )
-                dst_pd = self.get_port_detail_by_filter(dst_pd_filter)
-
-                if not dst_pd:
-                    # Create dst port detail
-                    dst_pd = self._create_port_detail(dst_pd_filter)
-                    LOG.debug('create dst port detail: %s', dst_pd)
-                else:
-                    for path_node in dst_pd['path_nodes']:
-                        if path_node['pathnode_id'] == dst_node['id']:
-                            need_assoc = False
-                if need_assoc:
-                    # Create associate relationship
-                    dst_assco_args = {'portpair_id': dst_pd['id'],
-                                      'pathnode_id': dst_node['id'],
-                                      'weight': 1,
-                                      }
-                    dna = self.create_pathport_assoc(dst_assco_args)
-                    LOG.debug('create assoc dst port with node: %s', dna)
-                    dst_node['portpair_details'].append(dst_pd['id'])
-
-                dst_ports.append(dict(portpair_id=dst_pd['id'], weight=1))
-
-        if last_sf_node and dst_ports is not None:
-            if last_sf_node['next_hop']:
-                next_hops = jsonutils.loads(last_sf_node['next_hop'])
-                next_hops.extend(dst_ports)
-                last_sf_node['next_hop'] = jsonutils.dumps(next_hops)
-            # update nexthop info of pre node
-            self.update_path_node(last_sf_node['id'],
-                                  last_sf_node)
-        return dst_ports
+            if not src_pd:
+                # Create source port detail
+                src_pd = self._create_port_detail(src_pd_filter)
+                LOG.debug('create src port detail: %s', src_pd)
+            else:
+                for path_node in src_pd['path_nodes']:
+                    if path_node['pathnode_id'] == src_node['id']:
+                        need_assoc = False
+            if need_assoc:
+                # Create associate relationship
+                assco_args = {
+                    'portpair_id': src_pd['id'],
+                    'pathnode_id': src_node['id'],
+                    'weight': 1,
+                }
+                sna = self.create_pathport_assoc(assco_args)
+                LOG.debug('create assoc src port with node: %s', sna)
+                src_node['portpair_details'].append(src_pd['id'])
 
     def _remove_flowclassifier_port_assoc(self, fc_ids, tenant_id,
-                                          src_node=None, dst_node=None,
-                                          last_sf_node=None):
-        update_last_sf = False
+                                          src_node):
         if not fc_ids:
             return
         for fc in self._get_fcs_by_ids(fc_ids):
-            if fc.get('logical_source_port', ''):
-                # delete source port detail
-                src_pd_filter = dict(egress=fc['logical_source_port'],
-                                     tenant_id=tenant_id
-                                     )
-                pds = self.get_port_details_by_filter(src_pd_filter)
-                if pds:
-                    for pd in pds:
-                        # update src_node portpair_details refence info
-                        if src_node and pd['id'] in src_node[
-                            'portpair_details'
-                        ]:
-                            src_node['portpair_details'].remove(pd['id'])
-                            if len(pd['path_nodes']) == 1:
-                                self.delete_port_detail(pd['id'])
-
-            if fc.get('logical_destination_port', ''):
-                # Create dst port detail
-                dst_pd_filter = dict(ingress=fc['logical_destination_port'],
-                                     tenant_id=tenant_id
-                                     )
-                pds = self.get_port_details_by_filter(dst_pd_filter)
-                if pds:
-                    for pd in pds:
-                        # update dst_node portpair_details refence info
-                        if dst_node and pd['id'] in dst_node[
-                            'portpair_details'
-                        ]:
-                            # update portpair_details of this node
-                            dst_node['portpair_details'].remove(pd['id'])
-                            # update last hop(SF-group) next hop info
-                            if last_sf_node:
-                                next_hop = dict(portpair_id=pd['id'],
-                                                weight=1)
-                                next_hops = jsonutils.loads(
-                                    last_sf_node['next_hop'])
-                                next_hops.remove(next_hop)
-                                last_sf_node['next_hop'] = jsonutils.dumps(
-                                    next_hops)
-                                update_last_sf = True
-                            if len(pd['path_nodes']) == 1:
-                                self.delete_port_detail(pd['id'])
-
-        if last_sf_node and update_last_sf:
-            # update nexthop info of pre node
-            self.update_path_node(last_sf_node['id'],
-                                  last_sf_node)
+            # delete source port detail
+            src_pd_filter = dict(
+                egress=fc['logical_source_port'],
+                tenant_id=tenant_id
+            )
+            pds = self.get_port_details_by_filter(src_pd_filter)
+            if pds:
+                for pd in pds:
+                    # update src_node portpair_details refence info
+                    if src_node and pd['id'] in src_node[
+                        'portpair_details'
+                    ]:
+                        self.delete_pathport_assoc(src_node['id'], pd['id'])
+                        src_node['portpair_details'].remove(pd['id'])
+                        if len(pd['path_nodes']) == 1:
+                            self.delete_port_detail(pd['id'])
 
     @log_helpers.log_method_call
     def _create_portchain_path(self, context, port_chain):
         src_node, src_pd, dst_node, dst_pd = (({}, ) * 4)
-        path_nodes, dst_ports = [], []
+        path_nodes = []
         # Create an assoc object for chain_id and path_id
         # context = context._plugin_context
         path_id = self.id_pool.assign_intid('portchain', port_chain['id'])
@@ -452,11 +330,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         LOG.debug('create dst node: %s', dst_node)
         path_nodes.append(dst_node)
 
-        dst_ports = self._add_flowclassifier_port_assoc(
+        self._add_flowclassifier_port_assoc(
             port_chain['flow_classifiers'],
             port_chain['tenant_id'],
-            src_node,
-            dst_node
+            src_node
         )
 
         for i in range(sf_path_length):
@@ -469,7 +346,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 )
             else:
                 next_group_intid = None
-                next_group_members = None if not dst_ports else dst_ports
+                next_group_members = None
 
             # Create a node object
             node_args = {
@@ -528,25 +405,13 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
     @log_helpers.log_method_call
     def _delete_portchain_path(self, context, port_chain):
-        first = self.get_path_node_by_filter(
-            filters={
-                'portchain_id': port_chain['id'],
-                'nsi': 0xff
-            }
-        )
-
-        # delete flow rules which source port isn't assigned
-        # in flow classifier
-        if first:
-            self._delete_src_node_flowrules(
-                first,
-                port_chain['flow_classifiers']
-            )
-
         pds = self.get_path_nodes_by_filter(
             dict(portchain_id=port_chain['id']))
+        src_node = None
         if pds:
             for pd in pds:
+                if pd['node_type'] == ovs_const.SRC_NODE:
+                    src_node = pd
                 self._delete_path_node_flowrule(
                     pd,
                     port_chain['flow_classifiers']
@@ -557,7 +422,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         # delete the ports on the traffic classifier
         self._remove_flowclassifier_port_assoc(
             port_chain['flow_classifiers'],
-            port_chain['tenant_id']
+            port_chain['tenant_id'],
+            src_node
         )
 
         # Delete the chainpathpair
@@ -572,6 +438,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         next_hops = jsonutils.loads(flow_rule['next_hop'])
         if not next_hops:
             return None
+        core_plugin = manager.NeutronManager.get_plugin()
         for member in next_hops:
             detail = {}
             port_detail = self.get_port_detail_by_filter(
@@ -583,12 +450,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             detail['mac_address'] = port_detail['mac_address']
             detail['segment_id'] = port_detail['segment_id']
             detail['network_type'] = port_detail['network_type']
-            mac, cidr, net_uuid = self._get_port_subnet_gw_info_by_port_id(
-                port_detail['ingress']
-            )
-            detail['gw_mac'] = mac
-            detail['cidr'] = cidr
-            detail['net_uuid'] = net_uuid
+            port = core_plugin.get_port(
+                self.admin_context, port_detail['ingress'])
+            detail['net_uuid'] = port['network_id']
             node_next_hops.append(detail)
         flow_rule['next_hops'] = node_next_hops
         flow_rule.pop('next_hop')
@@ -641,12 +505,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             new_fc.pop('tenant_id')
             new_fc.pop('description')
 
-            if ((flow_rule['node_type'] == ovs_const.SRC_NODE and
-                 flow_rule['egress'] == fc['logical_source_port']
-                 ) or
-                (flow_rule['node_type'] == ovs_const.DST_NODE and
-                 flow_rule['ingress'] == fc['logical_destination_port']
-                 )):
+            if (
+                flow_rule['node_type'] == ovs_const.SRC_NODE and
+                flow_rule['egress'] == fc['logical_source_port']
+            ):
                 fc_return.append(new_fc)
             elif flow_rule['node_type'] == ovs_const.SF_NODE:
                 fc_return.append(new_fc)
@@ -681,11 +543,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 self._update_path_node_port_flowrules(
                     node, port, add_fc_ids, del_fc_ids)
 
-    def _thread_update_path_nodes(self, nodes,
-                                  add_fc_ids=None, del_fc_ids=None):
+    def _update_path_nodes(self, nodes,
+                           add_fc_ids=None, del_fc_ids=None):
         for node in nodes:
             self._update_path_node_flowrules(node, add_fc_ids, del_fc_ids)
-        self._update_src_node_flowrules(nodes[0], add_fc_ids, del_fc_ids)
 
     def _get_portchain_fcs(self, port_chain):
         return self._get_fcs_by_ids(port_chain['flow_classifiers'])
@@ -714,10 +575,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def create_port_chain(self, context):
         port_chain = context.current
         path_nodes = self._create_portchain_path(context, port_chain)
-
-        # notify agent with async thread
-        # current we don't use greenthread.spawn
-        self._thread_update_path_nodes(
+        self._update_path_nodes(
             path_nodes,
             port_chain['flow_classifiers'],
             None)
@@ -743,7 +601,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         orig = context.original
         self._delete_portchain_path(context, orig)
         path_nodes = self._create_portchain_path(context, port_chain)
-        self._thread_update_path_nodes(
+        self._update_path_nodes(
             path_nodes,
             port_chain['flow_classifiers'],
             None)
@@ -798,11 +656,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             )
             # update next hop to database
             self.update_path_node(prev_node['id'], prev_node)
-            if prev_node['node_type'] == ovs_const.SRC_NODE:
-                self._delete_src_node_flowrules(
-                    before_update_prev_node, port_chain['flow_classifiers'])
-                self._update_src_node_flowrules(
-                    prev_node, port_chain['flow_classifiers'], None)
             self._delete_path_node_flowrule(
                 before_update_prev_node, port_chain['flow_classifiers'])
             self._update_path_node_flowrules(
@@ -1029,106 +882,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         except Exception as e:
             LOG.exception(e)
             LOG.error(_LE("update_flowrule_status failed"))
-
-    def _update_src_node_flowrules(self, node,
-                                   add_fc_ids=None, del_fc_ids=None):
-        flow_rule = self._get_portchain_src_node_flowrule(node,
-                                                          add_fc_ids,
-                                                          del_fc_ids)
-        if not flow_rule:
-            return
-
-        core_plugin = manager.NeutronManager.get_plugin()
-        pc_agents = core_plugin.get_agents(
-            self.admin_context,
-            filters={'agent_type': [nc_const.AGENT_TYPE_OVS]})
-        if not pc_agents:
-            return
-
-        for agent in pc_agents:
-            if agent['alive']:
-                # update host info to flow rule
-                flow_rule['host'] = agent['host']
-                self.ovs_driver_rpc.ask_agent_to_update_src_node_flow_rules(
-                    self.admin_context,
-                    flow_rule)
-
-    def _delete_src_node_flowrules(self, node, del_fc_ids=None):
-        flow_rule = self._get_portchain_src_node_flowrule(node,
-                                                          None, del_fc_ids)
-        if not flow_rule:
-            return
-
-        core_plugin = manager.NeutronManager.get_plugin()
-        pc_agents = core_plugin.get_agents(
-            self.admin_context, filters={
-                'agent_type': [nc_const.AGENT_TYPE_OVS]})
-        if not pc_agents:
-            return
-
-        for agent in pc_agents:
-            if agent['alive']:
-                # update host info to flow rule
-                self._update_portchain_group_reference_count(flow_rule,
-                                                             agent['host'])
-                self.ovs_driver_rpc.ask_agent_to_delete_src_node_flow_rules(
-                    self.admin_context,
-                    flow_rule)
-
-    def get_all_src_node_flowrules(self, context):
-        sfc_plugin = (
-            manager.NeutronManager.get_service_plugins().get(
-                sfc.SFC_EXT
-            )
-        )
-        if not sfc_plugin:
-            return []
-        try:
-            frs = []
-            port_chains = sfc_plugin.get_port_chains(context)
-
-            for port_chain in port_chains:
-                # get the first node of this chain
-                node_filters = dict(portchain_id=port_chain['id'], nsi=0xff)
-                portchain_node = self.get_path_node_by_filter(node_filters)
-                if not portchain_node:
-                    continue
-                flow_rule = self._get_portchain_src_node_flowrule(
-                    portchain_node,
-                    port_chain['flow_classifiers']
-                )
-                if not flow_rule:
-                    continue
-                frs.append(flow_rule)
-            return frs
-        except Exception as e:
-            LOG.exception(e)
-            LOG.error(_LE("get_all_src_node_flowrules failed"))
-
-    def _get_portchain_src_node_flowrule(self, node,
-                                         add_fc_ids=None, del_fc_ids=None):
-        try:
-            add_fc_rt = []
-            del_fc_rt = []
-
-            if add_fc_ids:
-                for fc in self._get_fcs_by_ids(add_fc_ids):
-                    if not fc.get('logical_source_port', None):
-                        add_fc_rt.append(fc)
-
-            if del_fc_ids:
-                for fc in self._get_fcs_by_ids(del_fc_ids):
-                    if not fc.get('logical_source_port', None):
-                        del_fc_rt.append(fc)
-
-            if not add_fc_rt and not del_fc_rt:
-                return None
-
-            return self._build_portchain_flowrule_body_without_port(
-                node, add_fc_rt, del_fc_rt)
-        except Exception as e:
-            LOG.exception(e)
-            LOG.error(_LE("_get_portchain_src_node_flowrule failed"))
 
     def _update_portchain_group_reference_count(self, flow_rule, host):
         group_refcnt = 0
