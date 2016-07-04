@@ -57,7 +57,7 @@ class SfcDbPluginTestCaseBase(
         )
         res = req.get_response(self.ext_api)
         if expected_res_status:
-            self.assertEqual(res.status_int, expected_res_status)
+            self.assertEqual(expected_res_status, res.status_int)
         return res
 
     @contextlib.contextmanager
@@ -86,7 +86,7 @@ class SfcDbPluginTestCaseBase(
         )
         res = req.get_response(self.ext_api)
         if expected_res_status:
-            self.assertEqual(res.status_int, expected_res_status)
+            self.assertEqual(expected_res_status, res.status_int)
         return res
 
     @contextlib.contextmanager
@@ -119,7 +119,7 @@ class SfcDbPluginTestCaseBase(
         )
         res = req.get_response(self.ext_api)
         if expected_res_status:
-            self.assertEqual(res.status_int, expected_res_status)
+            self.assertEqual(expected_res_status, res.status_int)
         return res
 
     @contextlib.contextmanager
@@ -755,7 +755,7 @@ class SfcDbPluginTestCase(
             'port_chains', '1'
         )
         res = req.get_response(self.ext_api)
-        self.assertEqual(res.status_int, 404)
+        self.assertEqual(404, res.status_int)
 
     def test_update_port_chain_add_flow_classifiers(self):
         with self.port(
@@ -1002,7 +1002,7 @@ class SfcDbPluginTestCase(
                             pc2['port_chain']['id']
                         )
                         res = req.get_response(self.ext_api)
-                        self.assertEqual(res.status_int, 400)
+                        self.assertEqual(400, res.status_int)
 
     def test_update_port_chain_port_pair_groups(self):
         with self.port_pair_group(
@@ -1091,7 +1091,7 @@ class SfcDbPluginTestCase(
                     pc['port_chain']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 400)
+                self.assertEqual(400, res.status_int)
 
     def test_delete_port_chain(self):
         with self.port_pair_group(
@@ -1104,24 +1104,24 @@ class SfcDbPluginTestCase(
                     'port_chains', pc['port_chain']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 204)
+                self.assertEqual(204, res.status_int)
                 req = self.new_show_request(
                     'port_chains', pc['port_chain']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 404)
+                self.assertEqual(404, res.status_int)
                 req = self.new_show_request(
                     'port_pair_groups', pg['port_pair_group']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 200)
+                self.assertEqual(200, res.status_int,)
 
     def test_delete_port_chain_noexist(self):
         req = self.new_delete_request(
             'port_chains', '1'
         )
         res = req.get_response(self.ext_api)
-        self.assertEqual(res.status_int, 404)
+        self.assertEqual(404, res.status_int)
 
     def test_delete_flow_classifier_port_chain_exist(self):
         with self.port(
@@ -1140,7 +1140,7 @@ class SfcDbPluginTestCase(
                             'flow_classifiers', fc['flow_classifier']['id']
                         )
                         res = req.get_response(self.ext_api)
-                        self.assertEqual(res.status_int, 409)
+                        self.assertEqual(409, res.status_int)
 
     def test_create_port_pair_group(self):
         self._test_create_port_pair_group({})
@@ -1280,7 +1280,7 @@ class SfcDbPluginTestCase(
             'port_pair_groups', '1'
         )
         res = req.get_response(self.ext_api)
-        self.assertEqual(res.status_int, 404)
+        self.assertEqual(404, res.status_int)
 
     def test_update_port_pair_group(self):
         with self.port(
@@ -1336,12 +1336,12 @@ class SfcDbPluginTestCase(
                 'port_pair_groups', pc['port_pair_group']['id']
             )
             res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, 204)
+            self.assertEqual(204, res.status_int)
             req = self.new_show_request(
                 'port_pair_groups', pc['port_pair_group']['id']
             )
             res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, 404)
+            self.assertEqual(404, res.status_int)
 
     def test_delete_port_pair_group_port_chain_exist(self):
         with self.port_pair_group(port_pair_group={
@@ -1354,14 +1354,14 @@ class SfcDbPluginTestCase(
                     'port_pair_groups', pg['port_pair_group']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 409)
+                self.assertEqual(409, res.status_int)
 
     def test_delete_port_pair_group_noexist(self):
         req = self.new_delete_request(
             'port_pair_groups', '1'
         )
         res = req.get_response(self.ext_api)
-        self.assertEqual(res.status_int, 404)
+        self.assertEqual(404, res.status_int)
 
     def test_create_port_pair(self):
         with self.port(
@@ -1694,7 +1694,7 @@ class SfcDbPluginTestCase(
             'port_pairs', '1'
         )
         res = req.get_response(self.ext_api)
-        self.assertEqual(res.status_int, 404)
+        self.assertEqual(404, res.status_int)
 
     def test_update_port_pair(self):
         with self.port(
@@ -1759,7 +1759,7 @@ class SfcDbPluginTestCase(
                     pc['port_pair']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 400)
+                self.assertEqual(400, res.status_int)
 
     def test_update_port_pair_ingress(self):
         with self.port(
@@ -1783,7 +1783,7 @@ class SfcDbPluginTestCase(
                     pc['port_pair']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 400)
+                self.assertEqual(400, res.status_int)
 
     def test_update_port_pair_egress(self):
         with self.port(
@@ -1807,7 +1807,7 @@ class SfcDbPluginTestCase(
                     pc['port_pair']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 400)
+                self.assertEqual(400, res.status_int)
 
     def test_delete_port_pair(self):
         with self.port(
@@ -1825,19 +1825,19 @@ class SfcDbPluginTestCase(
                     'port_pairs', pc['port_pair']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 204)
+                self.assertEqual(204, res.status_int)
                 req = self.new_show_request(
                     'port_pairs', pc['port_pair']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 404)
+                self.assertEqual(404, res.status_int)
 
     def test_delete_port_pair_noexist(self):
         req = self.new_delete_request(
             'port_pairs', '1'
         )
         res = req.get_response(self.ext_api)
-        self.assertEqual(res.status_int, 404)
+        self.assertEqual(404, res.status_int)
 
     def test_delete_port_pair_port_pair_group_exist(self):
         with self.port(
@@ -1858,7 +1858,7 @@ class SfcDbPluginTestCase(
                         'port_pairs', pp['port_pair']['id']
                     )
                     res = req.get_response(self.ext_api)
-                    self.assertEqual(res.status_int, 409)
+                    self.assertEqual(409, res.status_int)
 
     def test_delete_ingress_port_pair_exist(self):
         with self.port(
@@ -1876,7 +1876,7 @@ class SfcDbPluginTestCase(
                     'ports', src_port['port']['id']
                 )
                 res = req.get_response(self.api)
-                self.assertEqual(res.status_int, 500)
+                self.assertEqual(500, res.status_int)
 
     def test_delete_egress_port_pair_exist(self):
         with self.port(
@@ -1894,4 +1894,4 @@ class SfcDbPluginTestCase(
                     'ports', dst_port['port']['id']
                 )
                 res = req.get_response(self.api)
-                self.assertEqual(res.status_int, 500)
+                self.assertEqual(500, res.status_int)

@@ -53,7 +53,7 @@ class FlowClassifierDbPluginTestCaseBase(base.BaseTestCase):
         )
         res = req.get_response(self.ext_api)
         if expected_res_status:
-            self.assertEqual(res.status_int, expected_res_status)
+            self.assertEqual(expected_res_status, res.status_int)
         return res
 
     @contextlib.contextmanager
@@ -1465,7 +1465,7 @@ class FlowClassifierDbPluginTestCase(
             'flow_classifiers', '1'
         )
         res = req.get_response(self.ext_api)
-        self.assertEqual(res.status_int, 404)
+        self.assertEqual(404, res.status_int)
 
     def test_update_flow_classifier(self):
         with self.port(
@@ -1512,7 +1512,7 @@ class FlowClassifierDbPluginTestCase(
             fc['flow_classifier']['id']
         )
         res = req.get_response(self.ext_api)
-        self.assertEqual(res.status_int, expected_status_code)
+        self.assertEqual(expected_status_code, res.status_int)
 
     def test_update_flow_classifer_unsupported_fields(self):
         with self.port(
@@ -1556,16 +1556,16 @@ class FlowClassifierDbPluginTestCase(
                     'flow_classifiers', fc['flow_classifier']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 204)
+                self.assertEqual(204, res.status_int)
                 req = self.new_show_request(
                     'flow_classifiers', fc['flow_classifier']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 404)
+                self.assertEqual(404, res.status_int)
 
     def test_delete_flow_classifier_noexist(self):
         req = self.new_delete_request(
             'flow_classifiers', '1'
         )
         res = req.get_response(self.ext_api)
-        self.assertEqual(res.status_int, 404)
+        self.assertEqual(404, res.status_int)
