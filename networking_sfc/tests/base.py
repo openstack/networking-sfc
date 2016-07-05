@@ -16,12 +16,13 @@ import contextlib
 import mock
 from oslo_utils import uuidutils
 
+from neutron_lib import constants as nl_const
+
 from neutron.agent import securitygroups_rpc as sg_rpc
 from neutron.api import extensions as api_ext
 from neutron.api.rpc.agentnotifiers import dhcp_rpc_agent_api as dhcp_rpc_log
 from neutron.api.v2 import resource as api_res_log
 from neutron.common import config as cfg
-from neutron.common import constants as nc_const
 from neutron.extensions import vlantransparent as vlan_log
 from neutron import manager
 from neutron.notifiers import nova as nova_log
@@ -71,7 +72,7 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         )
         self._gateway = self._create_port(
             self.fmt, self._network['network']['id'],
-            device_owner=nc_const.DEVICE_OWNER_ROUTER_INTF
+            device_owner=nl_const.DEVICE_OWNER_ROUTER_INTF
         )
 
     def _mock_unncessary_logging(self):
