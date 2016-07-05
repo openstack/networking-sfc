@@ -94,7 +94,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_port_chain.assert_called_with(
             mock.ANY,
             port_chain=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_chain', res)
         self.assertEqual(return_value, res['port_chain'])
@@ -120,7 +120,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_port_chain.assert_called_with(
             mock.ANY,
             port_chain=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_chain', res)
         self.assertEqual(return_value, res['port_chain'])
@@ -143,7 +143,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_port_chain.assert_called_with(
             mock.ANY,
             port_chain=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_chain', res)
         self.assertEqual(return_value, res['port_chain'])
@@ -166,7 +166,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_port_chain.assert_called_with(
             mock.ANY,
             port_chain=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_chain', res)
         self.assertEqual(return_value, res['port_chain'])
@@ -237,10 +237,10 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             fields=mock.ANY,
             filters=mock.ANY
         )
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_chains', res)
-        self.assertEqual(res['port_chains'], return_value)
+        self.assertEqual(return_value, res['port_chains'])
 
     def test_port_chain_get(self):
         portchain_id = _uuid()
@@ -260,7 +260,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             portchain_id,
             fields=mock.ANY
         )
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_chain', res)
         self.assertEqual(return_value, res['port_chain'])
@@ -288,10 +288,10 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.update_port_chain.assert_called_with(
             mock.ANY, portchain_id,
             port_chain=update_data)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_chain', res)
-        self.assertEqual(res['port_chain'], return_value)
+        self.assertEqual(return_value, res['port_chain'])
 
     def test_port_chain_update_nonuuid_flow_classifiers(self):
         portchain_id = _uuid()
@@ -360,7 +360,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_port_pair_group.assert_called_with(
             mock.ANY,
             port_pair_group=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pair_group', res)
         self.assertEqual(return_value, res['port_pair_group'])
@@ -385,7 +385,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_port_pair_group.assert_called_with(
             mock.ANY,
             port_pair_group=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pair_group', res)
         self.assertEqual(return_value, res['port_pair_group'])
@@ -419,10 +419,10 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             fields=mock.ANY,
             filters=mock.ANY
         )
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pair_groups', res)
-        self.assertEqual(res['port_pair_groups'], return_value)
+        self.assertEqual(return_value, res['port_pair_groups'])
 
     def test_port_pair_group_get(self):
         portpairgroup_id = _uuid()
@@ -442,7 +442,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             portpairgroup_id,
             fields=mock.ANY
         )
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pair_group', res)
         self.assertEqual(return_value, res['port_pair_group'])
@@ -471,10 +471,10 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.update_port_pair_group.assert_called_with(
             mock.ANY, portpairgroup_id,
             port_pair_group=update_data)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pair_group', res)
-        self.assertEqual(res['port_pair_group'], return_value)
+        self.assertEqual(return_value, res['port_pair_group'])
 
     def test_port_pair_group_update_nonuuid_port_pairs(self):
         portpairgroup_id = _uuid()
@@ -521,7 +521,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_port_pair.assert_called_with(
             mock.ANY,
             port_pair=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pair', res)
         self.assertEqual(return_value, res['port_pair'])
@@ -547,7 +547,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_port_pair.assert_called_with(
             mock.ANY,
             port_pair=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pair', res)
         self.assertEqual(return_value, res['port_pair'])
@@ -571,7 +571,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_port_pair.assert_called_with(
             mock.ANY,
             port_pair=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pair', res)
         self.assertEqual(return_value, res['port_pair'])
@@ -595,7 +595,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_port_pair.assert_called_with(
             mock.ANY,
             port_pair=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pair', res)
         self.assertEqual(return_value, res['port_pair'])
@@ -656,10 +656,10 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             fields=mock.ANY,
             filters=mock.ANY
         )
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pairs', res)
-        self.assertEqual(res['port_pairs'], return_value)
+        self.assertEqual(return_value, res['port_pairs'])
 
     def test_port_pair_get(self):
         portpair_id = _uuid()
@@ -679,7 +679,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             portpair_id,
             fields=mock.ANY
         )
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pair', res)
         self.assertEqual(return_value, res['port_pair'])
@@ -705,10 +705,10 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.update_port_pair.assert_called_with(
             mock.ANY, portpair_id,
             port_pair=update_data)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('port_pair', res)
-        self.assertEqual(res['port_pair'], return_value)
+        self.assertEqual(return_value, res['port_pair'])
 
     def test_port_pair_update_service_function_parameters(self):
         portpair_id = _uuid()
