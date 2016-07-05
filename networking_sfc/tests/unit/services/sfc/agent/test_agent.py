@@ -22,7 +22,8 @@ from neutron.agent.common import ovs_lib
 from neutron.agent.common import utils
 from neutron.agent import rpc as agent_rpc
 from neutron import context
-from neutron.tests import base
+from neutron.tests.unit.plugins.ml2.drivers.openvswitch.agent \
+    import ovs_test_base
 
 from networking_sfc.services.sfc.agent import agent
 from networking_sfc.services.sfc.agent import br_int
@@ -31,7 +32,7 @@ from networking_sfc.services.sfc.agent import br_tun
 from networking_sfc.services.sfc.common import ovs_ext_lib
 
 
-class OVSSfcAgentTestCase(base.BaseTestCase):
+class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
     def setUp(self):
         super(OVSSfcAgentTestCase, self).setUp()
         mock.patch(
@@ -298,7 +299,7 @@ class OVSSfcAgentTestCase(base.BaseTestCase):
     def mock_get_vlan_by_port(self, port_id):
         return 0
 
-    def mock_get_vif_ports(self):
+    def mock_get_vif_ports(self, ofport_filter):
         vif_ports = []
         for port_id, port_values in six.iteritems(self.port_mapping):
             vif_ports.append(
