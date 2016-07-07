@@ -88,7 +88,7 @@ class FlowClassifierDriverManager(stevedore.named.NamedExtensionManager):
                     {'name': driver.name, 'method': method_name}
                 )
                 if raise_orig_exc:
-                    raise e
+                    raise
                 else:
                     raise fc_exc.FlowClassifierDriverError(
                         method=method_name
