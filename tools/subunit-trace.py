@@ -268,7 +268,7 @@ def parse_args():
                         'debug information in realtime')
     parser.add_argument('--fails', '-f', action='store_true',
                         dest='post_fails', help='Print failure debug '
-                        'information after the stream is proccesed')
+                        'information after the stream is processed')
     parser.add_argument('--failonly', action='store_true',
                         dest='failonly', help="Don't print success items",
                         default=(
@@ -295,7 +295,7 @@ def main():
     finally:
         result.stopTestRun()
     if count_tests('status', '.*') == 0:
-        print("The test run didn't actually run any tests")
+        print("The test run didn't execute any tests")
         return 1
     if args.post_fails:
         print_fails(sys.stdout)
