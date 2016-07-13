@@ -34,7 +34,7 @@ Currently Neutron does not support service function chaining. To support
 service function chaining, Service VMs must be attached at points in the
 network and then traffic must be steered between these attachment
 points. Please refer to `Neutron Service Chain blue-print <https://blueprints.launchpad.net/neutron/+spec/neutron-api-extension-for-service-chaining>`_ and Bugs `[1] <https://bugs.launchpad.net/neutron/+bug/1450617>`_ `[2] <https://bugs.launchpad.net/neutron/+bug/1450625>`_
-releated to this specification for more information.
+related to this specification for more information.
 
 Proposed Change
 ===============
@@ -155,7 +155,7 @@ specified, then no traffic will be steered through the chain.
 One chain parameter option is currently defined. More parameter options can be added
 in future extensions to accommodate new requirements.
 The "correlation" parameter is used to specify the type of chain correlation mechanism.
-This parameter allows different correlation mechanim to be selected.
+This parameter allows different correlation mechanisms to be selected.
 This will be set to "mpls" for now to be consistent with current OVS capability.
 If this parameter is not specified, it will default to "mpls".
 
