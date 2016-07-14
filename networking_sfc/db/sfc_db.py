@@ -83,8 +83,7 @@ class ChainClassifierAssoc(model_base.BASEV2):
     )
 
 
-class PortPair(model_base.BASEV2, models_v2.HasId,
-               models_v2.HasTenant):
+class PortPair(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents the ingress and egress ports for a single service function.
 
     """
@@ -131,8 +130,8 @@ class ChainGroupAssoc(model_base.BASEV2):
     position = sa.Column(sa.Integer)
 
 
-class PortPairGroup(model_base.BASEV2, models_v2.HasId,
-                    models_v2.HasTenant):
+class PortPairGroup(model_base.BASEV2, model_base.HasId,
+                    model_base.HasProject):
     """Represents a port pair group model."""
     __tablename__ = 'sfc_port_pair_groups'
     name = sa.Column(sa.String(NAME_MAX_LEN))
@@ -146,7 +145,7 @@ class PortPairGroup(model_base.BASEV2, models_v2.HasId,
         backref='port_pair_groups')
 
 
-class PortChain(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
+class PortChain(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents a Neutron service function Port Chain."""
     __tablename__ = 'sfc_port_chains'
 

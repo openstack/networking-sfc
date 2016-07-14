@@ -26,7 +26,6 @@ from oslo_utils import uuidutils
 from neutron import context as n_context
 from neutron.db import common_db_mixin
 from neutron.db import model_base
-from neutron.db import models_v2
 
 from networking_sfc._i18n import _
 
@@ -40,7 +39,7 @@ class NodeNotFound(n_exc.NotFound):
 
 
 # name changed to ChainPathId
-class UuidIntidAssoc(model_base.BASEV2, models_v2.HasId):
+class UuidIntidAssoc(model_base.BASEV2, model_base.HasId):
     __tablename__ = 'sfc_uuid_intid_associations'
     uuid = sa.Column(sa.String(36), primary_key=True)
     intid = sa.Column(sa.Integer, unique=True, nullable=False)
@@ -133,8 +132,8 @@ class PathPortAssoc(model_base.BASEV2):
     weight = sa.Column(sa.Integer, nullable=False, default=1)
 
 
-class PortPairDetail(model_base.BASEV2, models_v2.HasId,
-                     models_v2.HasTenant):
+class PortPairDetail(model_base.BASEV2, model_base.HasId,
+                     model_base.HasProject):
     __tablename__ = 'sfc_portpair_details'
     ingress = sa.Column(sa.String(36), nullable=True)
     egress = sa.Column(sa.String(36), nullable=True)
@@ -149,7 +148,7 @@ class PortPairDetail(model_base.BASEV2, models_v2.HasId,
                                   cascade='all,delete')
 
 
-class PathNode(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
+class PathNode(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     __tablename__ = 'sfc_path_nodes'
     nsp = sa.Column(sa.Integer, nullable=False)
     nsi = sa.Column(sa.Integer, nullable=False)
