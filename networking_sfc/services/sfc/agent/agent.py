@@ -15,7 +15,6 @@
 import six
 import sys
 
-from neutron_lib import exceptions
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
@@ -37,16 +36,11 @@ from neutron.plugins.ml2.drivers.openvswitch.agent.common import (
     constants as ovs_const)
 from neutron.plugins.ml2.drivers.openvswitch.agent import ovs_neutron_agent
 
-from networking_sfc._i18n import _, _LE, _LI, _LW
+from networking_sfc._i18n import _LE, _LI, _LW
 
 LOG = logging.getLogger(__name__)
 
-agent_opts = [
-    cfg.StrOpt('sfc_encap_mode', default='mpls',
-               help=_("The encapsulation mode of sfc.")),
-]
 
-cfg.CONF.register_opts(agent_opts, "AGENT")
 cfg.CONF.import_group('OVS', 'neutron.plugins.ml2.drivers.openvswitch.agent.'
                       'common.config')
 
@@ -67,10 +61,6 @@ INGRESS_TABLE = 10
 # port chain default flow rule priority
 PC_DEF_PRI = 20
 PC_INGRESS_PRI = 30
-
-
-class FeatureSupportError(exceptions.NeutronException):
-    message = _("Current sfc agent don't support %(feature)s ")
 
 
 class SfcPluginApi(object):
@@ -110,13 +100,8 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
         super(OVSSfcAgent, self).__init__(
             bridge_classes, conf=conf)
 
-        self.overlay_encap_mode = cfg.CONF.AGENT.sfc_encap_mode
         self._sfc_setup_rpc()
-
-        if self.overlay_encap_mode == 'mpls':
-            self._clear_sfc_flow_on_int_br()
-        else:
-            raise FeatureSupportError(feature=self.overlay_encap_mode)
+        self._clear_sfc_flow_on_int_br()
 
     def _sfc_setup_rpc(self):
         self.sfc_plugin_rpc = SfcPluginApi(
@@ -455,7 +440,7 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
                         )
                     )
                     if flowrule:
-                        self._treat_delete_flow_rules(
+                        self._delete_flow_rule_with_mpls_enc(
                             flowrule, flowrule_status)
             LOG.debug(
                 "_delete_ports_flowrules_by_id received, count= %s", count)
@@ -510,23 +495,16 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
             LOG.exception(e)
             LOG.error(_LE("_delete_flow_rule_with_mpls_enc failed"))
 
-    def _treat_update_flow_rules(self, flowrule, flowrule_status):
-        if self.overlay_encap_mode == 'mpls':
-            self._update_flow_rules_with_mpls_enc(flowrule, flowrule_status)
-
-    def _treat_delete_flow_rules(self, flowrule, flowrule_status):
-        if self.overlay_encap_mode == 'mpls':
-            self._delete_flow_rule_with_mpls_enc(flowrule, flowrule_status)
-
     def update_flow_rules(self, context, **kwargs):
+        flowrule_status = []
         try:
-            flowrule_status = []
             flowrules = kwargs['flowrule_entries']
             LOG.debug("update_flow_rules received,  flowrules = %s",
                       flowrules)
 
             if flowrules:
-                self._treat_update_flow_rules(flowrules, flowrule_status)
+                self._update_flow_rules_with_mpls_enc(
+                    flowrules, flowrule_status)
         except Exception as e:
             LOG.exception(e)
             LOG.error(_LE("update_flow_rules failed"))
@@ -536,12 +514,13 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
                 self.context, flowrule_status)
 
     def delete_flow_rules(self, context, **kwargs):
+        flowrule_status = []
         try:
-            flowrule_status = []
             flowrules = kwargs['flowrule_entries']
             LOG.debug("delete_flow_rules received,  flowrules= %s", flowrules)
             if flowrules:
-                self._treat_delete_flow_rules(flowrules, flowrule_status)
+                self._delete_flow_rule_with_mpls_enc(
+                    flowrules, flowrule_status)
         except Exception as e:
             LOG.exception(e)
             LOG.error(_LE("delete_flow_rules failed"))
@@ -562,7 +541,8 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
             )
             if flows_list:
                 for flow in flows_list:
-                    self._treat_update_flow_rules(flow, flowrule_status)
+                    self._update_flow_rules_with_mpls_enc(
+                        flow, flowrule_status)
         except Exception as e:
             LOG.exception(e)
             LOG.error(_LE("portchain_treat_devices_added_updated failed"))
