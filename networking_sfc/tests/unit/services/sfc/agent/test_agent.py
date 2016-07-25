@@ -587,10 +587,30 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             ]
         )
         self.assertEqual(
-            self.added_flows, self.default_flow_rules + []
+            self.added_flows, self.default_flow_rules + [{
+                'actions': 'normal',
+                'dl_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': u'10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }]
         )
         self.assertEqual(
-            self.deleted_flows, self.default_delete_flow_rules + []
+            self.deleted_flows, self.default_delete_flow_rules + [{
+                'dl_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': u'10.100.0.0/16',
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }]
         )
         self.assertEqual(
             self.group_mapping, {}
@@ -741,14 +761,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.assertEqual(
             self.added_flows, self.default_flow_rules + [{
-                'actions': 'mod_vlan_vid:1,resubmit(,10)',
-                'priority': 1,
-                'table': 4,
-                'tun_id': 33
-            }, {
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
-                    'mod_vlan_vid:1,,output:2'),
+                    'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'dl_type': 2048,
                 'priority': 0,
@@ -834,14 +849,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.assertEqual(
             self.added_flows, self.default_flow_rules + [{
-                'actions': 'mod_vlan_vid:1,resubmit(,10)',
-                'priority': 1,
-                'table': 4,
-                'tun_id': 33
-            }, {
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
-                    'mod_vlan_vid:1,,resubmit(,10)'),
+                    'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'dl_type': 2048,
                 'priority': 0,
@@ -933,14 +943,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.assertEqual(
             self.added_flows, self.default_flow_rules + [{
-                'actions': 'mod_vlan_vid:1,resubmit(,10)',
-                'priority': 1,
-                'table': 4,
-                'tun_id': 33
-            }, {
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
-                    'mod_vlan_vid:1,,output:2'),
+                    'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'dl_type': 2048,
                 'priority': 0,
@@ -1040,14 +1045,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.assertEqual(
             self.added_flows, self.default_flow_rules + [{
-                'actions': 'mod_vlan_vid:1,resubmit(,10)',
-                'priority': 1,
-                'table': 4,
-                'tun_id': 33
-            }, {
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
-                    'mod_vlan_vid:1,,resubmit(,10)'),
+                    'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'dl_type': 2048,
                 'priority': 0,

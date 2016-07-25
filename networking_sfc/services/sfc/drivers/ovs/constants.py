@@ -15,26 +15,13 @@
 from neutron.common import constants as n_const
 
 
-INGRESS_DIR = 'ingress'
-EGRESS_DIR = 'egress'
-
 STATUS_BUILDING = 'building'
 STATUS_ACTIVE = 'active'
 STATUS_ERROR = 'error'
-STATUS_DELETING = 'deleting'
-
-
-PORTFLOW_OPT_ADD = 'add-flows'
-PROTFLOW_OPT_DELETE = 'delete-flows'
-PROTFLOW_OPT_UPDATE = 'update-flows'
-
 
 SRC_NODE = 'src_node'
 DST_NODE = 'dst_node'
 SF_NODE = 'sf_node'
-
-RES_TYPE_GROUP = 'group'
-RES_TYPE_NSP = 'nsp'
 
 INSERTION_TYPE_L2 = 'l2'
 INSERTION_TYPE_L3 = 'l3'
