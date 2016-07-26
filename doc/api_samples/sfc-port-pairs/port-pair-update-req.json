@@ -1,0 +1,7 @@
+{
+    "port_pair": {
+         "name": "SF1",
+         "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+         "description": "Firewall SF instance"
+    }
+}

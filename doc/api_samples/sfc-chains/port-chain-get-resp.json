@@ -1,0 +1,16 @@
+{
+    "port_chain": {
+        "id": "1278dcd4-459f-62ed-754b-87fc5e4a6751",
+        "name": "PC1",
+        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "description": "Port chain with Firewall and IPS SFs",
+        "flow_classifiers": [
+             "4a334cd4-fe9c-4fae-af4b-321c5e2eb051",
+             "105a4b0a-73d6-11e5-b392-2c27d72acb4c"
+        ],
+        "port_pair_groups": [
+             "4512d643-24fc-4fae-af4b-321c5e2eb3d1",
+             "4a634d49-76dc-4fae-af4b-321c5e23d651"
+        ]
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "port_pair_groups": [
+        {
+             "name": "Firewall_PortPairGroup",
+             "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+             "description": "Group of Firewall SF instances",
+             "port_pairs": [
+                 "78dcd363-fc23-aeb6-f44b-56dc5e2fb3ae"
+             ],
+             "id": "4512d643-24fc-4fae-af4b-321c5e2eb3d1"
+        }
+    ]
+}

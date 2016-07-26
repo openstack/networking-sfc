@@ -1,0 +1,8 @@
+{
+     "flow_classifier": {
+         "id": "4a334cd4-fe9c-4fae-af4b-321c5e2eb051",
+         "name": "FC1",
+         "tenant_id": "1814726e2d22407b8ca76db5e567dcf1",
+         "description": "Flow rule for classifying TCP traffic"
+     }
+}
