@@ -1580,6 +1580,38 @@ class SfcDbPluginTestCase(
                 expected_res_status=400
             )
 
+    def test_create_port_pair_egress_no_host(self):
+        with self.port(
+            name='port1',
+            device_id='device1'
+        ) as src_port, self.port(
+            name='port2'
+        ) as dst_port:
+            self._create_port_pair(
+                self.fmt,
+                {
+                    'ingress': src_port['port']['id'],
+                    'egress': dst_port['port']['id']
+                },
+                expected_res_status=400
+            )
+
+    def test_create_port_pair_ingress_no_host(self):
+        with self.port(
+            name='port1'
+        ) as src_port, self.port(
+            name='port2',
+            device_id='device2'
+        ) as dst_port:
+            self._create_port_pair(
+                self.fmt,
+                {
+                    'ingress': src_port['port']['id'],
+                    'egress': dst_port['port']['id']
+                },
+                expected_res_status=400
+            )
+
     def test_create_port_pair_with_invalid_service_function_parameters(self):
         with self.port(
             name='port1',
