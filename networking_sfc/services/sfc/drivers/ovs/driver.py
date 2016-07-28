@@ -855,26 +855,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             LOG.exception(e)
             LOG.error(_LE("get_flowrules_by_host_portid failed"))
 
-    def get_flow_classifier_by_portchain_id(self, context, portchain_id):
-        try:
-            flow_classifier_list = []
-            sfc_plugin = (
-                manager.NeutronManager.get_service_plugins().get(
-                    sfc.SFC_EXT
-                )
-            )
-            if not sfc_plugin:
-                return []
-
-            port_chain = sfc_plugin.get_port_chain(
-                context,
-                portchain_id)
-            flow_classifier_list = self._get_portchain_fcs(port_chain)
-            return flow_classifier_list
-        except Exception as e:
-            LOG.exception(e)
-            LOG.error(_LE("get_flow_classifier_by_portchain_id failed"))
-
     def update_flowrule_status(self, context, id, status):
         try:
             flowrule_status = dict(status=status)
@@ -911,24 +891,3 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         flow_rule['group_refcnt'] = group_refcnt
 
         return group_refcnt
-
-    def _build_portchain_flowrule_body_without_port(self,
-                                                    node,
-                                                    add_fcs=None,
-                                                    del_fcs=None):
-        flow_rule = node.copy()
-        flow_rule.pop('tenant_id')
-        flow_rule.pop('portpair_details')
-
-        # according to the first sf node get network information
-        if not node['next_hop']:
-            return None
-
-        flow_rule['ingress'] = None
-        flow_rule['egress'] = None
-        flow_rule['add_fcs'] = add_fcs
-        flow_rule['del_fcs'] = del_fcs
-
-        # update next hop info
-        self._update_path_node_next_hops(flow_rule)
-        return flow_rule

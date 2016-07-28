@@ -277,22 +277,15 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
         group_id = flowrule.get('next_group_id', None)
         next_hops = flowrule.get('next_hops', None)
 
-        if not next_hops or not group_id:
-            return
         # if the group is not none, install the egress rule for this SF
         if (
-            flowrule['node_type'] == constants.SRC_NODE or
-            flowrule['node_type'] == constants.SF_NODE
+            group_id and next_hops
         ):
             # 1st, install br-int flow rule on table ACROSS_SUBNET_TABLE
             # and group table
             buckets = []
+            vlan = self._get_vlan_by_port(flowrule['egress'])
             for item in next_hops:
-                if item['net_uuid'] not in self.local_vlan_map:
-                    self.provision_local_vlan(item['net_uuid'],
-                                              item['network_type'],
-                                              None, item['segment_id'])
-                lvm = self.local_vlan_map[item['net_uuid']]
                 bucket = (
                     'bucket=weight=%d, mod_dl_dst:%s,'
                     'resubmit(,%d)' % (
@@ -309,7 +302,7 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
                     "set_mpls_ttl:%d,"
                     "mod_vlan_vid:%d," %
                     ((flowrule['nsp'] << 8) | flowrule['nsi'],
-                     flowrule['nsi'], lvm.vlan))
+                     flowrule['nsi'], vlan))
                 subnet_actions_list.append(push_mpls)
 
                 if item['local_endpoint'] == self.local_ip:
@@ -353,6 +346,23 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
                 enc_actions,
                 add_flow=True,
                 match_inport=match_inport)
+        else:
+            # to uninstall the new removed flow classifiers
+            self._setup_local_switch_flows_on_int_br(
+                flowrule,
+                flowrule['del_fcs'],
+                None,
+                add_flow=False,
+                match_inport=True
+            )
+
+            # to install the added flow classifiers
+            self._setup_local_switch_flows_on_int_br(
+                flowrule,
+                flowrule['add_fcs'],
+                actions='normal',
+                add_flow=True,
+                match_inport=True)
 
     def _get_vlan_by_port(self, port_id):
         for key, val in six.iteritems(self.network_ports):
@@ -381,37 +391,10 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
 
             self.int_br.add_flow(**match_field)
 
-    def _setup_last_egress_flow_rules_with_mpls(self, flowrule):
-        group_id = flowrule.get('next_group_id', None)
-
-        # check whether user assign the destination neutron port.
-        if (
-            constants.SF_NODE == flowrule['node_type'] and
-            not group_id and
-            flowrule['egress'] is not None
-        ):
-            # to uninstall the new removed flow classifiers
-            self._setup_local_switch_flows_on_int_br(
-                flowrule,
-                flowrule['del_fcs'],
-                None,
-                add_flow=False,
-                match_inport=True
-            )
-
-            # to install the added flow classifiers
-            self._setup_local_switch_flows_on_int_br(
-                flowrule,
-                flowrule['add_fcs'],
-                actions='normal',
-                add_flow=True,
-                match_inport=True)
-
     def _update_flow_rules_with_mpls_enc(self, flowrule, flowrule_status):
         try:
             if flowrule.get('egress', None):
                 self._setup_egress_flow_rules_with_mpls(flowrule)
-                self._setup_last_egress_flow_rules_with_mpls(flowrule)
             if flowrule.get('ingress', None):
                 self._setup_ingress_flow_rules_with_mpls(flowrule)
 

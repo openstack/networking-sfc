@@ -40,14 +40,6 @@ class SfcRpcCallback(object):
         LOG.debug('host: %s, port_id: %s', host, port_id)
         return pcfrs
 
-    def get_flow_classifier_by_portchain_id(self, context, **kwargs):
-        portchain_id = kwargs.get('portchain_id')
-        pcfcs = self.driver.get_flow_classifier_by_portchain_id(
-            context,
-            portchain_id)
-        LOG.debug('portchain id: %s', portchain_id)
-        return pcfcs
-
     def update_flowrules_status(self, context, **kwargs):
         flowrules_status = kwargs.get('flowrules_status')
         LOG.info(_LI('update_flowrules_status: %s'), flowrules_status)
