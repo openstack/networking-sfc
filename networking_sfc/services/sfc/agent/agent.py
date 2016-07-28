@@ -36,7 +36,7 @@ from neutron.plugins.ml2.drivers.openvswitch.agent.common import (
     constants as ovs_const)
 from neutron.plugins.ml2.drivers.openvswitch.agent import ovs_neutron_agent
 
-from networking_sfc._i18n import _LE, _LI, _LW
+from networking_sfc._i18n import _LE, _LI
 
 LOG = logging.getLogger(__name__)
 
@@ -553,64 +553,14 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
 
         return resync
 
-    def treat_devices_added_or_updated(self, devices, ovs_restarted):
-        skipped_devices = []
-        need_binding_devices = []
-        security_disabled_devices = []
-        devices_details_list = (
-            self.plugin_rpc.get_devices_details_list_and_failed_devices(
-                self.context,
-                devices,
-                self.agent_id,
-                self.conf.host
-            )
-        )
-        failed_devices = set(devices_details_list.get('failed_devices'))
-
-        devices = devices_details_list.get('devices')
-        vif_by_id = self.int_br.get_vifs_by_ids(
-            [vif['device'] for vif in devices])
-        for details in devices:
-            device = details['device']
-            LOG.debug("Processing port: %s", device)
-            port = vif_by_id.get(device)
-            if not port:
-                # The port disappeared and cannot be processed
-                LOG.info(_LI("Port %s was not found on the integration bridge "
-                             "and will therefore not be processed"), device)
-                skipped_devices.append(device)
-                continue
-
-            if 'port_id' in details:
-                LOG.info(_LI("Port %(device)s updated. Details: %(details)s"),
-                         {'device': device, 'details': details})
-                details['vif_port'] = port
-                need_binding = self.treat_vif_port(port, details['port_id'],
-                                                   details['network_id'],
-                                                   details['network_type'],
-                                                   details['physical_network'],
-                                                   details['segmentation_id'],
-                                                   details['admin_state_up'],
-                                                   details['fixed_ips'],
-                                                   details['device_owner'],
-                                                   ovs_restarted)
-                if need_binding:
-                    need_binding_devices.append(details)
-
-                port_security = details['port_security_enabled']
-                has_sgs = 'security_groups' in details
-                if not port_security or not has_sgs:
-                    security_disabled_devices.append(device)
-                self._update_port_network(details['port_id'],
-                                          details['network_id'])
-                self.ext_manager.handle_port(self.context, details)
-                self.sfc_treat_devices_added_updated(details['port_id'])
-            else:
-                LOG.warning(_LW("Device %s not defined on plugin"), device)
-                if (port and port.ofport != -1):
-                    self.port_dead(port)
-        return (skipped_devices, need_binding_devices,
-                security_disabled_devices, failed_devices)
+    def _bind_devices(self, need_binding_ports):
+        ret = super(OVSSfcAgent, self)._bind_devices(need_binding_ports)
+        for port_detail in need_binding_ports:
+            if 'port_id' in port_detail:
+                self.sfc_treat_devices_added_updated(
+                    port_detail['port_id']
+                )
+        return ret
 
     def process_deleted_ports(self, port_info):
         # don't try to process removed ports as deleted ports since
@@ -618,6 +568,7 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
         if 'removed' in port_info:
             self.deleted_ports -= port_info['removed']
         deleted_ports = list(self.deleted_ports)
+        self.sfc_treat_devices_removed(deleted_ports)
         while self.deleted_ports:
             port_id = self.deleted_ports.pop()
             port = self.int_br.get_vif_port_by_id(port_id)
@@ -625,7 +576,6 @@ class OVSSfcAgent(ovs_neutron_agent.OVSNeutronAgent):
             self.ext_manager.delete_port(self.context,
                                          {"vif_port": port,
                                           "port_id": port_id})
-            self.sfc_treat_devices_removed(port_id)
             # move to dead VLAN so deleted ports no
             # longer have access to the network
             if port:

@@ -34,8 +34,8 @@ FAKE_PARAM2_UUID = str(uuid.uuid4())
 
 class CLITestV20PortChainExtensionJSON(test_cli20.CLITestV20Base):
     def setUp(self):
-        self._mock_extension_loading()
         super(CLITestV20PortChainExtensionJSON, self).setUp()
+        self._mock_extension_loading()
         self.register_non_admin_status_resource('port_chain')
 
     def _create_patch(self, name, func=None):

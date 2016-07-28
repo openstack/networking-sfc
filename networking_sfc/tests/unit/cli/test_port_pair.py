@@ -30,8 +30,8 @@ egress_port_UUID = str(uuid.uuid4())
 
 class CLITestV20PortPairExtensionJSON(test_cli20.CLITestV20Base):
     def setUp(self):
-        self._mock_extension_loading()
         super(CLITestV20PortPairExtensionJSON, self).setUp()
+        self._mock_extension_loading()
         self.register_non_admin_status_resource('port_pair')
 
     def _create_patch(self, name, func=None):
