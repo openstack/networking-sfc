@@ -128,7 +128,7 @@ class FlowClassifierExtensionTestCase(
         instance.create_flow_classifier.assert_called_with(
             mock.ANY,
             flow_classifier=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('flow_classifier', res)
         self.assertEqual(return_value, res['flow_classifier'])
@@ -155,7 +155,7 @@ class FlowClassifierExtensionTestCase(
                 instance.create_flow_classifier.assert_called_with(
                     mock.ANY,
                     flow_classifier=expected_data)
-                self.assertEqual(res.status_int, exc.HTTPCreated.code)
+                self.assertEqual(exc.HTTPCreated.code, res.status_int)
                 res = self.deserialize(res)
                 self.assertIn('flow_classifier', res)
                 self.assertEqual(return_value, res['flow_classifier'])
@@ -182,7 +182,7 @@ class FlowClassifierExtensionTestCase(
                 instance.create_flow_classifier.assert_called_with(
                     mock.ANY,
                     flow_classifier=expected_data)
-                self.assertEqual(res.status_int, exc.HTTPCreated.code)
+                self.assertEqual(exc.HTTPCreated.code, res.status_int)
                 res = self.deserialize(res)
                 self.assertIn('flow_classifier', res)
                 self.assertEqual(return_value, res['flow_classifier'])
@@ -209,7 +209,7 @@ class FlowClassifierExtensionTestCase(
             instance.create_flow_classifier.assert_called_with(
                 mock.ANY,
                 flow_classifier=expected_data)
-            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            self.assertEqual(exc.HTTPCreated.code, res.status_int)
             res = self.deserialize(res)
             self.assertIn('flow_classifier', res)
             self.assertEqual(return_value, res['flow_classifier'])
@@ -262,7 +262,7 @@ class FlowClassifierExtensionTestCase(
             instance.create_flow_classifier.assert_called_with(
                 mock.ANY,
                 flow_classifier=expected_data)
-            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            self.assertEqual(exc.HTTPCreated.code, res.status_int)
             res = self.deserialize(res)
             self.assertIn('flow_classifier', res)
             self.assertEqual(return_value, res['flow_classifier'])
@@ -288,7 +288,7 @@ class FlowClassifierExtensionTestCase(
             instance.create_flow_classifier.assert_called_with(
                 mock.ANY,
                 flow_classifier=expected_data)
-            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            self.assertEqual(exc.HTTPCreated.code, res.status_int)
             res = self.deserialize(res)
             self.assertIn('flow_classifier', res)
             self.assertEqual(return_value, res['flow_classifier'])
@@ -313,7 +313,7 @@ class FlowClassifierExtensionTestCase(
             instance.create_flow_classifier.assert_called_with(
                 mock.ANY,
                 flow_classifier=expected_data)
-            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            self.assertEqual(exc.HTTPCreated.code, res.status_int)
             res = self.deserialize(res)
             self.assertIn('flow_classifier', res)
             self.assertEqual(return_value, res['flow_classifier'])
@@ -338,7 +338,7 @@ class FlowClassifierExtensionTestCase(
             instance.create_flow_classifier.assert_called_with(
                 mock.ANY,
                 flow_classifier=expected_data)
-            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            self.assertEqual(exc.HTTPCreated.code, res.status_int)
             res = self.deserialize(res)
             self.assertIn('flow_classifier', res)
             self.assertEqual(return_value, res['flow_classifier'])
@@ -366,7 +366,7 @@ class FlowClassifierExtensionTestCase(
             instance.create_flow_classifier.assert_called_with(
                 mock.ANY,
                 flow_classifier=expected_data)
-            self.assertEqual(res.status_int, exc.HTTPCreated.code)
+            self.assertEqual(exc.HTTPCreated.code, res.status_int)
             res = self.deserialize(res)
             self.assertIn('flow_classifier', res)
             self.assertEqual(return_value, res['flow_classifier'])
@@ -401,7 +401,7 @@ class FlowClassifierExtensionTestCase(
         instance.create_flow_classifier.assert_called_with(
             mock.ANY,
             flow_classifier=expected_data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('flow_classifier', res)
         self.assertEqual(return_value, res['flow_classifier'])
@@ -526,10 +526,10 @@ class FlowClassifierExtensionTestCase(
             fields=mock.ANY,
             filters=mock.ANY
         )
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('flow_classifiers', res)
-        self.assertEqual(res['flow_classifiers'], return_value)
+        self.assertEqual(return_value, res['flow_classifiers'])
 
     def test_flow_classifier_list_all_fields(self):
         flowclassifier_id = _uuid()
@@ -559,10 +559,10 @@ class FlowClassifierExtensionTestCase(
             fields=mock.ANY,
             filters=mock.ANY
         )
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('flow_classifiers', res)
-        self.assertEqual(res['flow_classifiers'], return_value)
+        self.assertEqual(return_value, res['flow_classifiers'])
 
     def test_flow_classifier_list_unknown_fields(self):
         flowclassifier_id = _uuid()
@@ -584,10 +584,10 @@ class FlowClassifierExtensionTestCase(
             fields=mock.ANY,
             filters=mock.ANY
         )
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('flow_classifiers', res)
-        self.assertEqual(res['flow_classifiers'], expected_return)
+        self.assertEqual(expected_return, res['flow_classifiers'])
 
     def test_flow_classifier_get(self):
         flowclassifier_id = _uuid()
@@ -609,7 +609,7 @@ class FlowClassifierExtensionTestCase(
             flowclassifier_id,
             fields=mock.ANY
         )
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('flow_classifier', res)
         self.assertEqual(return_value, res['flow_classifier'])
@@ -636,10 +636,10 @@ class FlowClassifierExtensionTestCase(
         instance.update_flow_classifier.assert_called_with(
             mock.ANY, flowclassifier_id,
             flow_classifier=update_data)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('flow_classifier', res)
-        self.assertEqual(res['flow_classifier'], return_value)
+        self.assertEqual(return_value, res['flow_classifier'])
 
     def test_flow_classifier_update_source_port_range_min(self):
         flowclassifier_id = _uuid()
