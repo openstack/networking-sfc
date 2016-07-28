@@ -15,6 +15,7 @@
 import six
 import sys
 
+from neutron_lib import constants as n_const
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
@@ -28,7 +29,6 @@ from networking_sfc.services.sfc.drivers.ovs import rpc_topics as sfc_topics
 
 from neutron.agent import rpc as agent_rpc
 from neutron.common import config as common_config
-from neutron.common import constants as n_const
 from neutron.common import rpc as n_rpc
 from neutron.common import topics
 from neutron.common import utils as q_utils

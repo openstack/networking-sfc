@@ -17,11 +17,11 @@ import mock
 from webob import exc
 import webtest
 
+from neutron_lib import constants as const
 from oslo_utils import uuidutils
 
 from neutron.api.v2 import resource as api_res_log
 from neutron.common import config
-from neutron.common import constants as const
 from neutron import manager
 from neutron.notifiers import nova as nova_log
 

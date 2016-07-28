@@ -18,13 +18,13 @@ import mock
 import six
 import webob.exc
 
+from neutron_lib import constants as lib_const
 from oslo_config import cfg
 from oslo_utils import importutils
 from oslo_utils import uuidutils
 
 from neutron.api import extensions as api_ext
 from neutron.common import config
-from neutron.common import constants as const
 import neutron.extensions as nextensions
 
 from networking_sfc.db import flowclassifier_db as fdb
@@ -197,8 +197,8 @@ class FlowClassifierDbPluginTestCase(
         ) as port:
             self._test_create_flow_classifier({
                 'name': 'test1',
-                'ethertype': const.IPv4,
-                'protocol': const.PROTO_NAME_TCP,
+                'ethertype': lib_const.IPv4,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'source_port_range_min': 100,
                 'source_port_range_max': 200,
                 'destination_port_range_min': 101,
@@ -248,15 +248,15 @@ class FlowClassifierDbPluginTestCase(
                 'logical_source_port': port['port']['id']
             })
             self._test_create_flow_classifier({
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             })
             self._test_create_flow_classifier({
-                'protocol': const.PROTO_NAME_UDP,
+                'protocol': lib_const.PROTO_NAME_UDP,
                 'logical_source_port': port['port']['id']
             })
             self._test_create_flow_classifier({
-                'protocol': const.PROTO_NAME_ICMP,
+                'protocol': lib_const.PROTO_NAME_ICMP,
                 'logical_source_port': port['port']['id']
             })
 
@@ -281,7 +281,7 @@ class FlowClassifierDbPluginTestCase(
                 'source_port_range_max': None,
                 'destination_port_range_min': None,
                 'destination_port_range_max': None,
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             })
             self._test_create_flow_classifier({
@@ -289,7 +289,7 @@ class FlowClassifierDbPluginTestCase(
                 'source_port_range_max': 200,
                 'destination_port_range_min': 100,
                 'destination_port_range_max': 200,
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             })
             self._test_create_flow_classifier({
@@ -297,7 +297,7 @@ class FlowClassifierDbPluginTestCase(
                 'source_port_range_max': 100,
                 'destination_port_range_min': 100,
                 'destination_port_range_max': 100,
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             })
             self._test_create_flow_classifier({
@@ -305,14 +305,14 @@ class FlowClassifierDbPluginTestCase(
                 'source_port_range_max': '200',
                 'destination_port_range_min': '100',
                 'destination_port_range_max': '200',
-                'protocol': const.PROTO_NAME_UDP,
+                'protocol': lib_const.PROTO_NAME_UDP,
                 'logical_source_port': port['port']['id']
             }, {
                 'source_port_range_min': 100,
                 'source_port_range_max': 200,
                 'destination_port_range_min': 100,
                 'destination_port_range_max': 200,
-                'protocol': const.PROTO_NAME_UDP,
+                'protocol': lib_const.PROTO_NAME_UDP,
                 'logical_source_port': port['port']['id']
             })
 
@@ -344,7 +344,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'source_port_range_min': 'abc',
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -352,7 +352,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'source_port_range_max': 'abc',
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -361,7 +361,7 @@ class FlowClassifierDbPluginTestCase(
                 self.fmt, {
                     'source_port_range_min': 100,
                     'source_port_range_max': 99,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -369,7 +369,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'source_port_range_min': 65536,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -377,7 +377,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'source_port_range_max': 65536,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -385,7 +385,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'source_port_range_min': -1,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -393,7 +393,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'source_port_range_max': -1,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -401,7 +401,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'destination_port_range_min': 'abc',
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -409,7 +409,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'destination_port_range_max': 'abc',
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -418,7 +418,7 @@ class FlowClassifierDbPluginTestCase(
                 self.fmt, {
                     'destination_port_range_min': 100,
                     'destination_port_range_max': 99,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -426,7 +426,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'destination_port_range_min': 65536,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -434,7 +434,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'destination_port_range_max': 65536,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -442,7 +442,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'destination_port_range_min': -1,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -450,7 +450,7 @@ class FlowClassifierDbPluginTestCase(
             self._create_flow_classifier(
                 self.fmt, {
                     'destination_port_range_max': -1,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -481,7 +481,7 @@ class FlowClassifierDbPluginTestCase(
                 self.fmt, {
                     'source_port_range_min': 100,
                     'source_port_range_max': 200,
-                    'protocol': const.PROTO_NAME_ICMP,
+                    'protocol': lib_const.PROTO_NAME_ICMP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -512,7 +512,7 @@ class FlowClassifierDbPluginTestCase(
                 self.fmt, {
                     'destination_port_range_min': 100,
                     'destination_port_range_max': 200,
-                    'protocol': const.PROTO_NAME_ICMP,
+                    'protocol': lib_const.PROTO_NAME_ICMP,
                     'logical_source_port': port['port']['id']
                 },
                 expected_res_status=400
@@ -727,7 +727,7 @@ class FlowClassifierDbPluginTestCase(
             }):
                 self._create_flow_classifier(
                     self.fmt, {
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -740,12 +740,12 @@ class FlowClassifierDbPluginTestCase(
                 )
             with self.flow_classifier(flow_classifier={
                 'name': 'test1',
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             }):
                 self._create_flow_classifier(
                     self.fmt, {
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -757,7 +757,7 @@ class FlowClassifierDbPluginTestCase(
                     expected_res_status=400
                 )
                 self._test_create_flow_classifier({
-                    'protocol': const.PROTO_NAME_UDP,
+                    'protocol': lib_const.PROTO_NAME_UDP,
                     'logical_source_port': port['port']['id']
                 })
 
@@ -859,13 +859,13 @@ class FlowClassifierDbPluginTestCase(
         ) as port:
             with self.flow_classifier(flow_classifier={
                 'name': 'test1',
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             }):
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_min': 100,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -873,7 +873,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_max': 200,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -882,14 +882,14 @@ class FlowClassifierDbPluginTestCase(
                     self.fmt, {
                         'source_port_range_min': 100,
                         'source_port_range_max': 200,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
                 )
                 self._create_flow_classifier(
                     self.fmt, {
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -897,12 +897,12 @@ class FlowClassifierDbPluginTestCase(
             with self.flow_classifier(flow_classifier={
                 'name': 'test1',
                 'source_port_range_min': 100,
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             }):
                 self._create_flow_classifier(
                     self.fmt, {
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -910,7 +910,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_min': 99,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id'],
                     },
                     expected_res_status=400
@@ -918,7 +918,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_min': 101,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -926,25 +926,25 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_max': 101,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
                 )
                 self._test_create_flow_classifier({
                     'source_port_range_max': 99,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
             with self.flow_classifier(flow_classifier={
                 'name': 'test1',
                 'source_port_range_max': 100,
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             }):
                 self._create_flow_classifier(
                     self.fmt, {
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -952,7 +952,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_max': 99,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -960,7 +960,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_max': 101,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -968,26 +968,26 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_min': 99,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
                 )
                 self._test_create_flow_classifier({
                     'source_port_range_min': 101,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
             with self.flow_classifier(flow_classifier={
                 'name': 'test1',
                 'source_port_range_min': 100,
                 'source_port_range_max': 200,
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             }):
                 self._create_flow_classifier(
                     self.fmt, {
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -996,7 +996,7 @@ class FlowClassifierDbPluginTestCase(
                     self.fmt, {
                         'source_port_range_min': 99,
                         'source_port_range_max': 201,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1005,7 +1005,7 @@ class FlowClassifierDbPluginTestCase(
                     self.fmt, {
                         'source_port_range_min': 101,
                         'source_port_range_max': 199,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1014,7 +1014,7 @@ class FlowClassifierDbPluginTestCase(
                     self.fmt, {
                         'source_port_range_min': 99,
                         'source_port_range_max': 199,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1023,7 +1023,7 @@ class FlowClassifierDbPluginTestCase(
                     self.fmt, {
                         'source_port_range_min': 101,
                         'source_port_range_max': 201,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1031,7 +1031,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_min': 99,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1039,7 +1039,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_min': 101,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1047,7 +1047,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_max': 199,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1055,31 +1055,31 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'source_port_range_max': 201,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
                 )
                 self._test_create_flow_classifier({
                     'source_port_range_min': 201,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
                 self._test_create_flow_classifier({
                     'source_port_range_min': 201,
                     'source_port_range_max': 300,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
                 self._test_create_flow_classifier({
                     'source_port_range_max': 99,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
                 self._test_create_flow_classifier({
                     'source_port_range_min': 50,
                     'source_port_range_max': 99,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
 
@@ -1089,13 +1089,13 @@ class FlowClassifierDbPluginTestCase(
         ) as port:
             with self.flow_classifier(flow_classifier={
                 'name': 'test1',
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             }):
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_min': 100,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1103,7 +1103,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_max': 200,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1112,14 +1112,14 @@ class FlowClassifierDbPluginTestCase(
                     self.fmt, {
                         'destination_port_range_min': 100,
                         'destination_port_range_max': 200,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
                 )
                 self._create_flow_classifier(
                     self.fmt, {
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1127,12 +1127,12 @@ class FlowClassifierDbPluginTestCase(
             with self.flow_classifier(flow_classifier={
                 'name': 'test1',
                 'destination_port_range_min': 100,
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             }):
                 self._create_flow_classifier(
                     self.fmt, {
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1140,7 +1140,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_min': 99,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1148,7 +1148,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_min': 101,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1156,25 +1156,25 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_max': 101,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
                 )
                 self._test_create_flow_classifier({
                     'destination_port_range_max': 99,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
             with self.flow_classifier(flow_classifier={
                 'name': 'test1',
                 'destination_port_range_max': 100,
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             }):
                 self._create_flow_classifier(
                     self.fmt, {
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1182,7 +1182,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_max': 99,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1190,7 +1190,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_max': 101,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1198,26 +1198,26 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_min': 99,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
                 )
                 self._test_create_flow_classifier({
                     'destination_port_range_min': 101,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
             with self.flow_classifier(flow_classifier={
                 'name': 'test1',
                 'destination_port_range_min': 100,
                 'destination_port_range_max': 200,
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             }):
                 self._create_flow_classifier(
                     self.fmt, {
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1226,7 +1226,7 @@ class FlowClassifierDbPluginTestCase(
                     self.fmt, {
                         'destination_port_range_min': 99,
                         'destination_port_range_max': 201,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1235,7 +1235,7 @@ class FlowClassifierDbPluginTestCase(
                     self.fmt, {
                         'destination_port_range_min': 101,
                         'destination_port_range_max': 199,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1244,7 +1244,7 @@ class FlowClassifierDbPluginTestCase(
                     self.fmt, {
                         'destination_port_range_min': 99,
                         'destination_port_range_max': 199,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1253,7 +1253,7 @@ class FlowClassifierDbPluginTestCase(
                     self.fmt, {
                         'destination_port_range_min': 101,
                         'destination_port_range_max': 201,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1261,7 +1261,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_min': 99,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1269,7 +1269,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_min': 101,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1277,7 +1277,7 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_max': 199,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
@@ -1285,31 +1285,31 @@ class FlowClassifierDbPluginTestCase(
                 self._create_flow_classifier(
                     self.fmt, {
                         'destination_port_range_max': 201,
-                        'protocol': const.PROTO_NAME_TCP,
+                        'protocol': lib_const.PROTO_NAME_TCP,
                         'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
                 )
                 self._test_create_flow_classifier({
                     'destination_port_range_min': 201,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
                 self._test_create_flow_classifier({
                     'destination_port_range_min': 201,
                     'destination_port_range_max': 300,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
                 self._test_create_flow_classifier({
                     'destination_port_range_max': 99,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
                 self._test_create_flow_classifier({
                     'destination_port_range_min': 50,
                     'destination_port_range_max': 99,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
 
@@ -1334,7 +1334,7 @@ class FlowClassifierDbPluginTestCase(
                 'source_port_range_max': 200,
                 'destination_port_range_min': 100,
                 'destination_port_range_max': 200,
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             }):
                 self._test_create_flow_classifier({
@@ -1342,7 +1342,7 @@ class FlowClassifierDbPluginTestCase(
                     'source_port_range_max': 200,
                     'destination_port_range_min': 300,
                     'destination_port_range_max': 400,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
             with self.flow_classifier(flow_classifier={
@@ -1350,14 +1350,14 @@ class FlowClassifierDbPluginTestCase(
                 'source_ip_prefix': '192.168.100.0/24',
                 'source_port_range_min': 100,
                 'source_port_range_max': 200,
-                'protocol': const.PROTO_NAME_TCP,
+                'protocol': lib_const.PROTO_NAME_TCP,
                 'logical_source_port': port['port']['id']
             }):
                 self._test_create_flow_classifier({
                     'source_ip_prefix': '192.168.100.0/24',
                     'source_port_range_min': 300,
                     'source_port_range_max': 400,
-                    'protocol': const.PROTO_NAME_TCP,
+                    'protocol': lib_const.PROTO_NAME_TCP,
                     'logical_source_port': port['port']['id']
                 })
 
