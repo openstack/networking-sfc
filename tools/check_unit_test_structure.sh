@@ -12,6 +12,7 @@ test_files=$(find ${test_path} -iname 'test_*.py')
 
 ignore_regexes=(
     "^plugins.*$"
+    "^db/test_migrations.py$"
 )
 
 error_count=0
