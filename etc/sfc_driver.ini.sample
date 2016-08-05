@@ -1,0 +1,12 @@
+[DEFAULT]
+
+
+[sfc]
+
+#
+# From sfc
+#
+
+# An ordered list of service chain drivers entrypoints to be loaded from the
+# networking_sfc.sfc.drivers namespace. (list value)
+#drivers = dummy

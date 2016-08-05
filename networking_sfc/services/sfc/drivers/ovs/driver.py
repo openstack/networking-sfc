@@ -737,7 +737,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         else:
             driver = core_plugin.type_manager.drivers.get(network_type)
             host_endpoint = driver.obj.get_endpoint_by_host(host_id)
-            local_ip = host_endpoint['ip_address']
+            if host_endpoint:
+                local_ip = host_endpoint['ip_address']
+            else:
+                local_ip = None
 
         return host_id, local_ip, network_type, segment_id, mac_address
 
