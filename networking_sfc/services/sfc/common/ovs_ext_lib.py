@@ -166,7 +166,7 @@ def _build_group_expr_str(group_dict, cmd):
 
     if cmd != 'del':
         if "group_id" not in group_dict:
-            msg = _("Must specify one groupId on groupo addition"
+            msg = _("Must specify one group Id on group addition"
                     " or modification")
             raise exceptions.InvalidInput(error_message=msg)
         groupId = "group_id=%s" % group_dict.pop('group_id')
