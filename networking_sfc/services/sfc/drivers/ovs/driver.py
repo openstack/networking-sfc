@@ -52,8 +52,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         self.ovs_driver_rpc = ovs_sfc_rpc.SfcAgentRpcClient(
             sfc_topics.SFC_AGENT
         )
-
-        self.id_pool = ovs_sfc_db.IDAllocation(self.admin_context)
         self.rpc_ctx = n_context.get_admin_context_without_session()
         self._setup_rpc()
 
@@ -202,7 +200,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     @log_helpers.log_method_call
     def _get_portgroup_members(self, context, pg_id):
         next_group_members = []
-        group_intid = self.id_pool.get_intid_by_uuid('group', pg_id)
+        ppg_obj = context._plugin._get_port_pair_group(context._plugin_context,
+                                                       pg_id)
+        group_intid = ppg_obj['group_id']
         LOG.debug('group_intid: %s', group_intid)
         pg = context._plugin.get_port_pair_group(context._plugin_context,
                                                  pg_id)
@@ -290,7 +290,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         path_nodes = []
         # Create an assoc object for chain_id and path_id
         # context = context._plugin_context
-        path_id = self.id_pool.assign_intid('portchain', port_chain['id'])
+        path_id = port_chain['chain_id']
 
         if not path_id:
             LOG.error(_LE('No path_id available for creating port chain path'))
@@ -425,11 +425,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             port_chain['tenant_id'],
             src_node
         )
-
-        # Delete the chainpathpair
-        intid = self.id_pool.get_intid_by_uuid(
-            'portchain', port_chain['id'])
-        self.id_pool.release_intid('portchain', intid)
 
     def _update_path_node_next_hops(self, flow_rule):
         node_next_hops = []
@@ -608,15 +603,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
     @log_helpers.log_method_call
     def create_port_pair_group(self, context):
-        group = context.current
-        self.id_pool.assign_intid('group', group['id'])
+        pass
 
     @log_helpers.log_method_call
     def delete_port_pair_group(self, context):
-        group = context.current
-        group_intid = self.id_pool.get_intid_by_uuid('group', group['id'])
-        if group_intid:
-            self.id_pool.release_intid('group', group_intid)
+        pass
 
     @log_helpers.log_method_call
     def update_port_pair_group(self, context):
@@ -637,8 +628,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         for chain_id in port_chains:
             port_chain = context._plugin.get_port_chain(
                 context._plugin_context, chain_id)
-            group_intid = self.id_pool.get_intid_by_uuid('group',
-                                                         current['id'])
+            group_intid = current['group_id']
             # Get the previous node
             prev_node = self.get_path_node_by_filter(
                 filters={'portchain_id': chain_id,
@@ -737,7 +727,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         else:
             driver = core_plugin.type_manager.drivers.get(network_type)
             host_endpoint = driver.obj.get_endpoint_by_host(host_id)
-            local_ip = host_endpoint['ip_address']
+            if host_endpoint:
+                local_ip = host_endpoint['ip_address']
+            else:
+                local_ip = None
 
         return host_id, local_ip, network_type, segment_id, mac_address
 

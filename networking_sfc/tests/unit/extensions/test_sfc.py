@@ -76,6 +76,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             'flow_classifiers': port_chain.get(
                 'flow_classifiers') or [],
             'tenant_id': port_chain['tenant_id'],
+            'chain_id': port_chain.get('chain_id') or 0
         }}
         return ret
 
@@ -361,6 +362,8 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                 'port_pair_group_parameters'
             ) or {'lb_fields': []}
         }}
+        if port_pair_group.get('group_id'):
+            ret['port_pair_group']['group_id'] = port_pair_group['group_id']
         return ret
 
     def test_create_port_pair_group(self):

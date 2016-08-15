@@ -146,6 +146,7 @@ class PortPairGroup(model_base.BASEV2, model_base.HasId,
                     model_base.HasProject):
     """Represents a port pair group model."""
     __tablename__ = 'sfc_port_pair_groups'
+    group_id = sa.Column(sa.Integer(), unique=True, nullable=False)
     name = sa.Column(sa.String(NAME_MAX_LEN))
     description = sa.Column(sa.String(DESCRIPTION_MAX_LEN))
     port_pairs = orm.relationship(
@@ -164,6 +165,7 @@ class PortPairGroup(model_base.BASEV2, model_base.HasId,
 class PortChain(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents a Neutron service function Port Chain."""
     __tablename__ = 'sfc_port_chains'
+    chain_id = sa.Column(sa.Integer(), unique=True, nullable=False)
     name = sa.Column(sa.String(NAME_MAX_LEN))
     description = sa.Column(sa.String(DESCRIPTION_MAX_LEN))
     chain_group_associations = orm.relationship(
@@ -205,7 +207,8 @@ class SfcDbPlugin(
             'chain_parameters': {
                 param['keyword']: jsonutils.loads(param['value'])
                 for k, param in six.iteritems(port_chain['chain_parameters'])
-            }
+            },
+            'chain_id': port_chain['chain_id'],
         }
         return self._fields(res, fields)
 
@@ -300,6 +303,7 @@ class SfcDbPlugin(
         """Create a port chain."""
         pc = port_chain['port_chain']
         tenant_id = pc['tenant_id']
+        chain_id = pc['chain_id']
         with context.session.begin(subtransactions=True):
             chain_parameters = {
                 key: ChainParameter(keyword=key, value=jsonutils.dumps(val))
@@ -309,11 +313,31 @@ class SfcDbPlugin(
             fc_ids = pc['flow_classifiers']
             self._validate_port_pair_groups(context, pg_ids)
             self._validate_flow_classifiers(context, fc_ids)
+            assigned_chain_ids = {}
+            query = self._model_query(context, PortChain)
+            for port_chain_db in query.all():
+                assigned_chain_ids[port_chain_db['chain_id']] = (
+                    port_chain_db['id']
+                )
+            if not chain_id:
+                available_chain_id = 1
+                while available_chain_id < ext_sfc.MAX_CHAIN_ID:
+                    if available_chain_id not in assigned_chain_ids:
+                        chain_id = available_chain_id
+                        break
+                    available_chain_id += 1
+                if not chain_id:
+                    raise ext_sfc.PortChainUnavailableChainId()
+            else:
+                if chain_id not in assigned_chain_ids:
+                    raise ext_sfc.PortChainChainIdInConflict(
+                        chain_id=chain_id, pc_id=assigned_chain_ids[chain_id])
             port_chain_db = PortChain(id=uuidutils.generate_uuid(),
                                       tenant_id=tenant_id,
                                       description=pc['description'],
                                       name=pc['name'],
-                                      chain_parameters=chain_parameters)
+                                      chain_parameters=chain_parameters,
+                                      chain_id=chain_id)
             self._setup_chain_group_associations(
                 context, port_chain_db, pg_ids)
             self._setup_chain_classifier_associations(
@@ -517,7 +541,8 @@ class SfcDbPlugin(
                 for k, param in six.iteritems(
                     port_pair_group['port_pair_group_parameters']
                 )
-            }
+            },
+            'group_id': port_pair_group.get('group_id') or 0
         }
 
         return self._fields(res, fields)
@@ -541,13 +566,27 @@ class SfcDbPlugin(
                     pg['port_pair_group_parameters']
                 )
             }
+            assigned_group_ids = {}
+            query = self._model_query(context, PortPairGroup)
+            for port_pair_group_db in query.all():
+                assigned_group_ids[port_pair_group_db['group_id']] = (
+                    port_pair_group_db['id']
+                )
+            group_id = 0
+            available_group_id = 1
+            while True:
+                if available_group_id not in assigned_group_ids:
+                    group_id = available_group_id
+                    break
+                available_group_id += 1
             port_pair_group_db = PortPairGroup(
                 id=uuidutils.generate_uuid(),
                 name=pg['name'],
                 description=pg['description'],
                 tenant_id=tenant_id,
                 port_pairs=portpairs_list,
-                port_pair_group_parameters=port_pair_group_parameters)
+                port_pair_group_parameters=port_pair_group_parameters,
+                group_id=group_id)
             context.session.add(port_pair_group_db)
             return self._make_port_pair_group_dict(port_pair_group_db)
 

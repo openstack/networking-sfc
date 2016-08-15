@@ -176,6 +176,8 @@ class SfcDbPluginTestCaseBase(
                 'port_pair_group_parameters'
             ) or {'lb_fields': []}
         }
+        if port_pair_group.get('group_id'):
+            ret['group_id'] = port_pair_group['group_id']
         return ret
 
     def _test_create_port_pair_group(
@@ -212,6 +214,8 @@ class SfcDbPluginTestCaseBase(
                 'chain_parameters'
             ) or {'correlation': 'mpls'}
         }
+        if port_chain.get('chain_id'):
+            ret['chain_id'] = port_chain['chain_id']
         return ret
 
     def _test_create_port_chain(self, port_chain, expected_port_chain=None):

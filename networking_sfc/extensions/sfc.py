@@ -82,6 +82,7 @@ SUPPORTED_PPG_PARAMETERS = {
         'convert_to': normalize_lb_fields
     }
 }
+MAX_CHAIN_ID = 65535
 
 
 # Port Chain Exceptions
@@ -89,9 +90,18 @@ class PortChainNotFound(neutron_exc.NotFound):
     message = _("Port Chain %(id)s not found.")
 
 
+class PortChainUnavailableChainId(neutron_exc.InvalidInput):
+    message = _("Port Chain %(id)s no available chain id.")
+
+
 class PortChainFlowClassifierInConflict(neutron_exc.InvalidInput):
     message = _("Flow Classifier %(fc_id)s conflicts with "
                 "Flow Classifier %(pc_fc_id)s in port chain %(pc_id)s.")
+
+
+class PortChainChainIdInConflict(neutron_exc.InvalidInput):
+    message = _("Chain id %(chain_id)s conflicts with "
+                "Chain id in port chain %(pc_id)s.")
 
 
 class InvalidChainParameter(neutron_exc.InvalidInput):
@@ -268,6 +278,11 @@ RESOURCE_ATTRIBUTE_MAP = {
             'is_visible': True,
             'validate': {'type:uuid': None},
             'primary_key': True},
+        'chain_id': {
+            'allow_post': True, 'allow_put': False,
+            'is_visible': True, 'default': 0,
+            'validate': {'type:range': (0, MAX_CHAIN_ID)},
+            'convert_to': lib_converters.convert_to_int},
         'name': {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': None,
@@ -305,6 +320,9 @@ RESOURCE_ATTRIBUTE_MAP = {
             'is_visible': True,
             'validate': {'type:uuid': None},
             'primary_key': True},
+        'group_id': {
+            'allow_post': False, 'allow_put': False,
+            'is_visible': True},
         'name': {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': None,
