@@ -16,6 +16,7 @@ import six
 
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
+from oslo_serialization import jsonutils
 from oslo_utils import uuidutils
 
 import sqlalchemy as sa
@@ -148,7 +149,6 @@ class PortPairGroup(model_base.BASEV2, model_base.HasId,
 class PortChain(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents a Neutron service function Port Chain."""
     __tablename__ = 'sfc_port_chains'
-
     name = sa.Column(sa.String(NAME_MAX_LEN))
     description = sa.Column(sa.String(DESCRIPTION_MAX_LEN))
     chain_group_associations = orm.relationship(
@@ -188,7 +188,7 @@ class SfcDbPlugin(
                 for assoc in port_chain['chain_classifier_associations']
             ],
             'chain_parameters': {
-                param['keyword']: param['value']
+                param['keyword']: jsonutils.loads(param['value'])
                 for k, param in six.iteritems(port_chain['chain_parameters'])
             }
         }
@@ -287,7 +287,7 @@ class SfcDbPlugin(
         tenant_id = pc['tenant_id']
         with context.session.begin(subtransactions=True):
             chain_parameters = {
-                key: ChainParameter(keyword=key, value=val)
+                key: ChainParameter(keyword=key, value=jsonutils.dumps(val))
                 for key, val in six.iteritems(pc['chain_parameters'])}
 
             pg_ids = pc['port_pair_groups']
@@ -375,7 +375,7 @@ class SfcDbPlugin(
             'ingress': port_pair['ingress'],
             'egress': port_pair['egress'],
             'service_function_parameters': {
-                param['keyword']: param['value']
+                param['keyword']: jsonutils.loads(param['value'])
                 for k, param in six.iteritems(
                     port_pair['service_function_parameters'])
             }
@@ -415,7 +415,8 @@ class SfcDbPlugin(
                 )
 
             service_function_parameters = {
-                key: ServiceFunctionParam(keyword=key, value=val)
+                key: ServiceFunctionParam(
+                    keyword=key, value=jsonutils.dumps(val))
                 for key, val in six.iteritems(
                     pp['service_function_parameters']
                 )

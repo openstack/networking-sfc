@@ -66,10 +66,15 @@ class PortPairCreate(extension.ClientExtensionCreate, PortPair):
             help=_('ID or name of the egress neutron port.'))
         parser.add_argument(
             '--service-function-parameters',
-            metavar='type=TYPE[,correlation=CORRELATION_TYPE]',
+            metavar=(
+                'type=TYPE[,correlation=CORRELATION_TYPE,weight=WEIGHT]'),
             type=utils.str2dict,
             help=_('Dictionary of Service function parameters. '
-                   'Currently, only correlation=None is supported.'))
+                   'Currently, only correlation=None and weight '
+                   'is supported. Weight is an integer that influences '
+                   'the selection of a port pair within a port pair group '
+                   'for a flow. The higher the weight, the more flows will '
+                   'hash to the port pair. The default weight is 1.'))
 
     def args2body(self, parsed_args):
         body = {}

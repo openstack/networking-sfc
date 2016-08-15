@@ -69,7 +69,7 @@ class CLITestV20PortPairExtensionJSON(test_cli20.CLITestV20Base):
         self._test_create_resource(resource, cmd, name, myid, args,
                                    position_names, position_values)
 
-    def test_create_port_group_with_bidirectional_port(self):
+    def test_create_port_pair_with_bidirectional_port(self):
         """Create port_pair: myname with bidirectional port."""
         resource = 'port_pair'
         cmd = pp.PortPairCreate(test_cli20.MyApp(sys.stdout), None)
@@ -90,8 +90,8 @@ class CLITestV20PortPairExtensionJSON(test_cli20.CLITestV20Base):
         name = 'myname'
         myid = 'myid'
         desc = "my_port_pair"
-        service_fn_param = 'correlation=None'
-        service_fn_param_exp = {"correlation": "None"}
+        service_fn_param = 'correlation=None,weight=2'
+        service_fn_param_exp = {"correlation": "None", "weight": "2"}
         args = [name, '--ingress', ingress_port_UUID,
                 '--egress', egress_port_UUID, '--description', desc,
                 '--service-function-parameters', service_fn_param]

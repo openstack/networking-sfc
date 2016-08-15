@@ -17,7 +17,7 @@ from abc import abstractmethod
 
 import six
 
-from neutron_lib.api import converters
+from neutron_lib.api import converters as lib_converters
 from neutron_lib import exceptions as neutron_exc
 from oslo_config import cfg
 
@@ -35,10 +35,27 @@ neutron_ext.append_api_extensions_path(extensions.__path__)
 SFC_EXT = "sfc"
 SFC_PREFIX = "/sfc"
 
-SUPPORTED_CHAIN_PARAMETERS = [('correlation', 'mpls')]
-DEFAULT_CHAIN_PARAMETER = {'correlation': 'mpls'}
-SUPPORTED_SF_PARAMETERS = [('correlation', None)]
-DEFAULT_SF_PARAMETER = {'correlation': None}
+
+SUPPORTED_CHAIN_PARAMETERS = {
+    'correlation': {
+        'allow_post': True,
+        'default': 'mpls',
+        'validate': {'type:values': ['mpls']}
+    }
+}
+SUPPORTED_SF_PARAMETERS = {
+    'correlation': {
+        'allow_post': True,
+        'default': None,
+        'validate': {'type:values': [None]}
+    },
+    'weight': {
+        'allow_post': True,
+        'default': 1,
+        'validate': {'type:non_negative': None},
+        'convert_to': lib_converters.convert_to_int
+    }
+}
 
 
 # Port Chain Exceptions
@@ -53,14 +70,14 @@ class PortChainFlowClassifierInConflict(neutron_exc.InvalidInput):
 
 class InvalidChainParameter(neutron_exc.InvalidInput):
     message = _(
-        "Chain parameter does not support (%%(key)s, %%(value)s). "
+        "Invalid chain parameter: %%(error_message)s. "
         "Supported chain parameters are %(supported_paramters)s."
     ) % {'supported_paramters': SUPPORTED_CHAIN_PARAMETERS}
 
 
 class InvalidServiceFunctionParameter(neutron_exc.InvalidInput):
     message = _(
-        "Service function parameter does not support (%%(key)s, %%(value)s). "
+        "Invalid Service function parameter: %%(error_message)s. "
         "Supported service function parameters are %(supported_paramters)s."
     ) % {'supported_paramters': SUPPORTED_SF_PARAMETERS}
 
@@ -122,29 +139,41 @@ def normalize_string(value):
 
 
 def normalize_port_pair_groups(port_pair_groups):
-    port_pair_groups = converters.convert_to_list(port_pair_groups)
+    port_pair_groups = lib_converters.convert_to_list(port_pair_groups)
     if not port_pair_groups:
         raise PortPairGroupNotSpecified()
     return port_pair_groups
 
 
 def normalize_chain_parameters(parameters):
-    parameters = converters.convert_none_to_empty_dict(parameters)
-    if not parameters:
-        return DEFAULT_CHAIN_PARAMETER
-    for key, value in six.iteritems(parameters):
-        if (key, value) not in SUPPORTED_CHAIN_PARAMETERS:
-            raise InvalidChainParameter(key=key, value=value)
+    parameters = lib_converters.convert_none_to_empty_dict(parameters)
+    for key in parameters:
+        if key not in SUPPORTED_CHAIN_PARAMETERS:
+            raise InvalidChainParameter(
+                error_message='Unknown key %s.' % key)
+    try:
+        attr.fill_default_value(
+            SUPPORTED_CHAIN_PARAMETERS, parameters)
+        attr.convert_value(
+            SUPPORTED_CHAIN_PARAMETERS, parameters)
+    except ValueError as error:
+        raise InvalidChainParameter(error_message=str(error))
     return parameters
 
 
 def normalize_sf_parameters(parameters):
-    parameters = converters.convert_none_to_empty_dict(parameters)
-    if not parameters:
-        return DEFAULT_SF_PARAMETER
-    for key, value in six.iteritems(parameters):
-        if (key, value) not in SUPPORTED_SF_PARAMETERS:
-            raise InvalidServiceFunctionParameter(key=key, value=value)
+    parameters = lib_converters.convert_none_to_empty_dict(parameters)
+    for key in parameters:
+        if key not in SUPPORTED_SF_PARAMETERS:
+            raise InvalidServiceFunctionParameter(
+                error_message='Unknown key %s.' % key)
+    try:
+        attr.fill_default_value(
+            SUPPORTED_SF_PARAMETERS, parameters)
+        attr.convert_value(
+            SUPPORTED_SF_PARAMETERS, parameters)
+    except ValueError as error:
+        raise InvalidServiceFunctionParameter(error_message=str(error))
     return parameters
 
 
@@ -214,12 +243,12 @@ RESOURCE_ATTRIBUTE_MAP = {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': None,
             'validate': {'type:uuid_list': None},
-            'convert_to': converters.convert_to_list},
+            'convert_to': lib_converters.convert_to_list},
         'chain_parameters': {
             'allow_post': True, 'allow_put': False,
             'is_visible': True, 'default': None,
             'validate': {'type:dict': None},
-            'convert_to': normalize_chain_parameters},
+            'convert_to': normalize_chain_parameters}
     },
     'port_pair_groups': {
         'id': {
@@ -246,7 +275,7 @@ RESOURCE_ATTRIBUTE_MAP = {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': None,
             'validate': {'type:uuid_list': None},
-            'convert_to': converters.convert_none_to_empty_list},
+            'convert_to': lib_converters.convert_none_to_empty_list}
     },
 }
 
