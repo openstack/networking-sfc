@@ -12,23 +12,31 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from logging import config as logging_config
-
 from alembic import context
-from neutron.db import model_base
 from oslo_config import cfg
-from oslo_db.sqlalchemy import session
 import sqlalchemy as sa
 from sqlalchemy import event
 
+from neutron.db.migration.alembic_migrations import external
+from neutron.db.migration import autogen
+from neutron.db.migration.connection import DBConnection
+from neutron.db import model_base
+
 from networking_sfc.db.migration.models import head  # noqa
+
+
+try:
+    # NOTE(mriedem): This is to register the DB2 alembic code which
+    # is an optional runtime dependency.
+    from ibm_db_alembic.ibm_db import IbmDbImpl  # noqa # pylint: disable=unused-import
+except ImportError:
+    pass
 
 
 MYSQL_ENGINE = None
 SFC_VERSION_TABLE = 'alembic_version_sfc'
 config = context.config
 neutron_config = config.neutron_config
-logging_config.fileConfig(config.config_file_name)
 target_metadata = model_base.BASEV2.metadata
 
 
@@ -43,7 +51,27 @@ def set_mysql_engine():
                     model_base.BASEV2.__table_args__['mysql_engine'])
 
 
+def include_object(object_, name, type_, reflected, compare_to):
+    if type_ == 'table' and name in external.TABLES:
+        return False
+    elif type_ == 'index' and reflected and name.startswith("idx_autoinc_"):
+        # skip indexes created by SQLAlchemy autoincrement=True
+        # on composite PK integer columns
+        return False
+    else:
+        return True
+
+
 def run_migrations_offline():
+    """Run migrations in 'offline' mode.
+
+    This configures the context with either a URL
+    or an Engine.
+
+    Calls to context.execute() here emit the given string to the
+    script output.
+
+    """
     set_mysql_engine()
 
     kwargs = dict()
@@ -51,6 +79,7 @@ def run_migrations_offline():
         kwargs['url'] = neutron_config.database.connection
     else:
         kwargs['dialect_name'] = neutron_config.database.engine
+    kwargs['include_object'] = include_object
     kwargs['version_table'] = SFC_VERSION_TABLE
     context.configure(**kwargs)
 
@@ -65,21 +94,24 @@ def set_storage_engine(target, parent):
 
 
 def run_migrations_online():
-    set_mysql_engine()
-    engine = session.create_engine(neutron_config.database.connection)
+    """Run migrations in 'online' mode.
 
-    connection = engine.connect()
-    context.configure(
-        connection=connection,
-        target_metadata=target_metadata,
-        version_table=SFC_VERSION_TABLE
-    )
-    try:
+    In this scenario we need to create an Engine
+    and associate a connection with the context.
+
+    """
+    set_mysql_engine()
+    connection = config.attributes.get('connection')
+    with DBConnection(neutron_config.database.connection, connection) as conn:
+        context.configure(
+            connection=conn,
+            target_metadata=target_metadata,
+            version_table=SFC_VERSION_TABLE,
+            include_object=include_object,
+            process_revision_directives=autogen.process_revision_directives
+        )
         with context.begin_transaction():
             context.run_migrations()
-    finally:
-        connection.close()
-        engine.dispose()
 
 
 if context.is_offline_mode():
