@@ -15,7 +15,6 @@
 import netaddr
 import six
 
-from neutron_lib import constants as const
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_utils import uuidutils
@@ -24,6 +23,8 @@ import sqlalchemy as sa
 from sqlalchemy import orm
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm import exc
+
+from neutron_lib import constants as const
 
 from neutron.db import common_db_mixin
 from neutron.db import model_base
@@ -51,7 +52,6 @@ class FlowClassifier(model_base.BASEV2, model_base.HasId,
                      model_base.HasProject):
     """Represents a v2 neutron flow classifier."""
     __tablename__ = 'sfc_flow_classifiers'
-
     name = sa.Column(sa.String(255))
     ethertype = sa.Column(sa.String(40))
     protocol = sa.Column(sa.String(40))
@@ -289,7 +289,6 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
                 param['keyword']: param['value']
                 for k, param in six.iteritems(flow_classifier.l7_parameters)
             }
-
         }
         return self._fields(res, fields)
 

@@ -38,8 +38,7 @@ FLOW_CLASSIFIER_PREFIX = "/sfc"
 fc_supported_protocols = [const.PROTO_NAME_TCP,
                           const.PROTO_NAME_UDP, const.PROTO_NAME_ICMP]
 fc_supported_ethertypes = ['IPv4', 'IPv6']
-SUPPORTED_L7_PARAMETERS = []
-DEFAULT_L7_PARAMETER = {}
+SUPPORTED_L7_PARAMETERS = {}
 
 
 # Flow Classifier Exceptions
@@ -98,9 +97,8 @@ class FlowClassifierIpPrefixFormatConflictWithEthertype(
 
 class FlowClassifierInvalidL7Parameter(neutron_exc.InvalidInput):
     message = _(
-        "Flow Classifier does not support L7 parameter "
-        "(%%(key)s, %%(value)s). Supported L7 parameters are "
-        "%(supported_parameters)s."
+        "Invalid Flow Classifier parameters: %%(error_message)s. "
+        "Supported flow classifier parameters are %(supported_parameters)s."
     ) % {'supported_parameters': SUPPORTED_L7_PARAMETERS}
 
 
@@ -147,11 +145,17 @@ def normalize_port_value(port):
 
 def normalize_l7parameters(parameters):
     parameters = converters.convert_none_to_empty_dict(parameters)
-    if not parameters:
-        return DEFAULT_L7_PARAMETER
-    for key, value in six.iteritems(parameters):
-        if (key, value) not in SUPPORTED_L7_PARAMETERS:
-            raise FlowClassifierInvalidL7Parameter(key=key, value=value)
+    for key in parameters:
+        if key not in SUPPORTED_L7_PARAMETERS:
+            raise FlowClassifierInvalidL7Parameter(
+                error_message='Unknown key %s.' % key)
+    try:
+        attr.fill_default_value(
+            SUPPORTED_L7_PARAMETERS, parameters)
+        attr.convert_value(
+            SUPPORTED_L7_PARAMETERS, parameters)
+    except ValueError as error:
+        raise FlowClassifierInvalidL7Parameter(error_message=str(error))
     return parameters
 
 
