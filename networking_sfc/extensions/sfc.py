@@ -35,6 +35,24 @@ neutron_ext.append_api_extensions_path(extensions.__path__)
 SFC_EXT = "sfc"
 SFC_PREFIX = "/sfc"
 
+SUPPORTED_LB_FIELDS = [
+    "eth_src", "eth_dst", "ip_src", "ip_dst",
+    "tcp_src", "tcp_dst", "udp_src", "udp_dst"
+]
+
+
+class InvalidLBField(neutron_exc.InvalidInput):
+    message = _("Unknown lb field %(field)s.")
+
+
+def normalize_lb_fields(lb_fields):
+    lb_fields = lib_converters.convert_none_to_empty_list(lb_fields)
+    for field in lb_fields:
+        if field not in SUPPORTED_LB_FIELDS:
+            raise InvalidLBField(
+                field=field)
+    return lb_fields
+
 
 SUPPORTED_CHAIN_PARAMETERS = {
     'correlation': {
@@ -54,6 +72,14 @@ SUPPORTED_SF_PARAMETERS = {
         'default': 1,
         'validate': {'type:non_negative': None},
         'convert_to': lib_converters.convert_to_int
+    }
+}
+SUPPORTED_PPG_PARAMETERS = {
+    'lb_fields': {
+        'allow_post': True,
+        'default': None,
+        'validate': {'type:list_of_unique_strings': None},
+        'convert_to': normalize_lb_fields
     }
 }
 
@@ -80,6 +106,13 @@ class InvalidServiceFunctionParameter(neutron_exc.InvalidInput):
         "Invalid Service function parameter: %%(error_message)s. "
         "Supported service function parameters are %(supported_paramters)s."
     ) % {'supported_paramters': SUPPORTED_SF_PARAMETERS}
+
+
+class InvalidPortPairGroupParameter(neutron_exc.InvalidInput):
+    message = _(
+        "Invalid port pair group parameter: %%(error_message)s. "
+        "Supported port pair group parameters are %(supported_paramters)s."
+    ) % {'supported_paramters': SUPPORTED_PPG_PARAMETERS}
 
 
 class PortPairGroupNotSpecified(neutron_exc.InvalidInput):
@@ -174,6 +207,22 @@ def normalize_sf_parameters(parameters):
             SUPPORTED_SF_PARAMETERS, parameters)
     except ValueError as error:
         raise InvalidServiceFunctionParameter(error_message=str(error))
+    return parameters
+
+
+def normalize_ppg_parameters(parameters):
+    parameters = lib_converters.convert_none_to_empty_dict(parameters)
+    for key in parameters:
+        if key not in SUPPORTED_PPG_PARAMETERS:
+            raise InvalidPortPairGroupParameter(
+                error_message='Unknown key %s.' % key)
+    try:
+        attr.fill_default_value(
+            SUPPORTED_PPG_PARAMETERS, parameters)
+        attr.convert_value(
+            SUPPORTED_PPG_PARAMETERS, parameters)
+    except ValueError as error:
+        raise InvalidPortPairGroupParameter(error_message=str(error))
     return parameters
 
 
@@ -275,7 +324,12 @@ RESOURCE_ATTRIBUTE_MAP = {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': None,
             'validate': {'type:uuid_list': None},
-            'convert_to': lib_converters.convert_none_to_empty_list}
+            'convert_to': lib_converters.convert_none_to_empty_list},
+        'port_pair_group_parameters': {
+            'allow_post': True, 'allow_put': False,
+            'is_visible': True, 'default': None,
+            'validate': {'type:dict': None},
+            'convert_to': normalize_ppg_parameters},
     },
 }
 
