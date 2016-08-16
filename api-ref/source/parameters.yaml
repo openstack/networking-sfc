@@ -22,34 +22,22 @@ port_chain_id:
   in: path
   required: true
   type: uuid
-tenant_id:
-  description: |
-     The UUID of the tenant in a multi-tenancy cloud.
-  in: body
-  required: true
-  type: uuid
 
 # variables in query
 
 # variables in body
-port_chain_name:
+chain_id:
   description: |
-      The name of the port-chain.
+      The UUID of the port-chain.
   in: body
   required: true
-  type: string
-port_pair_name:
+  type: uuid
+chain_parameters:
   description: |
-      The name of the port-pair.
+    A dictionary of chain parameters.
   in: body
-  required: true
-  type: string
-port_pair_group_name:
-  description: |
-      The name of the port-pair-group.
-  in: body
-  required: true
-  type: string
+  required: false
+  type: dict
 classifier_name:
   description: |
       The name of the flow-classifier.
@@ -62,117 +50,135 @@ description:
   in: body
   required: false
   type: string
-port_pair_id:
-  description: |
-      The UUID of the port-pair.
-  in: body
-  required: true
-  type: uuid
-port_pair_group_id:
-  description: |
-      The UUID of the port-pair-group.
-  in: body
-  required: true
-  type: uuid
-chain_id:
-  description: |
-      The UUID of the port-chain.
-  in: body
-  required: true
-  type: uuid
-flow_classifier_id:
-  description: |
-      The UUID of the flow-classifier.
-  in: body
-  required: true
-  type: uuid
-port_pair_groups:
-  description: |
-      List of port-pair-group UUIDs.
-  in: body
-  required: true
-  type: list(uuid)
-port_pairs:
-  description: |
-      List of port-pair UUIDs.
-  in: body
-  required: true
-  type: list(uuid)
-flow_classifiers:
-  description: |
-      List of flow-classifier UUIDs.
-  in: body
-  required: false
-  type: list(uuid)
-chain_parameters:
-  description: |
-    A dictionary of chain parameters.
-  in: body
-  required: false
-  type: dict
-ingress_port_id:
-  description: |
-    The UUID of the ingress Neutron port.
-  in: body
-  required: true
-  type: uuid
-egress_port_id:
-  description: |
-    The UUID of the egress Neutron port.
-  in: body
-  required: true
-  type: uuid
-service_function_parameters:
-  description: |
-    A dictionary of service function parameters.
-  in: body
-  required: false
-  type: dict
-ethertype:
-  description: |
-    L2 ethertype. Can be IPv4 or IPv6 only.
-  in: body
-  required: false
-  type: string
-source_logical_port:
-  description: |
-    The UUID of the source logical port.
-  in: body
-  required: false
-  type: uuid
-destination_logical_port:
-  description: |
-    The UUID of the destination logical port.
-  in: body
-  required: false
-  type: uuid
-source_ip_prefix:
-  description: |
-    The source IP prefix.
-  in: body
-  required: false
-  type: cidr
 destination_ip_prefix:
   description: |
     The destination IP prefix.
   in: body
   required: false
   type: cidr
-protocol:
+destination_logical_port:
   description: |
-    IP protocol.
+    The UUID of the destination logical port.
   in: body
   required: false
-  type: string
+  type: uuid
+destination_port_range_max:
+  description: |
+    Maximum destination protocol port.
+  in: body
+  required: false
+  type: integer
 destination_port_range_min:
   description: |
     Minimum destination protocol port.
   in: body
   required: false
   type: integer
-destination_port_range_max:
+egress_port_id:
   description: |
-    Maximum destination protocol port.
+    The UUID of the egress Neutron port.
+  in: body
+  required: true
+  type: uuid
+ethertype:
+  description: |
+    L2 ethertype. Can be IPv4 or IPv6 only.
+  in: body
+  required: false
+  type: string
+flow_classifier_id:
+  description: |
+      The UUID of the flow-classifier.
+  in: body
+  required: true
+  type: uuid
+flow_classifiers:
+  description: |
+      List of flow-classifier UUIDs.
+  in: body
+  required: false
+  type: list(uuid)
+ingress_port_id:
+  description: |
+    The UUID of the ingress Neutron port.
+  in: body
+  required: true
+  type: uuid
+l7_parameters:
+  description: |
+    A dictionary of L7 parameters.
+  in: body
+  required: false
+  type: dict
+port_chain_name:
+  description: |
+      The name of the port-chain.
+  in: body
+  required: true
+  type: string
+port_pair_group_id:
+  description: |
+      The UUID of the port-pair-group.
+  in: body
+  required: true
+  type: uuid
+port_pair_group_name:
+  description: |
+      The name of the port-pair-group.
+  in: body
+  required: true
+  type: string
+port_pair_groups:
+  description: |
+      List of port-pair-group UUIDs.
+  in: body
+  required: true
+  type: list(uuid)
+port_pair_id:
+  description: |
+      The UUID of the port-pair.
+  in: body
+  required: true
+  type: uuid
+port_pair_name:
+  description: |
+      The name of the port-pair.
+  in: body
+  required: true
+  type: string
+port_pairs:
+  description: |
+      List of port-pair UUIDs.
+  in: body
+  required: true
+  type: list(uuid)
+protocol:
+  description: |
+    IP protocol.
+  in: body
+  required: false
+  type: string
+service_function_parameters:
+  description: |
+    A dictionary of service function parameters.
+  in: body
+  required: false
+  type: dict
+source_ip_prefix:
+  description: |
+    The source IP prefix.
+  in: body
+  required: false
+  type: cidr
+source_logical_port:
+  description: |
+    The UUID of the source logical port.
+  in: body
+  required: false
+  type: uuid
+source_port_range_max:
+  description: |
+    Maximum source protocol port.
   in: body
   required: false
   type: integer
@@ -182,16 +188,10 @@ source_port_range_min:
   in: body
   required: false
   type: integer
-source_port_range_max:
+tenant_id:
   description: |
-    Maximum source protocol port.
+     The UUID of the tenant in a multi-tenancy cloud.
   in: body
-  required: false
-  type: integer
-l7_parameters:
-  description: |
-    A dictionary of L7 parameters.
-  in: body
-  required: false
-  type: dict
+  required: true
+  type: uuid
 
