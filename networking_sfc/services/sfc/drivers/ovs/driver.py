@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
+
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
@@ -29,6 +31,7 @@ from neutron.plugins.ml2.drivers.l2pop import rpc as l2pop_rpc
 from networking_sfc._i18n import _LE, _LW
 from networking_sfc.extensions import flowclassifier
 from networking_sfc.extensions import sfc
+from networking_sfc.services.sfc.common import exceptions as exc
 from networking_sfc.services.sfc.drivers import base as driver_base
 from networking_sfc.services.sfc.drivers.ovs import(
     rpc_topics as sfc_topics)
@@ -199,6 +202,28 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def _delete_agent_fdb_entries(self, flow_rule):
         self._call_on_l2pop_driver(flow_rule, "remove_fdb_entries")
 
+    def _get_subnet(self, tenant_id, cidr):
+        core_plugin = manager.NeutronManager.get_plugin()
+        filters = {'tenant_id': [tenant_id]}
+        subnets = core_plugin.get_subnets(self.admin_context, filters=filters)
+        cidr_set = netaddr.IPSet([cidr])
+
+        for subnet in subnets:
+            subnet_cidr_set = netaddr.IPSet([subnet['cidr']])
+            if cidr_set.issubset(subnet_cidr_set):
+                return subnet
+
+    def _get_subnet_by_port(self, id):
+        core_plugin = manager.NeutronManager.get_plugin()
+        port = core_plugin.get_port(self.admin_context, id)
+        for ip in port['fixed_ips']:
+            subnet = core_plugin.get_subnet(self.admin_context,
+                                            ip["subnet_id"])
+            # currently only support one subnet for a port
+            break
+
+        return subnet
+
     @log_helpers.log_method_call
     def _get_portgroup_members(self, context, pg_id):
         next_group_members = []
@@ -296,11 +321,65 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             LOG.error(_LE('No path_id available for creating port chain path'))
             return
 
+        port_pair_groups = port_chain['port_pair_groups']
+        sf_path_length = len(port_pair_groups)
+
+        # Detect cross-subnet transit
+        # Compare subnets for logical source ports
+        # and first PPG ingress ports
+        for fc in self._get_fcs_by_ids(port_chain['flow_classifiers']):
+            subnet1 = self._get_subnet_by_port(fc['logical_source_port'])
+            cidr1 = subnet1['cidr']
+            ppg = context._plugin.get_port_pair_group(context._plugin_context,
+                                                      port_pair_groups[0])
+            for pp_id1 in ppg['port_pairs']:
+                pp1 = context._plugin.get_port_pair(context._plugin_context,
+                                                    pp_id1)
+                filter1 = {}
+                if pp1.get('ingress', None):
+                    filter1 = dict(dict(ingress=pp1['ingress']), **filter1)
+                    pd1 = self.get_port_detail_by_filter(filter1)
+                    subnet2 = self._get_subnet_by_port(pd1['ingress'])
+                    cidr2 = subnet2['cidr']
+                    if cidr1 != cidr2:
+                        LOG.error(_LE('Cross-subnet chain not supported'))
+                        raise exc.SfcDriverError()
+                        return None
+
+        # Compare subnets for PPG egress ports
+        # and next PPG ingress ports
+        for i in range(sf_path_length - 1):
+            ppg = context._plugin.get_port_pair_group(context._plugin_context,
+                                                      port_pair_groups[i])
+            next_ppg = context._plugin.get_port_pair_group(
+                context._plugin_context, port_pair_groups[i + 1])
+            for pp_id1 in ppg['port_pairs']:
+                pp1 = context._plugin.get_port_pair(context._plugin_context,
+                                                    pp_id1)
+                filter1 = {}
+                if pp1.get('egress', None):
+                    filter1 = dict(dict(egress=pp1['egress']), **filter1)
+                    pd1 = self.get_port_detail_by_filter(filter1)
+                    subnet1 = self._get_subnet_by_port(pd1['egress'])
+                    cidr3 = subnet1['cidr']
+
+                for pp_id2 in next_ppg['port_pairs']:
+                    pp2 = context._plugin.get_port_pair(
+                        context._plugin_context, pp_id2)
+                    filter2 = {}
+                    if pp2.get('ingress', None):
+                        filter2 = dict(dict(ingress=pp2['ingress']), **filter2)
+                        pd2 = self.get_port_detail_by_filter(filter2)
+                        subnet2 = self._get_subnet_by_port(pd2['ingress'])
+                        cidr4 = subnet2['cidr']
+                        if cidr3 != cidr4:
+                            LOG.error(_LE('Cross-subnet chain not supported'))
+                            raise exc.SfcDriverError()
+                            return None
+
         next_group_intid, next_group_members = self._get_portgroup_members(
             context, port_chain['port_pair_groups'][0])
 
-        port_pair_groups = port_chain['port_pair_groups']
-        sf_path_length = len(port_pair_groups)
         # Create a head node object for port chain
         src_args = {'tenant_id': port_chain['tenant_id'],
                     'node_type': ovs_const.SRC_NODE,
