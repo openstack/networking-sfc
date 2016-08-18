@@ -1,0 +1,43 @@
+# This script is executed in the OpenStack CI job that runs DevStack + tempest.
+# You can find the CI job configuration here:
+#
+# http://git.openstack.org/cgit/openstack-infra/project-config/tree/jenkins/jobs/networking-sfc.yaml
+#
+
+export OVERRIDE_ENABLED_SERVICES=q-svc,q-dhcp,q-meta,neutron,tempest,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch,g-api,g-reg,mysql,rabbit,key,dstat
+# Begin list of exclusions.
+r="^(?!.*"
+
+# exclude the slow tag (part of the default for 'full')
+r="$r(?:.*\[.*\bslow\b.*\])"
+
+# exclude things that just aren't enabled:
+r="$r|(?:tempest\.api\.network\.admin\.test_quotas\.QuotasTest\.test_lbaas_quotas.*)"
+r="$r|(?:tempest\.api\.network\.test_load_balancer.*)"
+r="$r|(?:tempest\.scenario\.test_load_balancer.*)"
+r="$r|(?:tempest\.api\.network\.admin\.test_load_balancer.*)"
+r="$r|(?:tempest\.api\.network\.admin\.test_lbaas.*)"
+r="$r|(?:tempest\.api\.network\.test_fwaas_extensions.*)"
+r="$r|(?:tempest\.api\.network\.test_metering_extensions.*)"
+r="$r|(?:tempest\.thirdparty\.boto\.test_s3.*)"
+
+# exclude some unrelated stuff to make networking-sfc targeted runs go faster
+r="$r|(?:tempest\.api\.identity*)"
+r="$r|(?:tempest\.api\.image*)"
+r="$r|(?:tempest\.api\.volume*)"
+r="$r|(?:tempest\.api\.compute\.images*)"
+r="$r|(?:tempest\.api\.volume*)"
+r="$r|(?:tempest\.api\.compute\.images*)"
+r="$r|(?:tempest\.api\.compute\.keypairs*)"
+r="$r|(?:tempest\.api\.compute\.certificates*)"
+r="$r|(?:tempest\.api\.compute\.flavors*)"
+r="$r|(?:tempest\.api\.compute\.test_quotas*)"
+r="$r|(?:tempest\.api\.compute\.test_versions*)"
+r="$r|(?:tempest\.api\.compute\.volumes*)"
+
+# End list of exclusions.
+r="$r)"
+
+# only run tempest.api/scenario/thirdparty tests (part of the default for 'full')
+r="$r((?:tempest\.(api|scenario|thirdparty))|(?:networking_sfc\.tests\.tempest_plugin)).*$"
+export DEVSTACK_GATE_TEMPEST_REGEX="$r"
