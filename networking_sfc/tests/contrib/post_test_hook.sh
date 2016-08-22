@@ -31,6 +31,13 @@ prep_func="dsvm_functional_prep_func"
 # Set owner permissions according to job's requirements.
 cd $SFC_DIR
 sudo chown -R $owner:stack $SFC_DIR
+set +e
+sudo ls -l -a $BASE
+sudo ls -l -a $BASE/new
+sudo ps -ef
+sudo cat /etc/neutron/neutron.conf
+sudo cat /etc/neutron/plugins/ml2/ml2_conf.ini
+set -e
 # Prep the environment according to job's requirements.
 $prep_func
 
