@@ -38,3 +38,7 @@ def upgrade():
     sa.PrimaryKeyConstraint('keyword', 'pair_group_id'),
     mysql_engine='InnoDB'
     )
+    op.add_column('sfc_port_chains', sa.Column('chain_id', sa.Integer(), nullable=False))
+    op.create_unique_constraint(None, 'sfc_port_chains', ['chain_id'])
+    op.add_column('sfc_port_pair_groups', sa.Column('group_id', sa.Integer(), nullable=False))
+    op.create_unique_constraint(None, 'sfc_port_pair_groups', ['group_id'])
