@@ -103,7 +103,7 @@ class CLITestV20PortPairExtensionJSON(test_cli20.CLITestV20Base):
                                    position_names, position_values)
 
     def test_update_port_pair_description(self):
-        """Update port_pair: myid --name myname."""
+        """Update port_pair: myid --description mydesc."""
         resource = 'port_pair'
         desc1 = "My_New_Port_Pair"
         cmd = pp.PortPairUpdate(test_cli20.MyApp(sys.stdout), None)

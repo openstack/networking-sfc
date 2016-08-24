@@ -160,7 +160,7 @@ class CLITestV20FCExtensionJSON(test_cli20.CLITestV20Base):
                                  args, ['id', 'name'])
 
     def test_update_flow_classifier_description(self):
-        """flow-classifier-update myid --name newname."""
+        """flow-classifier-update myid --description mydesc."""
         resource = 'flow_classifier'
         cmd = fc.FlowClassifierUpdate(test_cli20.MyApp(sys.stdout), None)
         myid = 'myid'
@@ -170,7 +170,7 @@ class CLITestV20FCExtensionJSON(test_cli20.CLITestV20Base):
         self._test_update_resource(resource, cmd, myid, args, updatefields)
 
     def test_update_flow_classifier_name(self):
-        """flow-classifier-update myid --protocol any."""
+        """flow-classifier-update myid --name myname."""
         resource = 'flow_classifier'
         cmd = fc.FlowClassifierUpdate(test_cli20.MyApp(sys.stdout), None)
         self._test_update_resource(resource, cmd, 'myid',
