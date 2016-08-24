@@ -75,7 +75,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                 'chain_parameters') or {'correlation': 'mpls'},
             'flow_classifiers': port_chain.get(
                 'flow_classifiers') or [],
-            'tenant_id': port_chain['tenant_id']
+            'tenant_id': port_chain['tenant_id'],
         }}
         return ret
 
@@ -356,7 +356,10 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             'description': port_pair_group.get('description') or '',
             'name': port_pair_group.get('name') or '',
             'port_pairs': port_pair_group.get('port_pairs') or [],
-            'tenant_id': port_pair_group['tenant_id']
+            'tenant_id': port_pair_group['tenant_id'],
+            'port_pair_group_parameters': port_pair_group.get(
+                'port_pair_group_parameters'
+            ) or {'lb_fields': []}
         }}
         return ret
 
@@ -388,6 +391,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             'description': 'desc',
             'name': 'test1',
             'port_pairs': [],
+            'port_pair_group_parameters': {},
             'tenant_id': _uuid()
         }}
         expected_data = self._get_expected_port_pair_group(data)
@@ -406,6 +410,91 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         res = self.deserialize(res)
         self.assertIn('port_pair_group', res)
         self.assertEqual(return_value, res['port_pair_group'])
+
+    def test_create_port_pair_group_none_parameters(self):
+        portpairgroup_id = _uuid()
+        data = {'port_pair_group': {
+            'port_pairs': [_uuid()],
+            'port_pair_group_parameters': None,
+            'tenant_id': _uuid()
+        }}
+        expected_data = self._get_expected_port_pair_group(data)
+        return_value = copy.copy(expected_data['port_pair_group'])
+        return_value.update({'id': portpairgroup_id})
+        instance = self.plugin.return_value
+        instance.create_port_pair_group.return_value = return_value
+        res = self.api.post(_get_path(PORT_PAIR_GROUP_PATH, fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt)
+        instance.create_port_pair_group.assert_called_with(
+            mock.ANY,
+            port_pair_group=expected_data)
+        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        res = self.deserialize(res)
+        self.assertIn('port_pair_group', res)
+        self.assertEqual(return_value, res['port_pair_group'])
+
+    def test_create_port_pair_group_empty_parameters(self):
+        portpairgroup_id = _uuid()
+        data = {'port_pair_group': {
+            'port_pairs': [_uuid()],
+            'port_pair_group_parameters': {},
+            'tenant_id': _uuid()
+        }}
+        expected_data = self._get_expected_port_pair_group(data)
+        return_value = copy.copy(expected_data['port_pair_group'])
+        return_value.update({'id': portpairgroup_id})
+        instance = self.plugin.return_value
+        instance.create_port_pair_group.return_value = return_value
+        res = self.api.post(_get_path(PORT_PAIR_GROUP_PATH, fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt)
+        instance.create_port_pair_group.assert_called_with(
+            mock.ANY,
+            port_pair_group=expected_data)
+        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        res = self.deserialize(res)
+        self.assertIn('port_pair_group', res)
+        self.assertEqual(return_value, res['port_pair_group'])
+
+    def test_create_port_pair_group_invalid_parameters(self):
+        data = {'port_pair_group': {
+            'port_pairs': [_uuid()],
+            'port_pair_group_parameters': {'abc': 'def'},
+            'tenant_id': _uuid()
+        }}
+        self.assertRaises(
+            webtest.app.AppError,
+            self.api.post,
+            _get_path(PORT_PAIR_GROUP_PATH, fmt=self.fmt),
+            self.serialize(data),
+            content_type='application/%s' % self.fmt)
+
+    def test_create_port_pair_group_invalid_lb_fields_type(self):
+        data = {'port_pair_group': {
+            'port_pairs': [_uuid()],
+            'port_pair_group_parameters': {'lb_fields': 'ip_src'},
+            'tenant_id': _uuid()
+        }}
+        self.assertRaises(
+            webtest.app.AppError,
+            self.api.post,
+            _get_path(PORT_PAIR_GROUP_PATH, fmt=self.fmt),
+            self.serialize(data),
+            content_type='application/%s' % self.fmt)
+
+    def test_create_port_pair_group_invalid_lb_fields(self):
+        data = {'port_pair_group': {
+            'port_pairs': [_uuid()],
+            'port_pair_group_parameters': {'lb_fields': ['def']},
+            'tenant_id': _uuid()
+        }}
+        self.assertRaises(
+            webtest.app.AppError,
+            self.api.post,
+            _get_path(PORT_PAIR_GROUP_PATH, fmt=self.fmt),
+            self.serialize(data),
+            content_type='application/%s' % self.fmt)
 
     def test_create_port_pair_group_nonuuid_port_pairs(self):
         data = {'port_pair_group': {

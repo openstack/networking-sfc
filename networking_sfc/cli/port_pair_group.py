@@ -13,7 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from neutronclient.common import extension
+from neutronclient.common import utils
 from neutronclient.neutron import v2_0 as neutronv20
 
 from networking_sfc._i18n import _
@@ -68,9 +71,30 @@ class PortPairGroupCreate(extension.ClientExtensionCreate, PortPairGroup):
             metavar='NAME',
             help=_('Name of the Port Pair Group.'))
         add_common_arguments(parser)
+        parser.add_argument(
+            '--port-pair-group-parameters',
+            metavar=(
+                'type=TYPE[,service_type=SERVICE_TYPE'
+                ',lb_fields=LB_FIELDS]'),
+            type=utils.str2dict,
+            help=_('Dictionary of Port pair group parameters. '
+                   'Currently, only service_type=[l2,l3] and '
+                   '\'&\' separated string of the lb_fields '
+                   'are supported.'))
 
     def args2body(self, parsed_args):
         body = {}
+        if parsed_args.port_pair_group_parameters:
+            body['port_pair_group_parameters'] = {}
+            for key, value in six.iteritems(
+                parsed_args.port_pair_group_parameters
+            ):
+                if key == 'lb_fields':
+                    body['port_pair_group_parameters'][key] = ([
+                        field for field in value.split('&') if field])
+                else:
+                    body['port_pair_group_parameters'][key] = value
+
         body = update_common_args2body(self.get_client(), body, parsed_args)
         return {self.resource: body}
 

@@ -66,6 +66,17 @@ class ServiceFunctionParam(model_base.BASEV2):
         primary_key=True)
 
 
+class PortPairGroupParam(model_base.BASEV2):
+    """Represents a port pair group parameter."""
+    __tablename__ = 'sfc_port_pair_group_params'
+    keyword = sa.Column(sa.String(PARAM_LEN), primary_key=True)
+    value = sa.Column(sa.String(PARAM_LEN))
+    pair_group_id = sa.Column(
+        sa.String(UUID_LEN),
+        sa.ForeignKey('sfc_port_pair_groups.id', ondelete='CASCADE'),
+        primary_key=True)
+
+
 class ChainClassifierAssoc(model_base.BASEV2):
     """Relation table between sfc_port_chains and flow_classifiers."""
     __tablename__ = 'sfc_chain_classifier_associations'
@@ -141,6 +152,10 @@ class PortPairGroup(model_base.BASEV2, model_base.HasId,
         PortPair,
         backref='port_pair_group'
     )
+    port_pair_group_parameters = orm.relationship(
+        PortPairGroupParam,
+        collection_class=attribute_mapped_collection('keyword'),
+        cascade='all, delete-orphan')
     chain_group_associations = orm.relationship(
         ChainGroupAssoc,
         backref='port_pair_groups')
@@ -497,6 +512,12 @@ class SfcDbPlugin(
             'description': port_pair_group['description'],
             'tenant_id': port_pair_group['tenant_id'],
             'port_pairs': [pp['id'] for pp in port_pair_group['port_pairs']],
+            'port_pair_group_parameters': {
+                param['keyword']: jsonutils.loads(param['value'])
+                for k, param in six.iteritems(
+                    port_pair_group['port_pair_group_parameters']
+                )
+            }
         }
 
         return self._fields(res, fields)
@@ -513,12 +534,20 @@ class SfcDbPlugin(
             for portpair in portpairs_list:
                 if portpair.portpairgroup_id:
                     raise ext_sfc.PortPairInUse(id=portpair.id)
+            port_pair_group_parameters = {
+                key: PortPairGroupParam(
+                    keyword=key, value=jsonutils.dumps(val))
+                for key, val in six.iteritems(
+                    pg['port_pair_group_parameters']
+                )
+            }
             port_pair_group_db = PortPairGroup(
                 id=uuidutils.generate_uuid(),
                 name=pg['name'],
                 description=pg['description'],
                 tenant_id=tenant_id,
-                port_pairs=portpairs_list)
+                port_pairs=portpairs_list,
+                port_pair_group_parameters=port_pair_group_parameters)
             context.session.add(port_pair_group_db)
             return self._make_port_pair_group_dict(port_pair_group_db)
 

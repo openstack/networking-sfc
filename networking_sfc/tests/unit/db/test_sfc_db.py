@@ -171,7 +171,10 @@ class SfcDbPluginTestCaseBase(
         ret = {
             'name': port_pair_group.get('name') or '',
             'description': port_pair_group.get('description') or '',
-            'port_pairs': port_pair_group.get('port_pairs') or []
+            'port_pairs': port_pair_group.get('port_pairs') or [],
+            'port_pair_group_parameters': port_pair_group.get(
+                'port_pair_group_parameters'
+            ) or {'lb_fields': []}
         }
         return ret
 
@@ -1212,7 +1215,36 @@ class SfcDbPluginTestCase(
         self._test_create_port_pair_group({
             'name': 'test1',
             'description': 'desc1',
-            'port_pairs': []
+            'port_pairs': [],
+            'port_pair_group_parameters': {
+                'lb_fields': ['ip_src', 'ip_dst']
+            }
+        })
+
+    def test_create_port_pair_group_with_empty_parameters(self):
+        self._test_create_port_pair_group({
+            'name': 'test1',
+            'description': 'desc1',
+            'port_pairs': [],
+            'port_pair_group_parameters': {}
+        })
+
+    def test_create_port_pair_group_with_none_parameters(self):
+        self._test_create_port_pair_group({
+            'name': 'test1',
+            'description': 'desc1',
+            'port_pairs': [],
+            'port_pair_group_parameters': None
+        })
+
+    def test_create_port_pair_group_with_default_parameters(self):
+        self._test_create_port_pair_group({
+            'name': 'test1',
+            'description': 'desc1',
+            'port_pairs': [],
+            'port_pair_group_parameters': {
+                'lb_fields': []
+            }
         })
 
     def test_create_port_pair_group_with_port_pairs(self):

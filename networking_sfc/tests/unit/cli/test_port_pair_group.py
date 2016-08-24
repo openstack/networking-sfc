@@ -70,7 +70,7 @@ class CLITestV20PortGroupExtensionJSON(test_cli20.CLITestV20Base):
         self._test_create_resource(resource, cmd, name, myid, args,
                                    position_names, position_values)
 
-    def test_create_port_pair_group_with_ingress_egress_port_group(self):
+    def test_create_port_pair_group_with_multi_port_pairs(self):
         """Create port_pair_group: myname with multiple port pairs"""
         resource = 'port_pair_group'
         cmd = pg.PortPairGroupCreate(test_cli20.MyApp(sys.stdout), None)
@@ -79,6 +79,27 @@ class CLITestV20PortGroupExtensionJSON(test_cli20.CLITestV20Base):
         args = [name, '--port-pair', pp1, '--port-pair', pp2]
         position_names = ['name', 'port_pairs']
         position_values = [name, [pp1, pp2]]
+        self._test_create_resource(resource, cmd, name, myid, args,
+                                   position_names, position_values)
+
+    def test_create_port_pair_group_with_all_param(self):
+        """Create port_pair_group: myname with all parameter"""
+        resource = 'port_pair_group'
+        cmd = pg.PortPairGroupCreate(test_cli20.MyApp(sys.stdout),
+                                     None)
+        name = 'myname'
+        myid = 'myid'
+        ppg_param = (
+            'service_type=l2,'
+            'lb_fields=ip_src&ip_dst')
+        ppg_exp = {
+            "service_type": "l2",
+            "lb_fields": ["ip_src", "ip_dst"]}
+        args = [name, '--port-pair', pp1,
+                '--port-pair-group-parameters', ppg_param]
+        position_names = ['name', 'port_pairs',
+                          'port_pair_group_parameters']
+        position_values = [name, [pp1], ppg_exp]
         self._test_create_resource(resource, cmd, name, myid, args,
                                    position_names, position_values)
 
@@ -105,8 +126,7 @@ class CLITestV20PortGroupExtensionJSON(test_cli20.CLITestV20Base):
         resource = 'port_pair_group'
         cmd = pg.PortPairGroupUpdate(test_cli20.MyApp(sys.stdout), None)
         myid = 'myid'
-        args = [myid, '--port-pair', pp1,
-                '--port-pair', pp2, '--description', 'my_port_group',
+        args = [myid, '--port-pair', pp1, '--port-pair', pp2,
                 '--description', 'my_port_pair_group']
         updatefields = {'port_pairs': [pp1, pp2],
                         'description': 'my_port_pair_group'}
