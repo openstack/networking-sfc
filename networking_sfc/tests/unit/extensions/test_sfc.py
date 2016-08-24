@@ -66,16 +66,18 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         self.mock_log_api_res_log = mock_log_api_res_log_p.start()
 
     def _get_expected_port_chain(self, data):
-        return {'port_chain': {
-            'description': data['port_chain'].get('description') or '',
-            'name': data['port_chain'].get('name') or '',
-            'port_pair_groups': data['port_chain']['port_pair_groups'],
+        port_chain = data['port_chain']
+        ret = {'port_chain': {
+            'description': port_chain.get('description') or '',
+            'name': port_chain.get('name') or '',
+            'port_pair_groups': port_chain['port_pair_groups'],
             'chain_parameters': data['port_chain'].get(
                 'chain_parameters') or {'correlation': 'mpls'},
-            'flow_classifiers': data['port_chain'].get(
+            'flow_classifiers': port_chain.get(
                 'flow_classifiers') or [],
-            'tenant_id': data['port_chain']['tenant_id']
+            'tenant_id': port_chain['tenant_id']
         }}
+        return ret
 
     def test_create_port_chain(self):
         portchain_id = _uuid()
@@ -221,6 +223,19 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             self.serialize(data),
             content_type='application/%s' % self.fmt)
 
+    def test_create_port_chain_invalid_chain_parameters_correlation(self):
+        data = {'port_chain': {
+            'port_pair_groups': [_uuid()],
+            'chain_parameters': {'correlation': 'def'},
+            'tenant_id': _uuid()
+        }}
+        self.assertRaises(
+            webtest.app.AppError,
+            self.api.post,
+            _get_path(PORT_CHAIN_PATH, fmt=self.fmt),
+            self.serialize(data),
+            content_type='application/%s' % self.fmt)
+
     def test_port_chain_list(self):
         portchain_id = _uuid()
         return_value = [{
@@ -336,12 +351,14 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         self._test_entity_delete('port_chain')
 
     def _get_expected_port_pair_group(self, data):
-        return {'port_pair_group': {
-            'description': data['port_pair_group'].get('description') or '',
-            'name': data['port_pair_group'].get('name') or '',
-            'port_pairs': data['port_pair_group'].get('port_pairs') or [],
-            'tenant_id': data['port_pair_group']['tenant_id']
+        port_pair_group = data['port_pair_group']
+        ret = {'port_pair_group': {
+            'description': port_pair_group.get('description') or '',
+            'name': port_pair_group.get('name') or '',
+            'port_pairs': port_pair_group.get('port_pairs') or [],
+            'tenant_id': port_pair_group['tenant_id']
         }}
+        return ret
 
     def test_create_port_pair_group(self):
         portpairgroup_id = _uuid()
@@ -499,7 +516,8 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             'ingress': data['port_pair']['ingress'],
             'egress': data['port_pair']['egress'],
             'service_function_parameters': data['port_pair'].get(
-                'service_function_parameters') or {'correlation': None},
+                'service_function_parameters') or {
+                'correlation': None, 'weight': 1},
             'tenant_id': data['port_pair']['tenant_id']
         }}
 
@@ -533,7 +551,8 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             'name': 'test1',
             'ingress': _uuid(),
             'egress': _uuid(),
-            'service_function_parameters': {'correlation': None},
+            'service_function_parameters': {
+                'correlation': None, 'weight': 2},
             'tenant_id': _uuid()
         }}
         expected_data = self._get_expected_port_pair(data)
@@ -605,6 +624,48 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             'ingress': _uuid(),
             'egress': _uuid(),
             'service_function_parameters': {'abc': 'def'},
+            'tenant_id': _uuid()
+        }}
+        self.assertRaises(
+            webtest.app.AppError,
+            self.api.post,
+            _get_path(PORT_PAIR_PATH, fmt=self.fmt),
+            self.serialize(data),
+            content_type='application/%s' % self.fmt)
+
+    def test_create_port_pair_invalid_correlation(self):
+        data = {'port_pair': {
+            'ingress': _uuid(),
+            'egress': _uuid(),
+            'service_function_parameters': {'correlation': 'def'},
+            'tenant_id': _uuid()
+        }}
+        self.assertRaises(
+            webtest.app.AppError,
+            self.api.post,
+            _get_path(PORT_PAIR_PATH, fmt=self.fmt),
+            self.serialize(data),
+            content_type='application/%s' % self.fmt)
+
+    def test_create_port_pair_invalid_weight_type(self):
+        data = {'port_pair': {
+            'ingress': _uuid(),
+            'egress': _uuid(),
+            'service_function_parameters': {'weight': 'abc'},
+            'tenant_id': _uuid()
+        }}
+        self.assertRaises(
+            webtest.app.AppError,
+            self.api.post,
+            _get_path(PORT_PAIR_PATH, fmt=self.fmt),
+            self.serialize(data),
+            content_type='application/%s' % self.fmt)
+
+    def test_create_port_pair_invalid_weight(self):
+        data = {'port_pair': {
+            'ingress': _uuid(),
+            'egress': _uuid(),
+            'service_function_parameters': {'weight': -1},
             'tenant_id': _uuid()
         }}
         self.assertRaises(
