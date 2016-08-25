@@ -48,8 +48,8 @@ class L7Parameter(model_base.BASEV2):
         primary_key=True)
 
 
-class FlowClassifier(model_base.BASEV2, model_base.HasId,
-                     model_base.HasProject):
+class FlowClassifier(model_base.BASEV2, models_v2.HasId,
+                     models_v2.HasTenant):
     """Represents a v2 neutron flow classifier."""
     __tablename__ = 'sfc_flow_classifiers'
     name = sa.Column(sa.String(255))
