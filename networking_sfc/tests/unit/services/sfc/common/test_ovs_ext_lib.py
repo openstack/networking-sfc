@@ -28,7 +28,7 @@ class GetPortMaskTestCase(base.BaseTestCase):
 
     def test_single_port(self):
         masks = ovs_ext_lib.get_port_mask(100, 100)
-        self.assertEqual(masks, ['0x64/0xffff'])
+        self.assertEqual(['0x64/0xffff'], masks)
 
     def test_invalid_min_port(self):
         self.assertRaises(
@@ -53,23 +53,23 @@ class GetPortMaskTestCase(base.BaseTestCase):
 
     def test_one_port_mask(self):
         masks = ovs_ext_lib.get_port_mask(100, 101)
-        self.assertEqual(masks, ['0x64/0xfffe'])
+        self.assertEqual(['0x64/0xfffe'], masks)
         masks = ovs_ext_lib.get_port_mask(100, 103)
-        self.assertEqual(masks, ['0x64/0xfffc'])
+        self.assertEqual(['0x64/0xfffc'], masks)
         masks = ovs_ext_lib.get_port_mask(32768, 65535)
-        self.assertEqual(masks, ['0x8000/0x8000'])
+        self.assertEqual(['0x8000/0x8000'], masks)
 
     def test_multi_port_masks(self):
         masks = ovs_ext_lib.get_port_mask(101, 102)
-        self.assertEqual(masks, ['0x65/0xffff', '0x66/0xffff'])
+        self.assertEqual(['0x65/0xffff', '0x66/0xffff'], masks)
         masks = ovs_ext_lib.get_port_mask(101, 104)
         self.assertEqual(
-            masks,
-            ['0x65/0xffff', '0x66/0xfffe', '0x68/0xffff']
+            ['0x65/0xffff', '0x66/0xfffe', '0x68/0xffff'],
+            masks
         )
         masks = ovs_ext_lib.get_port_mask(1, 65535)
         self.assertEqual(
-            masks, [
+            [
                 '0x1/0xffff',
                 '0x2/0xfffe',
                 '0x4/0xfffc',
@@ -86,9 +86,11 @@ class GetPortMaskTestCase(base.BaseTestCase):
                 '0x2000/0xe000',
                 '0x4000/0xc000',
                 '0x8000/0x8000'
-            ]
+            ],
+            masks
         )
         masks = ovs_ext_lib.get_port_mask(32767, 65535)
         self.assertEqual(
-            masks, ['0x7fff/0xffff', '0x8000/0x8000']
+            ['0x7fff/0xffff', '0x8000/0x8000'],
+            masks
         )

@@ -179,7 +179,7 @@ class FlowClassifierPluginTestCase(
                 updated_flow_classifier = copy.copy(original_flow_classifier)
                 updated_flow_classifier['name'] = 'test2'
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 500)
+                self.assertEqual(500, res.status_int)
                 driver_manager = self.fake_driver_manager
                 driver_manager.update_flow_classifier.assert_called_once_with(
                     mock.ANY
@@ -203,7 +203,7 @@ class FlowClassifierPluginTestCase(
                     'flow_classifiers', fc['flow_classifier']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 204)
+                self.assertEqual(204, res.status_int)
                 driver_manager = self.fake_driver_manager
                 driver_manager.delete_flow_classifier.assert_called_once_with(
                     mock.ANY
@@ -232,7 +232,7 @@ class FlowClassifierPluginTestCase(
                     'flow_classifiers', fc['flow_classifier']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 500)
+                self.assertEqual(500, res.status_int)
                 driver_manager = self.fake_driver_manager
                 driver_manager.delete_flow_classifier.assert_called_once_with(
                     mock.ANY

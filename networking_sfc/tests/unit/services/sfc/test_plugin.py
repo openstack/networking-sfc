@@ -127,7 +127,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 updated_port_chain = copy.copy(original_port_chain)
                 updated_port_chain['name'] = 'test2'
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 500)
+                self.assertEqual(500, res.status_int)
                 res = self._list('port_chains')
                 self.assertIn('port_chains', res)
                 self.assertItemsEqual(
@@ -145,7 +145,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                     'port_chains', pc['port_chain']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 204)
+                self.assertEqual(204, res.status_int)
                 driver_manager = self.fake_driver_manager
                 driver_manager.delete_port_chain.assert_called_once_with(
                     mock.ANY
@@ -172,7 +172,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                     'port_chains', pc['port_chain']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 500)
+                self.assertEqual(500, res.status_int)
                 self._test_list_resources('port_chain', [pc])
 
     def test_create_port_pair_group_driver_manager_called(self):
@@ -249,7 +249,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
             updated_port_pair_group = copy.copy(original_port_pair_group)
             updated_port_pair_group['name'] = 'test2'
             res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, 500)
+            self.assertEqual(500, res.status_int)
             res = self._list('port_pair_groups')
             self.assertIn('port_pair_groups', res)
             self.assertItemsEqual(
@@ -265,7 +265,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 'port_pair_groups', pc['port_pair_group']['id']
             )
             res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, 204)
+            self.assertEqual(204, res.status_int)
             driver_manager = self.fake_driver_manager
             driver_manager.delete_port_pair_group.assert_called_once_with(
                 mock.ANY
@@ -290,7 +290,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 'port_pair_groups', pc['port_pair_group']['id']
             )
             res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, 500)
+            self.assertEqual(500, res.status_int)
             self._test_list_resources('port_pair_group', [pc])
 
     def test_create_port_pair_driver_manager_called(self):
@@ -407,7 +407,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 updated_port_pair = copy.copy(original_port_pair)
                 updated_port_pair['name'] = 'test2'
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 500)
+                self.assertEqual(500, res.status_int)
                 res = self._list('port_pairs')
                 self.assertIn('port_pairs', res)
                 self.assertItemsEqual(res['port_pairs'], [updated_port_pair])
@@ -431,7 +431,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                     'port_pairs', pc['port_pair']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 204)
+                self.assertEqual(204, res.status_int)
                 fake_driver_manager = self.fake_driver_manager
                 fake_driver_manager.delete_port_pair.assert_called_once_with(
                     mock.ANY
@@ -464,5 +464,5 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                     'port_pairs', pc['port_pair']['id']
                 )
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, 500)
+                self.assertEqual(500, res.status_int)
                 self._test_list_resources('port_pair', [pc])
