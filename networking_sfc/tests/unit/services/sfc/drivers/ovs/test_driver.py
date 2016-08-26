@@ -4023,9 +4023,7 @@ class OVSSfcDriverTestCase(
                                 flow_rules[flow4]['node_type'],
                                 'sf_node')
 
-    def test_agent_init_multi_flow_classifiers_port_pairs(
-        self
-    ):
+    def test_agent_init_multi_flow_classifiers_port_pairs(self):
         with self.port(
             name='port1',
             device_owner='compute',
@@ -4210,3 +4208,227 @@ class OVSSfcDriverTestCase(
                             self.assertEqual(
                                 flow_rules[flow3]['node_type'],
                                 'sf_node')
+
+    def test_create_port_chain_cross_subnet_ppg(self):
+        with self.subnet(
+            gateway_ip='10.0.0.10',
+            cidr='10.0.0.0/24'
+        ) as subnet1, self.subnet(
+            gateway_ip='10.0.1.10',
+            cidr='10.0.1.0/24'
+        ) as subnet2:
+            with self.port(
+                name='port1',
+                device_owner='compute',
+                device_id='test',
+                subnet=subnet1,
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+            ) as src_port, self.port(
+                name='ingress1',
+                device_owner='compute',
+                device_id='test',
+                subnet=subnet1,
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+            ) as ingress1, self.port(
+                name='egress1',
+                device_owner='compute',
+                device_id='test',
+                subnet=subnet1,
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+            )as egress1, self.port(
+                name='ingress2',
+                device_owner='compute',
+                device_id='test',
+                subnet=subnet2,
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+            ) as ingress2, self.port(
+                name='egress2',
+                device_owner='compute',
+                device_id='test',
+                subnet=subnet2,
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+            )as egress2:
+                self.host_endpoint_mapping = {
+                    'test': '10.0.0.1'
+                }
+                with self.flow_classifier(flow_classifier={
+                    'logical_source_port': src_port['port']['id']
+                }) as fc:
+                    with self.port_pair(port_pair={
+                        'ingress': ingress1['port']['id'],
+                        'egress': egress1['port']['id']
+                    }) as pp1, self.port_pair(port_pair={
+                        'ingress': ingress2['port']['id'],
+                        'egress': egress2['port']['id']
+                    }) as pp2:
+                        pp1_context = sfc_ctx.PortPairContext(
+                            self.sfc_plugin, self.ctx,
+                            pp1['port_pair']
+                        )
+                        self.driver.create_port_pair(pp1_context)
+                        pp2_context = sfc_ctx.PortPairContext(
+                            self.sfc_plugin, self.ctx,
+                            pp2['port_pair']
+                        )
+                        self.driver.create_port_pair(pp2_context)
+                        with self.port_pair_group(port_pair_group={
+                            'port_pairs': [pp1['port_pair']['id']]
+                        }) as pg1, self.port_pair_group(port_pair_group={
+                            'port_pairs': [pp2['port_pair']['id']]
+                        }) as pg2:
+                            pg1_context = sfc_ctx.PortPairGroupContext(
+                                self.sfc_plugin, self.ctx,
+                                pg1['port_pair_group']
+                            )
+                            self.driver.create_port_pair_group(pg1_context)
+                            pg2_context = sfc_ctx.PortPairGroupContext(
+                                self.sfc_plugin, self.ctx,
+                                pg2['port_pair_group']
+                            )
+                            self.driver.create_port_pair_group(pg2_context)
+                            with self.port_chain(port_chain={
+                                'name': 'test1',
+                                'port_pair_groups': [
+                                    pg1['port_pair_group']['id'],
+                                    pg2['port_pair_group']['id']],
+                                'flow_classifiers':
+                                    [fc['flow_classifier']['id']]
+                            }) as pc:
+                                pc_context = sfc_ctx.PortChainContext(
+                                    self.sfc_plugin, self.ctx,
+                                    pc['port_chain']
+                                )
+                                """
+                                import pdb
+                                pdb.set_trace()
+                                """
+                                result = self.driver.create_port_chain(
+                                    pc_context)
+                                self.assertIsNone(result)
+
+    def test_create_port_chain_cross_subnet_source(self):
+        with self.subnet(
+            gateway_ip='10.0.0.10',
+            cidr='10.0.0.0/24'
+        )as subnet1, self.subnet(
+            gateway_ip='10.0.1.10',
+            cidr='10.0.1.0/24'
+        )as subnet2:
+            with self.port(
+                name='port1',
+                device_owner='compute',
+                device_id='test',
+                subnet=subnet1,
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+            ) as src_port, self.port(
+                name='ingress1',
+                device_owner='compute',
+                device_id='test',
+                subnet=subnet2,
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+            ) as ingress1, self.port(
+                name='egress1',
+                device_owner='compute',
+                device_id='test',
+                subnet=subnet2,
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+            ) as egress1, self.port(
+                name='ingress2',
+                device_owner='compute',
+                device_id='test',
+                subnet=subnet2,
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+            ) as ingress2, self.port(
+                name='egress2',
+                device_owner='compute',
+                device_id='test',
+                subnet=subnet2,
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+            ) as egress2:
+                self.host_endpoint_mapping = {
+                    'test': '10.0.0.1'
+                }
+                with self.flow_classifier(flow_classifier={
+                    'ethertype': 'IPv4',
+                    'l7_parameters': {},
+                    'protocol': 'tcp',
+                    'logical_source_port': src_port['port']['id']
+                }) as fc:
+                    with self.port_pair(port_pair={
+                        'ingress': ingress1['port']['id'],
+                        'egress': egress1['port']['id']
+                    }) as pp1, self.port_pair(port_pair={
+                        'ingress': ingress2['port']['id'],
+                        'egress': egress2['port']['id']
+                    }) as pp2:
+                        pp1_context = sfc_ctx.PortPairContext(
+                            self.sfc_plugin, self.ctx,
+                            pp1['port_pair']
+                        )
+                        self.driver.create_port_pair(pp1_context)
+                        pp2_context = sfc_ctx.PortPairContext(
+                            self.sfc_plugin, self.ctx,
+                            pp2['port_pair']
+                        )
+                        self.driver.create_port_pair(pp2_context)
+                        with self.port_pair_group(port_pair_group={
+                            'port_pairs': [pp1['port_pair']['id']]
+                        }) as pg1, self.port_pair_group(port_pair_group={
+                            'port_pairs': [pp2['port_pair']['id']]
+                        }) as pg2:
+                            pg1_context = sfc_ctx.PortPairGroupContext(
+                                self.sfc_plugin, self.ctx,
+                                pg1['port_pair_group']
+                            )
+                            self.driver.create_port_pair_group(pg1_context)
+                            pg2_context = sfc_ctx.PortPairGroupContext(
+                                self.sfc_plugin, self.ctx,
+                                pg2['port_pair_group']
+                            )
+                            self.driver.create_port_pair_group(pg2_context)
+                            with self.port_chain(port_chain={
+                                'name': 'test1',
+                                'port_pair_groups': [
+                                    pg1['port_pair_group']['id'],
+                                    pg2['port_pair_group']['id']
+                                ],
+                                'flow_classifiers':
+                                    [fc['flow_classifier']['id']]
+                            }) as pc:
+                                pc_context = sfc_ctx.PortChainContext(
+                                    self.sfc_plugin, self.ctx,
+                                    pc['port_chain']
+                                )
+                                result = self.driver.create_port_chain(
+                                    pc_context)
+                                self.assertIsNone(result)
