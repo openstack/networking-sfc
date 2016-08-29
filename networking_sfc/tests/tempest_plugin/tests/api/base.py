@@ -16,15 +16,12 @@ import netaddr
 import socket
 
 from tempest.api.network import base
-from tempest import config
 from tempest.lib.common.utils import data_utils
 from tempest.lib import exceptions as lib_exc
 from tempest import test
 
 from networking_sfc.tests.tempest_plugin.tests import flowclassifier_client
 from networking_sfc.tests.tempest_plugin.tests import sfc_client
-
-CONF = config.CONF
 
 
 class BaseFlowClassifierTest(
