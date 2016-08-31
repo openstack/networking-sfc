@@ -40,12 +40,16 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     @log_helpers.log_method_call
     def create_port_chain(self, context, port_chain):
-        port_chain_db = super(SfcPlugin, self).create_port_chain(
-            context, port_chain)
-        portchain_db_context = sfc_ctx.PortChainContext(
-            self, context, port_chain_db)
+        with context.session.begin(subtransactions=True):
+            port_chain_db = super(SfcPlugin, self).create_port_chain(
+                context, port_chain)
+            portchain_db_context = sfc_ctx.PortChainContext(
+                self, context, port_chain_db)
+            self.driver_manager.create_port_chain_precommit(
+                portchain_db_context)
         try:
-            self.driver_manager.create_port_chain(portchain_db_context)
+            self.driver_manager.create_port_chain_postcommit(
+                portchain_db_context)
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
@@ -58,15 +62,19 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     @log_helpers.log_method_call
     def update_port_chain(self, context, portchain_id, port_chain):
-        original_portchain = self.get_port_chain(context, portchain_id)
-        updated_portchain = super(SfcPlugin, self).update_port_chain(
-            context, portchain_id, port_chain)
-        portchain_db_context = sfc_ctx.PortChainContext(
-            self, context, updated_portchain,
-            original_portchain=original_portchain)
+        with context.session.begin(subtransactions=True):
+            original_portchain = self.get_port_chain(context, portchain_id)
+            updated_portchain = super(SfcPlugin, self).update_port_chain(
+                context, portchain_id, port_chain)
+            portchain_db_context = sfc_ctx.PortChainContext(
+                self, context, updated_portchain,
+                original_portchain=original_portchain)
+            self.driver_manager.update_port_chain_precommit(
+                portchain_db_context)
 
         try:
-            self.driver_manager.update_port_chain(portchain_db_context)
+            self.driver_manager.update_port_chain_postcommit(
+                portchain_db_context)
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
@@ -87,17 +95,26 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
             with excutils.save_and_reraise_exception():
                 LOG.error(_LE("Delete port chain failed, portchain '%s'"),
                           portchain_id)
+
         # TODO(qijing): unsync in case deleted in driver but fail in database
-        super(SfcPlugin, self).delete_port_chain(context, portchain_id)
+        with context.session.begin(subtransactions=True):
+            pc = self.get_port_chain(context, portchain_id)
+            pc_context = sfc_ctx.PortChainContext(self, context, pc)
+            super(SfcPlugin, self).delete_port_chain(context, portchain_id)
+            self.driver_manager.delete_port_chain_precommit(pc_context)
+        self.driver_manager.delete_port_chain_postcommit(pc_context)
 
     @log_helpers.log_method_call
     def create_port_pair(self, context, port_pair):
-        portpair_db = super(SfcPlugin, self).create_port_pair(
-            context, port_pair)
-        portpair_context = sfc_ctx.PortPairContext(
-            self, context, portpair_db)
+        with context.session.begin(subtransactions=True):
+            portpair_db = super(SfcPlugin, self).create_port_pair(
+                context, port_pair)
+            portpair_context = sfc_ctx.PortPairContext(
+                self, context, portpair_db)
+            self.driver_manager.create_port_pair_precommit(portpair_context)
+
         try:
-            self.driver_manager.create_port_pair(portpair_context)
+            self.driver_manager.create_port_pair_postcommit(portpair_context)
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
@@ -110,14 +127,16 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     @log_helpers.log_method_call
     def update_port_pair(self, context, portpair_id, port_pair):
-        original_portpair = self.get_port_pair(context, portpair_id)
-        updated_portpair = super(SfcPlugin, self).update_port_pair(
-            context, portpair_id, port_pair)
-        portpair_context = sfc_ctx.PortPairContext(
-            self, context, updated_portpair,
-            original_portpair=original_portpair)
+        with context.session.begin(subtransactions=True):
+            original_portpair = self.get_port_pair(context, portpair_id)
+            updated_portpair = super(SfcPlugin, self).update_port_pair(
+                context, portpair_id, port_pair)
+            portpair_context = sfc_ctx.PortPairContext(
+                self, context, updated_portpair,
+                original_portpair=original_portpair)
+            self.driver_manager.update_port_pair_precommit(portpair_context)
         try:
-            self.driver_manager.update_port_pair(portpair_context)
+            self.driver_manager.update_port_pair_postcommit(portpair_context)
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
@@ -139,16 +158,26 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
                 LOG.error(_LE("Delete port pair failed, port_pair '%s'"),
                           portpair_id)
 
-        super(SfcPlugin, self).delete_port_pair(context, portpair_id)
+        with context.session.begin(subtransactions=True):
+            portpair = self.get_port_pair(context, portpair_id)
+            portpair_context = sfc_ctx.PortPairContext(
+                self, context, portpair)
+            super(SfcPlugin, self).delete_port_pair(context, portpair_id)
+            self.driver_manager.delete_port_pair_precommit(portpair_context)
+        self.driver_manager.delete_port_pair_postcommit(portpair_context)
 
     @log_helpers.log_method_call
     def create_port_pair_group(self, context, port_pair_group):
-        portpairgroup_db = super(SfcPlugin, self).create_port_pair_group(
-            context, port_pair_group)
-        portpairgroup_context = sfc_ctx.PortPairGroupContext(
-            self, context, portpairgroup_db)
+        with context.session.begin(subtransactions=True):
+            portpairgroup_db = super(SfcPlugin, self).create_port_pair_group(
+                context, port_pair_group)
+            portpairgroup_context = sfc_ctx.PortPairGroupContext(
+                self, context, portpairgroup_db)
+            self.driver_manager.create_port_pair_group_precommit(
+                portpairgroup_context)
         try:
-            self.driver_manager.create_port_pair_group(portpairgroup_context)
+            self.driver_manager.create_port_pair_group_postcommit(
+                portpairgroup_context)
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
@@ -163,15 +192,20 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
     def update_port_pair_group(
         self, context, portpairgroup_id, port_pair_group
     ):
-        original_portpairgroup = self.get_port_pair_group(
-            context, portpairgroup_id)
-        updated_portpairgroup = super(SfcPlugin, self).update_port_pair_group(
-            context, portpairgroup_id, port_pair_group)
-        portpairgroup_context = sfc_ctx.PortPairGroupContext(
-            self, context, updated_portpairgroup,
-            original_portpairgroup=original_portpairgroup)
+        with context.session.begin(subtransactions=True):
+            original_portpairgroup = self.get_port_pair_group(
+                context, portpairgroup_id)
+            updated_portpairgroup = super(
+                SfcPlugin, self).update_port_pair_group(
+                context, portpairgroup_id, port_pair_group)
+            portpairgroup_context = sfc_ctx.PortPairGroupContext(
+                self, context, updated_portpairgroup,
+                original_portpairgroup=original_portpairgroup)
+            self.driver_manager.update_port_pair_group_precommit(
+                portpairgroup_context)
         try:
-            self.driver_manager.update_port_pair_group(portpairgroup_context)
+            self.driver_manager.update_port_pair_group_postcommit(
+                portpairgroup_context)
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
@@ -195,5 +229,13 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
                               "port_pair_group '%s'"),
                           portpairgroup_id)
 
-        super(SfcPlugin, self).delete_port_pair_group(context,
-                                                      portpairgroup_id)
+        with context.session.begin(subtransactions=True):
+            portpairgroup = self.get_port_pair_group(context, portpairgroup_id)
+            portpairgroup_context = sfc_ctx.PortPairGroupContext(
+                self, context, portpairgroup)
+            super(SfcPlugin, self).delete_port_pair_group(context,
+                                                          portpairgroup_id)
+            self.driver_manager.delete_port_pair_group_precommit(
+                portpairgroup_context)
+        self.driver_manager.delete_port_pair_group_postcommit(
+            portpairgroup_context)

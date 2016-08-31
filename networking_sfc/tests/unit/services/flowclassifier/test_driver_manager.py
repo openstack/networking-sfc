@@ -73,21 +73,7 @@ class DriverManagerTestCase(base.BaseTestCase):
             mock_driver1.initialize.assert_called_once_with()
             mock_driver2.initialize.assert_called_once_with()
 
-    def test_create_flow_classifier_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            manager.create_flow_classifier(mocked_context)
-            mock_driver1.create_flow_classifier.assert_called_once_with(
-                mocked_context)
-            mock_driver2.create_flow_classifier.assert_called_once_with(
-                mocked_context)
-
-    def test_create_flow_classifier_precommit_called(self):
+    def _test_method_called(self, method_name):
         driver1 = mock.Mock()
         driver2 = mock.Mock()
         with self.driver_manager_context({
@@ -95,92 +81,65 @@ class DriverManagerTestCase(base.BaseTestCase):
             'dummy2': driver2
         }) as manager:
             mocked_context = mock.Mock()
-            manager.create_flow_classifier_precommit(mocked_context)
-            driver1.create_flow_classifier_precommit.assert_called_once_with(
+            getattr(manager, method_name)(mocked_context)
+            getattr(driver1, method_name).assert_called_once_with(
                 mocked_context)
-            driver2.create_flow_classifier_precommit.assert_called_once_with(
+            getattr(driver2, method_name).assert_called_once_with(
                 mocked_context)
 
-    def test_create_flow_classifier_exception(self):
+    def _test_method_exception(self, method_name,
+                               expected_exc=fc_exc.FlowClassifierDriverError):
         mock_driver = mock.Mock()
-        mock_driver.create_flow_classifier = mock.Mock(
+        mock_method = mock.Mock(
             side_effect=fc_exc.FlowClassifierException
         )
+        setattr(mock_driver, method_name, mock_method)
         with self.driver_manager_context({
             'dummy': mock_driver,
         }) as manager:
             mocked_context = mock.Mock()
             self.assertRaises(
-                fc_exc.FlowClassifierDriverError,
-                manager.create_flow_classifier, mocked_context
-            )
+                expected_exc, getattr(manager, method_name), mocked_context)
+
+    def test_create_flow_classifier_precommit_called(self):
+        self._test_method_called("create_flow_classifier_precommit")
 
     def test_create_flow_classifier_precommit_exception(self):
-        mock_driver = mock.Mock()
-        mock_driver.create_flow_classifier_precommit = mock.Mock(
-            side_effect=fc_exc.FlowClassifierException
-        )
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                fc_exc.FlowClassifierException,
-                manager.create_flow_classifier_precommit, mocked_context
-            )
+        self._test_method_exception("create_flow_classifier_precommit",
+                                    fc_exc.FlowClassifierException)
 
-    def test_update_flow_classifier_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            manager.update_flow_classifier(mocked_context)
-            mock_driver1.update_flow_classifier.assert_called_once_with(
-                mocked_context)
-            mock_driver2.update_flow_classifier.assert_called_once_with(
-                mocked_context)
+    def test_create_flow_classifier_postcommit_called(self):
+        self._test_method_called("create_flow_classifier_postcommit")
 
-    def test_update_flow_classifier_exception(self):
-        mock_driver = mock.Mock()
-        mock_driver.update_flow_classifier = mock.Mock(
-            side_effect=fc_exc.FlowClassifierException
-        )
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                fc_exc.FlowClassifierDriverError,
-                manager.update_flow_classifier, mocked_context
-            )
+    def test_create_flow_classifier_postcommit_exception(self):
+        self._test_method_exception("create_flow_classifier_postcommit")
+
+    def test_update_flow_classifier_precommit_called(self):
+        self._test_method_called("update_flow_classifier_precommit")
+
+    def test_update_flow_classifier_precommit_exception(self):
+        self._test_method_exception("update_flow_classifier_precommit")
+
+    def test_update_flow_classifier_postcommit_called(self):
+        self._test_method_called("update_flow_classifier_postcommit")
+
+    def test_update_flow_classifier_postcommit_exception(self):
+        self._test_method_exception("update_flow_classifier_postcommit")
 
     def test_delete_flow_classifier_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            manager.delete_flow_classifier(mocked_context)
-            mock_driver1.delete_flow_classifier.assert_called_once_with(
-                mocked_context)
-            mock_driver2.delete_flow_classifier.assert_called_once_with(
-                mocked_context)
+        self._test_method_called("delete_flow_classifier")
 
     def test_delete_flow_classifier_exception(self):
-        mock_driver = mock.Mock()
-        mock_driver.delete_flow_classifier = mock.Mock(
-            side_effect=fc_exc.FlowClassifierException
-        )
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                fc_exc.FlowClassifierDriverError,
-                manager.delete_flow_classifier, mocked_context
-            )
+        self._test_method_exception("delete_flow_classifier")
+
+    def test_delete_flow_classifier_precommit_called(self):
+        self._test_method_called("delete_flow_classifier_precommit")
+
+    def test_delete_flow_classifier_precommit_exception(self):
+        self._test_method_exception("delete_flow_classifier_precommit")
+
+    def test_delete_flow_classifier_postcommit_called(self):
+        self._test_method_called("delete_flow_classifier_postcommit")
+
+    def test_delete_flow_classifier_postcommit_exception(self):
+        self._test_method_exception("delete_flow_classifier_postcommit")

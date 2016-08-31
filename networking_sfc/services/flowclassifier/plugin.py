@@ -55,7 +55,8 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
                 fc_db_context)
 
         try:
-            self.driver_manager.create_flow_classifier(fc_db_context)
+            self.driver_manager.create_flow_classifier_postcommit(
+                fc_db_context)
         except fc_exc.FlowClassifierDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
@@ -67,16 +68,19 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
 
     @log_helpers.log_method_call
     def update_flow_classifier(self, context, id, flow_classifier):
-        original_flowclassifier = self.get_flow_classifier(context, id)
-        updated_fc = super(
-            FlowClassifierPlugin, self
-        ).update_flow_classifier(
-            context, id, flow_classifier)
-        fc_db_context = fc_ctx.FlowClassifierContext(
-            self, context, updated_fc,
-            original_flowclassifier=original_flowclassifier)
+        with context.session.begin(subtransactions=True):
+            original_flowclassifier = self.get_flow_classifier(context, id)
+            updated_fc = super(
+                FlowClassifierPlugin, self
+            ).update_flow_classifier(
+                context, id, flow_classifier)
+            fc_db_context = fc_ctx.FlowClassifierContext(
+                self, context, updated_fc,
+                original_flowclassifier=original_flowclassifier)
+            self.driver_manager.update_flow_classifier_precommit(fc_db_context)
         try:
-            self.driver_manager.update_flow_classifier(fc_db_context)
+            self.driver_manager.update_flow_classifier_postcommit(
+                fc_db_context)
         except fc_exc.FlowClassifierDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
@@ -99,5 +103,10 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
                               "flow_classifier '%s'"),
                           fc_id)
 
-        super(FlowClassifierPlugin, self).delete_flow_classifier(
-            context, fc_id)
+        with context.session.begin(subtransactions=True):
+            fc = self.get_flow_classifier(context, fc_id)
+            fc_context = fc_ctx.FlowClassifierContext(self, context, fc)
+            super(FlowClassifierPlugin, self).delete_flow_classifier(
+                context, fc_id)
+            self.driver_manager.delete_flow_classifier_precommit(fc_context)
+        self.driver_manager.delete_flow_classifier_postcommit(fc_context)
