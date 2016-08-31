@@ -16,6 +16,13 @@ function networking_sfc_configure_common {
 
 
 if [[ "$1" == "stack" && "$2" == "install" ]]; then
+    source $NETWORKING_SFC_DIR/devstack/lib/ovs
+    # The OVS_BRANCH variable is used by git checkout.
+    OVS_BRANCH=v2.4.0
+    remove_ovs_packages
+    compile_ovs True /usr /var
+    start_new_ovs
+
     # Perform installation of service source
     echo_summary "Installing networking-sfc"
     networking_sfc_install

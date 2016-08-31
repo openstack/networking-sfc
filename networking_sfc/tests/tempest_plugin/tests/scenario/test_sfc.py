@@ -35,7 +35,7 @@ class TestSfc(base.SfcScenarioTest):
             msg = ('Either project_networks_reachable must be "true", or '
                    'public_network_id must be defined.')
             raise cls.skipException(msg)
-        required_exts = ['sfc', 'flowclassifier']
+        required_exts = ['sfc', 'flow_classifier']
         for ext in required_exts:
             if not test.is_extension_enabled(ext, 'network'):
                 msg = "%s Extension not enabled." % ext
@@ -1096,7 +1096,6 @@ class TestSfc(base.SfcScenarioTest):
         server = self.create_server(
             networks=[{'uuid': network['id']}],
             wait_until='ACTIVE',
-            wait_on_delete=False,
             **kwargs)
         waiters.wait_for_server_status(self.servers_client,
                                        server['id'], 'ACTIVE')
