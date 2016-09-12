@@ -447,14 +447,16 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.added_flows, self.default_flow_rules + []
+            self.default_flow_rules + [],
+            self.added_flows
         )
         self.assertEqual(
-            self.group_mapping, {}
+            {},
+            self.group_mapping
         )
 
     def test_update_flow_rules_sf_node_empty_next_hops(self):
@@ -486,11 +488,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.added_flows, self.default_flow_rules + [{
+            self.default_flow_rules + [{
                 'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
                 'dl_dst': '00:01:02:03:05:07',
                 'dl_type': 34887,
@@ -498,10 +500,12 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'mpls_label': 65791,
                 'priority': 1,
                 'table': 10
-            }]
+            }],
+            self.added_flows
         )
         self.assertEqual(
-            self.group_mapping, {}
+            {},
+            self.group_mapping
         )
 
     def test_update_flow_rules_src_node_empty_next_hops(self):
@@ -528,14 +532,16 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.added_flows, self.default_flow_rules + []
+            self.default_flow_rules + [],
+            self.added_flows
         )
         self.assertEqual(
-            self.group_mapping, {}
+            {},
+            self.group_mapping
         )
 
     def test_update_flow_rules_src_node_empty_next_hops_add_fcs_del_fcs(self):
@@ -583,11 +589,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.added_flows, self.default_flow_rules + [{
+            self.default_flow_rules + [{
                 'actions': 'normal',
                 'dl_type': 2048,
                 'in_port': 42,
@@ -598,10 +604,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
                 'tp_src': '0x64/0xffff'
-            }]
+            }],
+            self.added_flows
         )
         self.assertEqual(
-            self.deleted_flows, self.default_delete_flow_rules + [{
+            self.default_delete_flow_rules + [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -610,10 +617,12 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
                 'tp_src': '0x64/0xffff'
-            }]
+            }],
+            self.deleted_flows
         )
         self.assertEqual(
-            self.group_mapping, {}
+            {},
+            self.group_mapping
         )
 
     def test_update_flow_rules_sf_node_empty_next_hops_add_fcs_del_fcs(self):
@@ -666,11 +675,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.added_flows, self.default_flow_rules + [{
+            self.default_flow_rules + [{
                 'actions': 'normal',
                 'dl_type': 2048,
                 'in_port': 42,
@@ -689,10 +698,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'mpls_label': 65792,
                 'priority': 1,
                 'table': 10
-            }]
+            }],
+            self.added_flows
         )
         self.assertEqual(
-            self.deleted_flows, self.default_delete_flow_rules + [{
+            self.default_delete_flow_rules + [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -701,10 +711,12 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
                 'tp_src': '0x64/0xffff'
-            }]
+            }],
+            self.deleted_flows
         )
         self.assertEqual(
-            self.group_mapping, {}
+            {},
+            self.group_mapping
         )
 
     def test_update_flow_rules_src_node_next_hops_add_fcs(self):
@@ -756,11 +768,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.added_flows, self.default_flow_rules + [{
+            self.default_flow_rules + [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
                     'mod_vlan_vid:0,,output:2'),
@@ -779,10 +791,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
                 'tp_src': '0x64/0xffff'
-            }]
+            }],
+            self.added_flows
         )
         self.assertEqual(
-            self.group_mapping, {
+            {
                 1: {
                     'buckets': (
                         'bucket=weight=1, '
@@ -792,7 +805,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'group_id': 1,
                     'type': 'select'
                 }
-            }
+            },
+            self.group_mapping
         )
 
     def test_update_flow_rules_src_node_next_hops_same_host_add_fcs(self):
@@ -844,11 +858,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.added_flows, self.default_flow_rules + [{
+            self.default_flow_rules + [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
                     'mod_vlan_vid:0,,resubmit(,10)'),
@@ -867,10 +881,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
                 'tp_src': '0x64/0xffff'
-            }]
+            }],
+            self.added_flows
         )
         self.assertEqual(
-            self.group_mapping, {
+            {
                 1: {
                     'buckets': (
                         'bucket=weight=1, '
@@ -880,7 +895,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'group_id': 1,
                     'type': 'select'
                 }
-            }
+            },
+            self.group_mapping
         )
 
     def test_update_flow_rules_sf_node_next_hops_add_fcs(self):
@@ -938,11 +954,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.added_flows, self.default_flow_rules + [{
+            self.default_flow_rules + [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
                     'mod_vlan_vid:0,,output:2'),
@@ -969,10 +985,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'mpls_label': 65792,
                 'priority': 1,
                 'table': 10
-            }]
+            }],
+            self.added_flows
         )
         self.assertEqual(
-            self.group_mapping, {
+            {
                 1: {
                     'buckets': (
                         'bucket=weight=1, '
@@ -982,7 +999,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'group_id': 1,
                     'type': 'select'
                 }
-            }
+            },
+            self.group_mapping
         )
 
     def test_update_flow_rules_sf_node_next_hops_same_host_add_fcs(self):
@@ -1040,11 +1058,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.added_flows, self.default_flow_rules + [{
+            self.default_flow_rules + [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
                     'mod_vlan_vid:0,,resubmit(,10)'),
@@ -1071,10 +1089,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'mpls_label': 65792,
                 'priority': 1,
                 'table': 10
-            }]
+            }],
+            self.added_flows
         )
         self.assertEqual(
-            self.group_mapping, {
+            {
                 1: {
                     'buckets': (
                         'bucket=weight=1, '
@@ -1084,7 +1103,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'group_id': 1,
                     'type': 'select'
                 }
-            }
+            },
+            self.group_mapping
         )
 
     def test_delete_flow_rules_sf_node_empty_del_fcs(self):
@@ -1116,21 +1136,23 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.deleted_flows, self.default_delete_flow_rules + [{
+            self.default_delete_flow_rules + [{
                 'dl_dst': '00:01:02:03:05:07',
                 'dl_type': 34887,
                 'mpls_label': 65791,
                 'table': 10
-            }]
+            }],
+            self.deleted_flows
         )
         self.assertEqual(
-            self.deleted_groups, [
+            [
                 "all"
-            ]
+            ],
+            self.deleted_groups
         )
 
     def test_delete_flow_rules_src_node_empty_del_fcs(self):
@@ -1162,16 +1184,18 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.deleted_flows, self.default_delete_flow_rules + []
+            self.default_delete_flow_rules + [],
+            self.deleted_flows
         )
         self.assertEqual(
-            self.deleted_groups, [
+            [
                 "all"
-            ]
+            ],
+            self.deleted_groups
         )
 
     def test_delete_flow_rules_sf_node_del_fcs(self):
@@ -1213,11 +1237,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.deleted_flows, self.default_delete_flow_rules + [{
+            self.default_delete_flow_rules + [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -1231,12 +1255,14 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'dl_type': 34887,
                 'mpls_label': 65791,
                 'table': 10
-            }]
+            }],
+            self.deleted_flows
         )
         self.assertEqual(
-            self.deleted_groups, [
+            [
                 "all"
-            ]
+            ],
+            self.deleted_groups
         )
 
     def test_delete_flow_rules_src_node_del_fcs(self):
@@ -1278,11 +1304,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.deleted_flows, self.default_delete_flow_rules + [{
+            self.default_delete_flow_rules + [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -1291,12 +1317,14 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
                 'tp_src': '0x64/0xffff'
-            }]
+            }],
+            self.deleted_flows
         )
         self.assertEqual(
-            self.deleted_groups, [
+            [
                 "all"
-            ]
+            ],
+            self.deleted_groups
         )
 
     def test_delete_flow_rules_src_node_next_hops_del_fcs(self):
@@ -1348,11 +1376,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.deleted_flows, self.default_delete_flow_rules + [{
+            self.default_delete_flow_rules + [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -1364,10 +1392,12 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'dl_dst': '12:34:56:78:cf:23',
                 'table': 5
-            }]
+            }],
+            self.deleted_flows
         )
         self.assertEqual(
-            self.deleted_groups, ['all', 1]
+            ['all', 1],
+            self.deleted_groups
         )
 
     def test_delete_flow_rules_sf_node_next_hops_del_fcs(self):
@@ -1419,11 +1449,11 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         )
         self.assertEqual(
-            self.executed_cmds, [
-            ]
+            [],
+            self.executed_cmds
         )
         self.assertEqual(
-            self.deleted_flows, self.default_delete_flow_rules + [{
+            self.default_delete_flow_rules + [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -1440,17 +1470,18 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'dl_type': 34887,
                 'mpls_label': 65792,
                 'table': 10
-            }]
+            }],
+            self.deleted_flows
         )
         self.assertEqual(
-            self.deleted_groups, ['all', 1]
+            ['all', 1],
+            self.deleted_groups
         )
 
     def test_init_agent_empty_flowrules(self):
         self.node_flowrules = []
         self.init_agent()
         self.assertEqual(
-            self.added_flows,
             [{
                 'actions': 'resubmit(,10)',
                 'dl_type': 34887,
@@ -1460,6 +1491,7 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': 'drop',
                 'priority': 0,
                 'table': 10
-            }]
+            }],
+            self.added_flows
         )
-        self.assertEqual(self.group_mapping, {})
+        self.assertEqual({}, self.group_mapping)
