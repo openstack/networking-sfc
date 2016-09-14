@@ -7,13 +7,6 @@ x-openstack-request-id:
   in: header
   required: true
   type: string
-x-openstack-request-id_1:
-  description: |
-    A unique request ID that provides tracking for the request. Provider must configure
-    middleware to return a request ID header in a response.
-  in: header
-  required: false
-  type: string
 
 # variables in path
 port_chain_id:
