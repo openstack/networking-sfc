@@ -15,8 +15,6 @@
 import testscenarios
 import time
 
-from oslo_log import log as logging
-
 from tempest.common import waiters
 from tempest import config
 from tempest.lib.common.utils import test_utils
@@ -25,7 +23,6 @@ from tempest import test
 from networking_sfc.tests.tempest_plugin.tests.scenario import base
 
 CONF = config.CONF
-LOG = logging.getLogger(__name__)
 load_tests = testscenarios.load_tests_apply_scenarios
 
 
