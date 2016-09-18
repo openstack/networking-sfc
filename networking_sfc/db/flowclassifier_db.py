@@ -25,9 +25,9 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm import exc
 
 from neutron_lib import constants as const
+from neutron_lib.db import model_base
 
 from neutron.db import common_db_mixin
-from neutron.db import model_base
 from neutron.db import models_v2
 
 from networking_sfc._i18n import _LI
