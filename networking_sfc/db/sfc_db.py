@@ -266,6 +266,18 @@ class SfcDbPlugin(
                     raise ext_sfc.InvalidPortPairGroups(
                         port_pair_groups=pg_ids, port_chain=port_chain_db.id)
 
+    def _validate_correlation_consistency(self, context, ppg_ids, pc_corr):
+        # format like in ServiceFunctionParam.value to aid comparison later:
+        pc_corr = jsonutils.dumps(pc_corr)
+        with db_api.context_manager.reader.using(context):
+            for ppg_id in ppg_ids:
+                ppg = self._get_port_pair_group(context, ppg_id)
+                for pp in ppg['port_pairs']:
+                    pp_corr = pp['service_function_parameters']['correlation']
+                    if pp_corr.value != 'null' and pp_corr.value != pc_corr:
+                        raise ext_sfc.PortChainInconsistentCorrelations(
+                            ppg=ppg_id)
+
     def _validate_flow_classifiers(self, context, fc_ids, pc_id=None):
         with db_api.context_manager.reader.using(context):
             fcs = [
@@ -347,9 +359,11 @@ class SfcDbPlugin(
                 key: ChainParameter(keyword=key, value=jsonutils.dumps(val))
                 for key, val in pc['chain_parameters'].items()}
 
-            pg_ids = pc['port_pair_groups']
+            ppg_ids = pc['port_pair_groups']
             fc_ids = pc['flow_classifiers']
-            self._validate_port_pair_groups(context, pg_ids)
+            self._validate_port_pair_groups(context, ppg_ids)
+            self._validate_correlation_consistency(
+                context, ppg_ids, pc['chain_parameters']['correlation'])
             self._validate_flow_classifiers(context, fc_ids)
             assigned_chain_ids = {}
             query = context.session.query(PortChain)
@@ -377,7 +391,7 @@ class SfcDbPlugin(
                                       chain_parameters=chain_parameters,
                                       chain_id=chain_id)
             self._setup_chain_group_associations(
-                context, port_chain_db, pg_ids)
+                context, port_chain_db, ppg_ids)
             self._setup_chain_classifier_associations(
                 context, port_chain_db, fc_ids)
             context.session.add(port_chain_db)

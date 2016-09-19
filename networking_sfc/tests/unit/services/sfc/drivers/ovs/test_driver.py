@@ -1,5 +1,5 @@
 # Copyright 2015 Huawei.  All rights reserved.
-# Copyright 2017 Intel Corporation.  All rights reserved.
+# Copyright 2017 Intel Corporation.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -465,6 +465,9 @@ class OVSSfcDriverTestCase(
 
     def test_create_port_chain_with_pp_fc_and_no_sfc_proxy_mpls(self):
         self._test_create_port_chain_with_pp_fc_and_no_sfc_proxy('mpls')
+
+    def test_create_port_chain_with_pp_fc_and_no_sfc_proxy_nsh(self):
+        self._test_create_port_chain_with_pp_fc_and_no_sfc_proxy('nsh')
 
     def test_create_port_chain_with_flow_classifiers(self):
         with self.port(
@@ -4631,8 +4634,8 @@ class OVSSfcDriverTestCase(
 
     def _test_agent_init_service_graphs_end(
             self, lsport, pc1port, pc2port1, pc2port2, pc3port, pc4port,
-            pc1fc, pc2fc, pc3fc, pc4fc,
-            pc1pp, pc2pp1, pc2pp2, pc3pp, pc4pp):
+            pc1fc, pc2fc, pc3fc, pc4fc, pc1pp, pc2pp1, pc2pp2, pc3pp, pc4pp,
+            correlation):
         pc1pp_context = sfc_ctx.PortPairContext(self.sfc_plugin,
                                                 self.ctx,
                                                 pc1pp['port_pair'])
@@ -4694,14 +4697,14 @@ class OVSSfcDriverTestCase(
 
             with self.port_chain(port_chain={
                 'chain_parameters': {
-                    'correlation': 'mpls'},
+                    'correlation': correlation},
                 'port_pair_groups': [
                     pc1pg['port_pair_group']['id']],
                 'flow_classifiers': [
                     pc1fc['flow_classifier']['id']]}
             ) as pc1, self.port_chain(port_chain={
                 'chain_parameters': {
-                    'correlation': 'mpls'},
+                    'correlation': correlation},
                 'port_pair_groups': [
                     # different amount of PPGs for pc2 just to complicate
                     pc2pg1['port_pair_group']['id'],
@@ -4710,14 +4713,14 @@ class OVSSfcDriverTestCase(
                     pc2fc['flow_classifier']['id']]}
             ) as pc2, self.port_chain(port_chain={
                 'chain_parameters': {
-                    'correlation': 'mpls'},
+                    'correlation': correlation},
                 'port_pair_groups': [
                     pc3pg['port_pair_group']['id']],
                 'flow_classifiers': [
                     pc3fc['flow_classifier']['id']]}
             ) as pc3, self.port_chain(port_chain={
                 'chain_parameters': {
-                    'correlation': 'mpls'},
+                    'correlation': correlation},
                 'port_pair_groups': [
                     pc4pg['port_pair_group']['id']],
                 'flow_classifiers': [
@@ -4881,7 +4884,7 @@ class OVSSfcDriverTestCase(
     # and joining branches, using 4 port chains in total, and will verify
     # that the driver is able to provide the newly-started agent with
     # the correct flow rules so that the latter can restore the flows.
-    def test_agent_init_service_graphs(self):
+    def _test_agent_init_service_graphs(self, correlation):
         with self.port(
             name='lsport',
             device_owner='compute',
@@ -4946,23 +4949,23 @@ class OVSSfcDriverTestCase(
                 'logical_source_port': lsport['port']['id'],
                 'destination_ip_prefix': '192.0.2.4/32'}
             ) as pc4fc, self.port_pair(port_pair={
-                'service_function_parameters': {'correlation': 'mpls'},
+                'service_function_parameters': {'correlation': correlation},
                 'ingress': pc1port['port']['id'],
                 'egress': pc1port['port']['id']}
             ) as pc1pp, self.port_pair(port_pair={
-                'service_function_parameters': {'correlation': 'mpls'},
+                'service_function_parameters': {'correlation': correlation},
                 'ingress': pc2port1['port']['id'],
                 'egress': pc2port1['port']['id']}
             ) as pc2pp1, self.port_pair(port_pair={
-                'service_function_parameters': {'correlation': 'mpls'},
+                'service_function_parameters': {'correlation': correlation},
                 'ingress': pc2port2['port']['id'],
                 'egress': pc2port2['port']['id']}
             ) as pc2pp2, self.port_pair(port_pair={
-                'service_function_parameters': {'correlation': 'mpls'},
+                'service_function_parameters': {'correlation': correlation},
                 'ingress': pc3port['port']['id'],
                 'egress': pc3port['port']['id']}
             ) as pc3pp, self.port_pair(port_pair={
-                'service_function_parameters': {'correlation': 'mpls'},
+                'service_function_parameters': {'correlation': correlation},
                 'ingress': pc4port['port']['id'],
                 'egress': pc4port['port']['id']}
             ) as pc4pp:
@@ -4970,8 +4973,14 @@ class OVSSfcDriverTestCase(
                 # more than 20 contexts, both in python2 and python3
                 self._test_agent_init_service_graphs_end(
                     lsport, pc1port, pc2port1, pc2port2, pc3port, pc4port,
-                    pc1fc, pc2fc, pc3fc, pc4fc,
-                    pc1pp, pc2pp1, pc2pp2, pc3pp, pc4pp)
+                    pc1fc, pc2fc, pc3fc, pc4fc, pc1pp, pc2pp1, pc2pp2,
+                    pc3pp, pc4pp, correlation)
+
+    def test_agent_init_service_graphs_mpls(self):
+        self._test_agent_init_service_graphs('mpls')
+
+    def test_agent_init_service_graphs_nsh(self):
+        self._test_agent_init_service_graphs('nsh')
 
     def test_create_port_chain_cross_subnet_ppg(self):
         with self.subnet(
@@ -6076,10 +6085,10 @@ class OVSSfcDriverTestCase(
                                 update_flow_rules[flow4]['node_type'],
                                 'sf_node')
 
-    def test_create_service_graph(self):
-        # this test will create the simplest possible graph, from a port chain
-        # with a single pp/ppg, to another port chain with a single pp/ppg,
-        # in the same host and using trivial flow classifiers.
+    # this test will create the simplest possible graph, from a port chain
+    # with a single pp/ppg, to another port chain with a single pp/ppg,
+    # in the same host and using trivial flow classifiers.
+    def _test_create_service_graph(self, correlation):
         with self.port(
             name='pc1port',
             device_owner='compute',
@@ -6125,11 +6134,13 @@ class OVSSfcDriverTestCase(
                     'protocol': 'udp'}
             ) as pc2fc:
                 with self.port_pair(port_pair={
-                    'service_function_parameters': {'correlation': 'mpls'},
+                    'service_function_parameters': {
+                        'correlation': correlation},
                     'ingress': pc1port['port']['id'],
                     'egress': pc1port['port']['id']}
                 ) as pc1pp, self.port_pair(port_pair={
-                    'service_function_parameters': {'correlation': 'mpls'},
+                    'service_function_parameters': {
+                        'correlation': correlation},
                     'ingress': pc2port['port']['id'],
                     'egress': pc2port['port']['id']}
                 ) as pc2pp:
@@ -6160,14 +6171,14 @@ class OVSSfcDriverTestCase(
                         self.driver.create_port_pair_group(pc2pg_context)
                         with self.port_chain(port_chain={
                             'chain_parameters': {
-                                'correlation': 'mpls'},
+                                'correlation': correlation},
                             'port_pair_groups': [
                                 pc1pg['port_pair_group']['id']],
                             'flow_classifiers': [
                                 pc1fc['flow_classifier']['id']]}
                         ) as pc1, self.port_chain(port_chain={
                             'chain_parameters': {
-                                'correlation': 'mpls'},
+                                'correlation': correlation},
                             'port_pair_groups': [
                                 pc2pg['port_pair_group']['id']],
                             'flow_classifiers': [
@@ -6278,6 +6289,12 @@ class OVSSfcDriverTestCase(
                                 self.assertEqual(del_fcs, old_add1)
                                 self.assertEqual(len(add_fcs), 1)
                                 self.assertEqual(len(del_fcs), 1)
+
+    def test_create_service_graph_mpls(self):
+        self._test_create_service_graph('mpls')
+
+    def test_create_service_graph_nsh(self):
+        self._test_create_service_graph('nsh')
 
     # post-graph-creation testing of test_create_service_graph_complex()
     def _test_create_service_graph_complex(self, g, sta_nodes, end_nodes,
@@ -6429,7 +6446,7 @@ class OVSSfcDriverTestCase(
     # this test will create a very complex graph, that initially branches
     # (after pc1), and later joins back into a single service function path
     # (on pc6), in the same host and using trivial flow classifiers.
-    def _test_service_graph_complex(self, create):
+    def _test_service_graph_complex(self, create, correlation):
         with self.port(
             name='lsport',
             device_owner='compute',
@@ -6512,27 +6529,27 @@ class OVSSfcDriverTestCase(
                 'logical_source_port': lsport['port']['id'],
                 'destination_ip_prefix': '192.0.2.6/32'}
             ) as pc6fc, self.port_pair(port_pair={
-                'service_function_parameters': {'correlation': 'mpls'},
+                'service_function_parameters': {'correlation': correlation},
                 'ingress': pc1port['port']['id'],
                 'egress': pc1port['port']['id']}
             ) as pc1pp, self.port_pair(port_pair={
-                'service_function_parameters': {'correlation': 'mpls'},
+                'service_function_parameters': {'correlation': correlation},
                 'ingress': pc2port['port']['id'],
                 'egress': pc2port['port']['id']}
             ) as pc2pp, self.port_pair(port_pair={
-                'service_function_parameters': {'correlation': 'mpls'},
+                'service_function_parameters': {'correlation': correlation},
                 'ingress': pc3port['port']['id'],
                 'egress': pc3port['port']['id']}
             ) as pc3pp, self.port_pair(port_pair={
-                'service_function_parameters': {'correlation': 'mpls'},
+                'service_function_parameters': {'correlation': correlation},
                 'ingress': pc4port['port']['id'],
                 'egress': pc4port['port']['id']}
             ) as pc4pp, self.port_pair(port_pair={
-                'service_function_parameters': {'correlation': 'mpls'},
+                'service_function_parameters': {'correlation': correlation},
                 'ingress': pc5port['port']['id'],
                 'egress': pc5port['port']['id']}
             ) as pc5pp, self.port_pair(port_pair={
-                'service_function_parameters': {'correlation': 'mpls'},
+                'service_function_parameters': {'correlation': correlation},
                 'ingress': pc6port['port']['id'],
                 'egress': pc6port['port']['id']}
             ) as pc6pp:
@@ -6540,11 +6557,11 @@ class OVSSfcDriverTestCase(
                 # more than 20 contexts, both in python2 and python3
                 self._test_service_graph_complex_end(
                     create, pc1fc, pc2fc, pc3fc, pc4fc, pc5fc, pc6fc,
-                    pc1pp, pc2pp, pc3pp, pc4pp, pc5pp, pc6pp)
+                    pc1pp, pc2pp, pc3pp, pc4pp, pc5pp, pc6pp, correlation)
 
     def _test_service_graph_complex_end(
             self, create, pc1fc, pc2fc, pc3fc, pc4fc, pc5fc, pc6fc,
-            pc1pp, pc2pp, pc3pp, pc4pp, pc5pp, pc6pp):
+            pc1pp, pc2pp, pc3pp, pc4pp, pc5pp, pc6pp, correlation):
         pc1pp_context = sfc_ctx.PortPairContext(self.sfc_plugin,
                                                 self.ctx,
                                                 pc1pp['port_pair'])
@@ -6617,42 +6634,42 @@ class OVSSfcDriverTestCase(
 
             with self.port_chain(port_chain={
                 'chain_parameters': {
-                    'correlation': 'mpls'},
+                    'correlation': correlation},
                 'port_pair_groups': [
                     pc1pg['port_pair_group']['id']],
                 'flow_classifiers': [
                     pc1fc['flow_classifier']['id']]}
             ) as pc1, self.port_chain(port_chain={
                 'chain_parameters': {
-                    'correlation': 'mpls'},
+                    'correlation': correlation},
                 'port_pair_groups': [
                     pc2pg['port_pair_group']['id']],
                 'flow_classifiers': [
                     pc2fc['flow_classifier']['id']]}
             ) as pc2, self.port_chain(port_chain={
                 'chain_parameters': {
-                    'correlation': 'mpls'},
+                    'correlation': correlation},
                 'port_pair_groups': [
                     pc3pg['port_pair_group']['id']],
                 'flow_classifiers': [
                     pc3fc['flow_classifier']['id']]}
             ) as pc3, self.port_chain(port_chain={
                 'chain_parameters': {
-                    'correlation': 'mpls'},
+                    'correlation': correlation},
                 'port_pair_groups': [
                     pc4pg['port_pair_group']['id']],
                 'flow_classifiers': [
                     pc4fc['flow_classifier']['id']]}
             ) as pc4, self.port_chain(port_chain={
                 'chain_parameters': {
-                    'correlation': 'mpls'},
+                    'correlation': correlation},
                 'port_pair_groups': [
                     pc5pg['port_pair_group']['id']],
                 'flow_classifiers': [
                     pc5fc['flow_classifier']['id']]}
             ) as pc5, self.port_chain(port_chain={
                 'chain_parameters': {
-                    'correlation': 'mpls'},
+                    'correlation': correlation},
                 'port_pair_groups': [
                     pc6pg['port_pair_group']['id']],
                 'flow_classifiers': [
@@ -6796,11 +6813,17 @@ class OVSSfcDriverTestCase(
                             g, sta_nodes, end_nodes,
                             old_add1, old_add2, nsp, nsi)
 
-    def test_create_service_graph_complex(self):
-        self._test_service_graph_complex(True)
+    def test_create_service_graph_complex_mpls(self):
+        self._test_service_graph_complex(True, 'mpls')
 
-    def test_delete_service_graph_complex(self):
-        self._test_service_graph_complex(False)
+    def test_create_service_graph_complex_nsh(self):
+        self._test_service_graph_complex(True, 'nsh')
+
+    def test_delete_service_graph_complex_mpls(self):
+        self._test_service_graph_complex(False, 'mpls')
+
+    def test_delete_service_graph_complex_nsh(self):
+        self._test_service_graph_complex(False, 'nsh')
 
     def test_create_port_chain_with_tap_enabled_ppg_only(self):
         with self.port(

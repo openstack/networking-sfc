@@ -133,6 +133,12 @@ class PortChainChainIdInConflict(neutron_exc.InvalidInput):
                 "Chain id in port chain %(pc_id)s.")
 
 
+class PortChainInconsistentCorrelations(neutron_exc.InvalidInput):
+    message = _("Port Chain attempted creation included a Port Pair Group "
+                "(%(ppg)s) with a different protocol used as correlation "
+                "type.")
+
+
 class PortPairGroupNotSpecified(neutron_exc.InvalidInput):
     message = _("Port Pair Group is not specified in Port Chain.")
 
@@ -274,7 +280,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                 'type:dict': {
                     'correlation': {
                         'default': DEFAULT_SF_PARAMETERS['correlation'],
-                        'type:values': [None, 'mpls']
+                        'type:values': [None, 'mpls', 'nsh']
                     },
                     'weight': {
                         'default': DEFAULT_SF_PARAMETERS['weight'],
@@ -334,7 +340,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                 'type:dict': {
                     'correlation': {
                         'default': DEFAULT_CHAIN_PARAMETERS['correlation'],
-                        'type:values': ['mpls']
+                        'type:values': ['mpls', 'nsh']
                     },
                     'symmetric': {
                         'default': DEFAULT_CHAIN_PARAMETERS['symmetric'],

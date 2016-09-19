@@ -492,6 +492,50 @@ class SfcDbPluginTestCase(
                 'port_pair_groups': [pg['port_pair_group']['id']]
             })
 
+    def test_create_port_chain_with_nsh_correlation(self):
+        with self.port_pair_group(port_pair_group={}) as pg:
+            self._test_create_port_chain({
+                'chain_parameters': {'symmetric': False,
+                                     'correlation': 'nsh'},
+                'port_pair_groups': [pg['port_pair_group']['id']]
+            })
+
+    def test_create_port_chain_with_nsh_correlation_incompatible_ppg_fail(
+            self):
+        with self.port(
+            name='port1',
+            device_id='default'
+        ) as port1, self.port(
+            name='port2',
+            device_id='default'
+        ) as port2:
+            with self.port_pair(port_pair={
+                'ingress': port1['port']['id'],
+                'egress': port1['port']['id'],
+                'service_function_parameters': {'correlation': 'nsh'}
+            }) as pp1, self.port_pair(port_pair={
+                'ingress': port2['port']['id'],
+                'egress': port2['port']['id'],
+                'service_function_parameters': {'correlation': 'mpls'}
+            }) as pp2:
+                with self.port_pair_group(port_pair_group={
+                    'port_pairs': [
+                        pp1['port_pair']['id']
+                    ]
+                }) as ppg1, self.port_pair_group(port_pair_group={
+                    'port_pairs': [
+                        pp2['port_pair']['id']
+                    ]
+                }) as ppg2:
+                    self._create_port_chain(
+                        self.fmt, {
+                            'chain_parameters': {'symmetric': False,
+                                                 'correlation': 'nsh'},
+                            'port_pair_groups': [
+                                ppg1['port_pair_group']['id'],
+                                ppg2['port_pair_group']['id']],
+                        }, expected_res_status=400)
+
     def test_create_port_chains_with_conflicting_chain_ids(self):
         with self.port_pair_group(
             port_pair_group={}, do_delete=False

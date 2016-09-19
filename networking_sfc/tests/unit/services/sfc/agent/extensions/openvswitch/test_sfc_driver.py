@@ -388,8 +388,116 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._clear_local_entries()
         super(SfcAgentDriverTestCase, self).tearDown()
 
-    def _prepare_update_flow_rules_sf_node_empty_next_hops(self, pc_corr,
-                                                           pp_corr):
+    def _assert_update_flow_rules_sf_node_many_hops_no_proxy_mpls(self):
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:ab:cd',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 34887,
+                'in_port': 42,
+                'mpls_label': 65791,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65792,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5),'
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:ab:cd, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def _assert_update_flow_rules_sf_node_many_hops_no_proxy_nsh(self):
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:ab:cd',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 255,
+                'in_port': 42,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 256,
+                'dl_vlan': 0,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5),'
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:ab:cd, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def _prepare_update_flow_rules_sf_node_empty_next_hops(
+            self, pc_corr, pp_corr):
         self.port_mapping = {
             'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579': {
                 'port_name': 'src_port',
@@ -423,94 +531,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
 
-    def test_update_flow_rules_sf_node_empty_next_hops(self):
-        self._prepare_update_flow_rules_sf_node_empty_next_hops('mpls', None)
-        self.assertEqual(
-            [],
-            self.executed_cmds
-        )
-        self.assertEqual(
-            [{
-                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65791,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {},
-            self.group_mapping
-        )
-
-    def test_update_flow_rules_sf_node_empty_next_hops_no_proxy(self):
-        self._prepare_update_flow_rules_sf_node_empty_next_hops('mpls', 'mpls')
-        self.assertEqual(
-            [],
-            self.executed_cmds
-        )
-        self.assertEqual(
-            [{
-                'actions': 'strip_vlan, output:6',
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65791,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {},
-            self.group_mapping
-        )
-
-    def test_update_flow_rules_src_node_empty_next_hops(self):
-        self.port_mapping = {
-            '2f1d2140-42ce-4979-9542-7ef25796e536': {
-                'port_name': 'dst_port',
-                'ofport': 42,
-                'vif_mac': '00:01:02:03:06:08',
-            }
-        }
-        status = []
-        self.sfc_driver.update_flow_rules(
-            {
-                'nsi': 254,
-                'ingress': None,
-                'next_hops': None,
-                'del_fcs': [],
-                'group_refcnt': 1,
-                'node_type': 'src_node',
-                'egress': u'2f1d2140-42ce-4979-9542-7ef25796e536',
-                'next_group_id': None,
-                'nsp': 256,
-                'add_fcs': [],
-                'id': uuidutils.generate_uuid(),
-                'fwd_path': True
-            },
-            status
-        )
-        self.assertEqual(
-            [],
-            self.executed_cmds
-        )
-        self.assertEqual(
-            [],
-            self.added_flows
-        )
-        self.assertEqual(
-            {},
-            self.group_mapping
-        )
-
-    def _prepare_update_flow_rules_src_node_empty_next_hops_a_d(self,
-                                                                pc_corr,
-                                                                pp_corr):
+    def _prepare_update_flow_rules_src_node_empty_next_hops_a_d(
+            self, pc_corr, pp_corr):
         self.port_mapping = {
             '9bedd01e-c216-4dfd-b48e-fbd5c8212ba4': {
                 'port_name': 'dst_port',
@@ -602,49 +624,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.group_mapping
         )
 
-    def test_update_flow_rules_src_node_empty_next_hops_add_fcs_del_fcs(self):
-        self._test_update_flow_rules_src_empty_next_hops_a_d('mpls')
-
-    def test_update_flow_rules_src_node_empty_next_hops_a_d_no_proxy(self):
-        self._prepare_update_flow_rules_src_node_empty_next_hops_a_d(
-            'mpls', 'mpls')
-        self.assertEqual(
-            [{
-                'actions': 'normal',
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': u'10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            [{
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': u'10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True,
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            {},
-            self.group_mapping
-        )
-
-    def _prepare_update_flow_rules_sf_node_empty_next_hops_a_d(self, pc_corr,
-                                                               pp_corr):
+    def _prepare_update_flow_rules_sf_node_empty_next_hops_a_d(
+            self, pc_corr, pp_corr):
         self.port_mapping = {
             '9bedd01e-c216-4dfd-b48e-fbd5c8212ba4': {
                 'port_name': 'dst_port',
@@ -703,98 +684,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
 
-    def test_update_flow_rules_sf_node_empty_next_hops_add_fcs_del_fcs(self):
-        self._prepare_update_flow_rules_sf_node_empty_next_hops_a_d(
-            'mpls', None)
-        self.assertEqual(
-            [],
-            self.executed_cmds
-        )
-        self.assertEqual(
-            [{
-                'actions': 'normal',
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': u'10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }, {
-                'actions': 'strip_vlan, pop_mpls:0x0800,output:42',
-                'dl_dst': '00:01:02:03:06:08',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65792,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            [{
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': u'10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True,
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            {},
-            self.group_mapping
-        )
-
-    # this test exercises the last SF_NODE in a chain with encapsulation
-    def test_update_flow_rules_sf_node_empty_next_hops_a_d_no_proxy(self):
-        self._prepare_update_flow_rules_sf_node_empty_next_hops_a_d(
-            'mpls', 'mpls')
-        self.assertEqual(
-            [{
-                'actions': 'pop_mpls:0x0800,normal',
-                'eth_type': 34887,
-                'in_port': 42,
-                'mpls_label': 65791,
-                'priority': 30,
-                'table': 0
-            }, {
-                'actions': 'strip_vlan, output:42',
-                'dl_dst': '00:01:02:03:06:08',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65792,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            [{
-                'eth_type': 34887,
-                'in_port': 42,
-                'mpls_label': 65791,
-                'priority': 30,
-                'table': 0,
-                'strict': True,
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            {},
-            self.group_mapping
-        )
-
-    def _prepare_update_flow_rules_src_node_next_hops_add_fcs(self,
-                                                              pc_corr,
-                                                              pp_corr_nh):
+    def _prepare_update_flow_rules_src_node_next_hops_add_fcs(
+            self, pc_corr, pp_corr, pp_corr_nh):
         self.port_mapping = {
             '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
                 'port_name': 'port1',
@@ -844,95 +735,13 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'id': uuidutils.generate_uuid(),
                 'fwd_path': True,
                 'pc_corr': pc_corr,
-                'pp_corr': None
+                'pp_corr': pp_corr
             },
             status
         )
         self.assertEqual(
             [],
             self.executed_cmds
-        )
-
-    def test_update_flow_rules_src_node_next_hops_add_fcs(self):
-        self._prepare_update_flow_rules_src_node_next_hops_add_fcs(
-            'mpls', None)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'push_mpls:0x8847,set_mpls_label:65791,'
-                    'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 2048,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'group:1',
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-
-    def test_update_flow_rules_src_node_next_hops_add_fcs_no_proxy(self):
-        self._prepare_update_flow_rules_src_node_next_hops_add_fcs(
-            'mpls', 'mpls')
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:65791,'
-                           'set_mpls_ttl:255,group:1',
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
         )
 
     def _prepare_update_flow_rules_src_node_next_hops_same_host_a(
@@ -995,92 +804,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
 
-    def test_update_flow_rules_src_node_next_hops_same_host_add_fcs(self):
-        self._prepare_update_flow_rules_src_node_next_hops_same_host_a(
-            'mpls', None)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'push_mpls:0x8847,set_mpls_label:65791,'
-                    'set_mpls_ttl:255,mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 2048,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'group:1',
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-
-    def test_update_flow_rules_src_node_next_hops_same_host_a_no_proxy(self):
-        self._prepare_update_flow_rules_src_node_next_hops_same_host_a(
-            'mpls', 'mpls')
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:65791,'
-                           'set_mpls_ttl:255,group:1',
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-
-    def _prepare_update_flow_rules_sf_node_next_hops_add_fcs(self,
-                                                             pc_corr,
-                                                             pp_corr,
-                                                             pp_corr_nh):
+    def _prepare_update_flow_rules_sf_node_next_hops_add_fcs(
+            self, pc_corr, pp_corr, pp_corr_nh):
         self.port_mapping = {
             '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
                 'port_name': 'port1',
@@ -1143,106 +868,6 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [],
             self.executed_cmds
-        )
-
-    def test_update_flow_rules_sf_node_next_hops_add_fcs(self):
-        self._prepare_update_flow_rules_sf_node_next_hops_add_fcs('mpls',
-                                                                  None,
-                                                                  None)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'push_mpls:0x8847,set_mpls_label:65791,'
-                    'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 2048,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'group:1',
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }, {
-                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65792,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-
-    def test_update_flow_rules_sf_node_next_hops_add_fcs_nh(self):
-        self._prepare_update_flow_rules_sf_node_next_hops_add_fcs('mpls',
-                                                                  None,
-                                                                  'mpls')
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:65791,'
-                           'set_mpls_ttl:255,group:1',
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }, {
-                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65792,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
         )
 
     def test_update_flowrules_srcnode_no_nexthops_add_del_fcs_symmetric(self):
@@ -1529,157 +1154,6 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
 
-    def test_update_flow_rules_sf_node_next_hops_same_host_add_fcs(self):
-        self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
-            'mpls', None, None)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 2048,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'group:1',
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }, {
-                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65792,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-
-    def test_update_flow_rules_sf_node_next_hops_same_host_add_fcs_nh(self):
-        self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
-            'mpls', None, 'mpls')
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:65791,'
-                           'set_mpls_ttl:255,group:1',
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }, {
-                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65792,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-
-    def _test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy(self,
-                                                                    pp_c_nh):
-        self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
-            'mpls', 'mpls', pp_c_nh)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'group:1',
-                'eth_type': 34887,
-                'in_port': 42,
-                'mpls_label': 65791,
-                'priority': 30,
-                'table': 0
-            }, {
-                'actions': 'strip_vlan, output:6',
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65792,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-
-    def test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy(self):
-        self._test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy(None)
-
-    def test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy_nh(self):
-        self._test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy(
-            'mpls'
-        )
-
     # to go from chain src_node to graph src_node, or vice-versa (on_add=True)
     def _prepare_update_flow_rules_src_node_graph_dependent_a(
             self, pc_corr, host, on_add):
@@ -1755,126 +1229,6 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
 
-    def test_update_flow_rules_src_node_graph_dependent_same_h_a_mpls(self):
-        self._prepare_update_flow_rules_src_node_graph_dependent_a(
-            'mpls', '10.0.0.1', True)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
-                           'set_mpls_ttl:252,group:1',
-                'reg0': 61640,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-        self.assertEqual(
-            [{
-                'in_port': 42,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
-    def test_reverse_ufr_src_node_graph_dependent_same_h_a_mpls(self):
-        self._prepare_update_flow_rules_src_node_graph_dependent_a(
-            'mpls', '10.0.0.1', False)  # notice on_add=False
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
-                           'set_mpls_ttl:252,group:1',
-                'in_port': 42,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-        self.assertEqual(
-            [{
-                'reg0': 61640,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
     # to go from chain's last sf_node to graph's last sf_node,
     # or vice-versa (branch_point=False or missing)
     def _prepare_update_flow_rules_lastsf_node_graph_dependency_same_h_a(
@@ -1936,217 +1290,6 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [],
             self.executed_cmds
-        )
-
-    def test_update_flow_rules_lastsf_node_graph_dependency_same_h_a_mpls(
-            self):
-        self._prepare_update_flow_rules_lastsf_node_graph_dependency_same_h_a(
-            'mpls', True)
-        self.assertEqual(
-            [{
-                'actions': 'load:0xf0c8->NXM_NX_REG0[],'
-                           'pop_mpls:0x0800,resubmit(,0)',
-                'eth_type': 34887,
-                'in_port': 42,
-                'mpls_label': 61640,
-                'priority': 30,
-                'table': 0
-            }, {
-                'actions': 'strip_vlan, output:42',
-                'dl_dst': '00:01:02:03:06:08',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 61641,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {},
-            self.group_mapping
-        )
-        self.assertEqual(
-            [{
-                'eth_type': 34887,
-                'in_port': 42,
-                'mpls_label': 61640,
-                'priority': 30,
-                'table': 0,
-                'strict': True
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
-    def test_reverse_ufr_lastsf_node_graph_dependency_same_h_a_mpls(
-            self):
-        # notice branch_point=False, which but could missing too, like in
-        # test_update_flow_rules_sf_node_empty_next_hops_a_d_no_proxy()
-        self._prepare_update_flow_rules_lastsf_node_graph_dependency_same_h_a(
-            'mpls', False)
-        self.assertEqual(
-            [{
-                'actions': 'pop_mpls:0x0800,normal',
-                'eth_type': 34887,
-                'in_port': 42,
-                'mpls_label': 61640,
-                'priority': 30,
-                'table': 0
-            }, {
-                'actions': 'strip_vlan, output:42',
-                'dl_dst': '00:01:02:03:06:08',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 61641,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {},
-            self.group_mapping
-        )
-        self.assertEqual(
-            [{
-                'eth_type': 34887,
-                'in_port': 42,
-                'mpls_label': 61640,
-                'priority': 30,
-                'table': 0,
-                'strict': True
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
-    def test_update_flow_rules_src_node_graph_dependent_diff_h_a_mpls(
-            self):
-        self._prepare_update_flow_rules_src_node_graph_dependent_a(
-            'mpls', '10.0.0.2', True)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
-                           'set_mpls_ttl:252,group:1',
-                'reg0': 61640,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-        self.assertEqual(
-            [{
-                'in_port': 42,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
-    def test_reverse_ufr_src_node_graph_dependent_diff_h_a_mpls(
-            self):
-        self._prepare_update_flow_rules_src_node_graph_dependent_a(
-            'mpls', '10.0.0.2', False)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
-                           'set_mpls_ttl:252,group:1',
-                'in_port': 42,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-        self.assertEqual(
-            [{
-                'reg0': 61640,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
         )
 
     # tests flow rules for "joining" branches (many entries in branch_info)
@@ -2225,150 +1368,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
 
-    def test_update_flow_rules_src_node_graph_dependent_join_same_h_mpls(self):
-        self._prepare_update_flow_rules_src_node_graph_dependent_join(
-            'mpls', '10.0.0.1', True)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
-                           'set_mpls_ttl:252,group:1',
-                'reg0': 61640,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
-                           'set_mpls_ttl:252,group:1',
-                'reg0': 64100,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-        self.assertEqual(
-            [{
-                'in_port': 42,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
-    def test_reverse_ufr_src_node_graph_dependent_join_same_h_mpls(self):
-        self._prepare_update_flow_rules_src_node_graph_dependent_join(
-            'mpls', '10.0.0.1', False)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
-                           'set_mpls_ttl:252,group:1',
-                'in_port': 42,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-        self.assertEqual(
-            [{
-                'reg0': 61640,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True
-            }, {
-                'reg0': 64100,
-                'eth_type': 2048,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
-    def _prepare_update_flow_rules_sf_node_many_hops_all_mpls(self, pp_corr):
+    def _prepare_update_flow_rules_sf_node_many_hops_all_encap(
+            self, pc_corr, pp_corr, pp_corr_nh):
         self.port_mapping = {
             '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
                 'port_name': 'port1',
@@ -2407,7 +1408,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'gw_mac': '00:01:02:03:06:09',
                     'cidr': '10.0.0.0/8',
                     'in_mac_address': '12:34:56:78:cf:23',
-                    'pp_corr': 'mpls'
+                    'pp_corr': pp_corr_nh
                 }, {
                     'local_endpoint': '10.0.0.1',
                     'ingress': '1234d2b3-746d-4868-ae0e-e81861c25678',
@@ -2418,7 +1419,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'gw_mac': '00:01:02:03:06:09',
                     'cidr': '10.0.0.0/8',
                     'in_mac_address': '12:34:56:78:ab:cd',
-                    'pp_corr': 'mpls'
+                    'pp_corr': pp_corr_nh
                 }],
                 'del_fcs': [],
                 'group_refcnt': 1,
@@ -2437,7 +1438,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'ethertype': 'IPv4',
                     'destination_port_range_max': 100,
                 }],
-                'pc_corr': 'mpls',
+                'pc_corr': pc_corr,
                 'pp_corr': pp_corr,
                 'id': uuidutils.generate_uuid(),
                 'fwd_path': True
@@ -2449,122 +1450,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
 
-    def _assert_update_flow_rules_sf_node_many_hops_no_proxy(self):
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:ab:cd',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'group:1',
-                'eth_type': 34887,
-                'in_port': 42,
-                'mpls_label': 65791,
-                'priority': 30,
-                'table': 0
-            }, {
-                'actions': 'strip_vlan, output:6',
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65792,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5),'
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:ab:cd, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-
-    def test_update_flow_rules_sf_node_many_hops_all_mpls_no_proxy(self):
-        self._prepare_update_flow_rules_sf_node_many_hops_all_mpls('mpls')
-        self._assert_update_flow_rules_sf_node_many_hops_no_proxy()
-
-    def test_update_flow_rules_sf_node_many_hops_all_mpls(self):
-        self._prepare_update_flow_rules_sf_node_many_hops_all_mpls(None)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:ab:cd',
-                'eth_type': 34887,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'push_mpls:0x8847,set_mpls_label:65791,'
-                           'set_mpls_ttl:255,group:1',
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }, {
-                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65792,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5),'
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:ab:cd, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
-
-    def _prepare_delete_flow_rules_sf_node_empty_del_fcs(self, pc_corr,
-                                                         pp_corr):
+    def _prepare_delete_flow_rules_sf_node_empty_del_fcs(
+            self, pc_corr, pp_corr):
         self.port_mapping = {
             'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579': {
                 'port_name': 'src_port',
@@ -2602,40 +1489,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
 
-    def test_delete_flow_rules_sf_node_empty_del_fcs(self):
-        self._prepare_delete_flow_rules_sf_node_empty_del_fcs('mpls', None)
-        self.assertEqual(
-            [{
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'mpls_label': 65791,
-                'table': 10
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
-    def test_delete_flow_rules_sf_node_empty_del_fcs_no_proxy(self):
-        self._prepare_delete_flow_rules_sf_node_empty_del_fcs('mpls', 'mpls')
-        self.assertEqual(
-            [{
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'mpls_label': 65791,
-                'table': 10
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
-    def _prepare_delete_flow_rules_src_node_empty_del_fcs(self, pc_corr,
-                                                          pp_corr):
+    def _prepare_delete_flow_rules_src_node_empty_del_fcs(
+            self, pc_corr, pp_corr):
         self.port_mapping = {
             'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579': {
                 'port_name': 'src_port',
@@ -2673,126 +1528,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
 
-    def _test_delete_flow_rules_src_node_empty_del_fcs(self, pc_corr,
-                                                       pp_corr):
-        self._prepare_delete_flow_rules_src_node_empty_del_fcs(pc_corr,
-                                                               pp_corr)
-        self.assertEqual(
-            [],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
-    def test_delete_flow_rules_src_node_empty_del_fcs(self):
-        self._test_delete_flow_rules_src_node_empty_del_fcs('mpls', None)
-
-    def test_delete_flow_rules_src_node_empty_del_fcs_no_proxy(self):
-        self._test_delete_flow_rules_src_node_empty_del_fcs('mpls', 'mpls')
-
-    def _prepare_delete_flow_rules_sf_node_del_fcs(self, pc_corr,
-                                                   pp_corr):
-        self.port_mapping = {
-            'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579': {
-                'port_name': 'src_port',
-                'ofport': 6,
-                'vif_mac': '00:01:02:03:05:07',
-            },
-            '2f1d2140-42ce-4979-9542-7ef25796e536': {
-                'port_name': 'dst_port',
-                'ofport': 42,
-                'vif_mac': '00:01:02:03:06:08',
-            }
-        }
-        status = []
-        self.sfc_driver.delete_flow_rule(
-            {
-                'nsi': 254,
-                'ingress': u'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579',
-                'next_hops': None,
-                'del_fcs': [{
-                    'source_port_range_min': 100,
-                    'destination_ip_prefix': u'10.200.0.0/16',
-                    'protocol': u'tcp',
-                    'l7_parameters': {},
-                    'source_port_range_max': 100,
-                    'source_ip_prefix': '10.100.0.0/16',
-                    'destination_port_range_min': 100,
-                    'ethertype': 'IPv4',
-                    'destination_port_range_max': 100,
-                }],
-                'group_refcnt': 1,
-                'node_type': 'sf_node',
-                'egress': u'2f1d2140-42ce-4979-9542-7ef25796e536',
-                'next_group_id': None,
-                'nsp': 256,
-                'add_fcs': [],
-                'id': uuidutils.generate_uuid(),
-                'fwd_path': True,
-                'pc_corr': pc_corr,
-                'pp_corr': pp_corr
-            },
-            status
-        )
-        self.assertEqual(
-            [],
-            self.executed_cmds
-        )
-
-    def test_delete_flow_rules_sf_node_del_fcs(self):
-        self._prepare_delete_flow_rules_sf_node_del_fcs('mpls', None)
-        self.assertEqual(
-            [{
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True,
-            }, {
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'mpls_label': 65791,
-                'table': 10
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
-    def test_delete_flow_rules_sf_node_del_fcs_no_proxy(self):
-        self._prepare_delete_flow_rules_sf_node_del_fcs('mpls', 'mpls')
-        self.assertEqual(
-            [{
-                'eth_type': 34887,
-                'in_port': 42,
-                'mpls_label': 65790,
-                'priority': 30,
-                'table': 0,
-                'strict': True,
-            }, {
-                'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'mpls_label': 65791,
-                'table': 10
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [],
-            self.deleted_groups
-        )
-
-    def _prepare_delete_flow_rules_src_node_del_fcs(self, pc_corr,
-                                                    pp_corr):
+    def _prepare_delete_flow_rules_src_node_del_fcs(
+            self, pc_corr, pp_corr):
         self.port_mapping = {
             'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579': {
                 'port_name': 'src_port',
@@ -2840,39 +1577,57 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
 
-    def _test_delete_flow_rules_src_node_del_fcs(self, pc_corr, pp_corr):
-        self._prepare_delete_flow_rules_src_node_del_fcs(pc_corr,
-                                                         pp_corr)
-        self.assertEqual(
-            [{
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True,
-            }],
-            self.deleted_flows
+    def _prepare_delete_flow_rules_sf_node_del_fcs(
+            self, pc_corr, pp_corr):
+        self.port_mapping = {
+            'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579': {
+                'port_name': 'src_port',
+                'ofport': 6,
+                'vif_mac': '00:01:02:03:05:07',
+            },
+            '2f1d2140-42ce-4979-9542-7ef25796e536': {
+                'port_name': 'dst_port',
+                'ofport': 42,
+                'vif_mac': '00:01:02:03:06:08',
+            }
+        }
+        status = []
+        self.sfc_driver.delete_flow_rule(
+            {
+                'nsi': 254,
+                'ingress': u'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579',
+                'next_hops': None,
+                'del_fcs': [{
+                    'source_port_range_min': 100,
+                    'destination_ip_prefix': u'10.200.0.0/16',
+                    'protocol': u'tcp',
+                    'l7_parameters': {},
+                    'source_port_range_max': 100,
+                    'source_ip_prefix': '10.100.0.0/16',
+                    'destination_port_range_min': 100,
+                    'ethertype': 'IPv4',
+                    'destination_port_range_max': 100,
+                }],
+                'group_refcnt': 1,
+                'node_type': 'sf_node',
+                'egress': u'2f1d2140-42ce-4979-9542-7ef25796e536',
+                'next_group_id': None,
+                'nsp': 256,
+                'add_fcs': [],
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True,
+                'pc_corr': pc_corr,
+                'pp_corr': pp_corr
+            },
+            status
         )
         self.assertEqual(
             [],
-            self.deleted_groups
+            self.executed_cmds
         )
 
-    def test_delete_flow_rules_src_node_del_fcs(self):
-        self._test_delete_flow_rules_src_node_del_fcs('mpls', None)
-
-    def test_delete_flow_rules_src_node_del_fcs_no_proxy(self):
-        self._test_delete_flow_rules_src_node_del_fcs('mpls', 'mpls')
-
-    def _prepare_delete_flow_rules_src_node_next_hops_del_fcs(self,
-                                                              pc_corr,
-                                                              pp_corr,
-                                                              pp_corr_nh):
+    def _prepare_delete_flow_rules_src_node_next_hops_del_fcs(
+            self, pc_corr, pp_corr, pp_corr_nh):
         self.port_mapping = {
             '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
                 'port_name': 'port1',
@@ -2931,56 +1686,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
 
-    def _test_delete_flow_rules_src_node_next_hops_del_fcs(self,
-                                                           pc_corr,
-                                                           pp_corr,
-                                                           pp_corr_nh):
-        self._prepare_delete_flow_rules_src_node_next_hops_del_fcs(pc_corr,
-                                                                   pp_corr,
-                                                                   pp_corr_nh)
-        self.assertEqual(
-            [{
-                'eth_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff',
-                'strict': True,
-            }, {
-                'dl_dst': '12:34:56:78:cf:23',
-                'table': 5
-            }],
-            self.deleted_flows
-        )
-        self.assertEqual(
-            [1],
-            self.deleted_groups
-        )
-
-    def test_delete_flow_rules_src_node_next_hops_del_fcs(self):
-        self._test_delete_flow_rules_src_node_next_hops_del_fcs('mpls',
-                                                                None, None)
-
-    def test_delete_flow_rules_src_node_next_hops_del_fcs_no_proxy(self):
-        self._test_delete_flow_rules_src_node_next_hops_del_fcs('mpls',
-                                                                'mpls', None)
-
-    def test_delete_flow_rules_src_node_next_hops_del_fcs_nh(self):
-        self._test_delete_flow_rules_src_node_next_hops_del_fcs('mpls',
-                                                                None, 'mpls')
-
-    def test_delete_flow_rules_src_node_next_hops_del_fcs_no_proxy_nh(self):
-        self._test_delete_flow_rules_src_node_next_hops_del_fcs('mpls',
-                                                                'mpls', 'mpls')
-
-    def _prepare_delete_flow_rules_sf_node_next_hops_del_fcs(self,
-                                                             pc_corr,
-                                                             pp_corr,
-                                                             pp_corr_nh):
+    def _prepare_delete_flow_rules_sf_node_next_hops_del_fcs(
+            self, pc_corr, pp_corr, pp_corr_nh):
         self.port_mapping = {
             '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
                 'port_name': 'port1',
@@ -3039,10 +1746,326 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
 
-    def _test_delete_flow_rules_sf_node_next_hops_del_fcs(self, pp_corr_nh):
-        self._prepare_delete_flow_rules_sf_node_next_hops_del_fcs('mpls',
-                                                                  None,
+    def _test_update_flow_rules_sf_node_next_hops_add_fcs_no_proxy_mpls(
+            self, pp_corr_nh):
+        self._prepare_update_flow_rules_sf_node_next_hops_add_fcs('mpls',
+                                                                  'mpls',
                                                                   pp_corr_nh)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 34887,
+                'in_port': 42,
+                'mpls_label': 65791,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65792,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def _test_update_flow_rules_sf_node_next_hops_add_fcs_no_proxy_nsh(
+            self, pp_corr_nh):
+        self._prepare_update_flow_rules_sf_node_next_hops_add_fcs('nsh',
+                                                                  'nsh',
+                                                                  pp_corr_nh)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 35151,
+                'in_port': 42,
+                'nsh_mdtype': 1,
+                'nsh_si': 255,
+                'nsh_spi': 256,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'dl_vlan': 0,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 256,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def _test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy_mpls(
+            self, pp_corr_nh):
+        self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
+            'mpls', 'mpls', pp_corr_nh)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 34887,
+                'in_port': 42,
+                'mpls_label': 65791,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65792,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def _test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy_nsh(
+            self, pp_corr_nh):
+        self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
+            'nsh', 'nsh', pp_corr_nh)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 35151,
+                'in_port': 42,
+                'nsh_mdtype': 1,
+                'nsh_si': 255,
+                'nsh_spi': 256,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'dl_vlan': 0,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 256,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def _test_delete_flow_rules_src_node_empty_del_fcs(
+            self, pc_corr, pp_corr):
+        self._prepare_delete_flow_rules_src_node_empty_del_fcs(pc_corr,
+                                                               pp_corr)
+        self.assertEqual(
+            [],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def _test_delete_flow_rules_src_node_del_fcs(
+            self, pc_corr, pp_corr):
+        self._prepare_delete_flow_rules_src_node_del_fcs(pc_corr,
+                                                         pp_corr)
+        self.assertEqual(
+            [{
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True,
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def _test_delete_flow_rules_src_node_next_hops_del_fcs(
+            self, pc_corr, pp_corr, pp_corr_nh):
+        self._prepare_delete_flow_rules_src_node_next_hops_del_fcs(pc_corr,
+                                                                   pp_corr,
+                                                                   pp_corr_nh)
+        self.assertEqual(
+            [{
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True,
+            }, {
+                'dl_dst': '12:34:56:78:cf:23',
+                'table': 5
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [1],
+            self.deleted_groups
+        )
+
+    def _test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy_mpls(
+            self, pp_corr_nh):
+        self._prepare_delete_flow_rules_sf_node_next_hops_del_fcs('mpls',
+                                                                  'mpls',
+                                                                  pp_corr_nh)
+        self.assertEqual(
+            [{
+                'eth_type': 34887,
+                'mpls_label': 65791,
+                'in_port': 42,
+                'priority': 30,
+                'table': 0,
+                'strict': True,
+            }, {
+                'dl_dst': '12:34:56:78:cf:23',
+                'table': 5
+            }, {
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'mpls_label': 65792,
+                'table': 10
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [1],
+            self.deleted_groups
+        )
+
+    def _test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy_nsh(
+            self, pp_corr_nh):
+        self._prepare_delete_flow_rules_sf_node_next_hops_del_fcs(
+            'nsh', 'nsh', pp_corr_nh)
+        self.assertEqual(
+            [{
+                'eth_type': 35151,
+                'in_port': 42,
+                'nsh_mdtype': 1,
+                'nsh_si': 255,
+                'nsh_spi': 256,
+                'priority': 30,
+                'table': 0,
+                'strict': True
+            }, {
+                'dl_dst': '12:34:56:78:cf:23',
+                'table': 5
+            }, {
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_si': 256,
+                'nsh_spi': 256,
+                'table': 10
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [1],
+            self.deleted_groups
+        )
+
+    def _test_delete_flow_rules_sf_node_next_hops_del_fcs_mpls(
+            self, pp_corr_nh):
+        self._prepare_delete_flow_rules_sf_node_next_hops_del_fcs(
+            'mpls', None, pp_corr_nh)
         self.assertEqual(
             [{
                 'eth_type': 2048,
@@ -3071,32 +2094,32 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.deleted_groups
         )
 
-    def test_delete_flow_rules_sf_node_next_hops_del_fcs(self):
-        self._test_delete_flow_rules_sf_node_next_hops_del_fcs(None)
-
-    def test_delete_flow_rules_sf_node_next_hops_del_fcs_nh(self):
-        self._test_delete_flow_rules_sf_node_next_hops_del_fcs('mpls')
-
-    def _test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy(self,
-                                                                   pp_corr_nh):
-        self._prepare_delete_flow_rules_sf_node_next_hops_del_fcs('mpls',
-                                                                  'mpls',
+    def _test_delete_flow_rules_sf_node_next_hops_del_fcs_nsh(
+            self, pp_corr_nh):
+        self._prepare_delete_flow_rules_sf_node_next_hops_del_fcs('nsh',
+                                                                  None,
                                                                   pp_corr_nh)
         self.assertEqual(
             [{
-                'eth_type': 34887,
-                'mpls_label': 65791,
+                'eth_type': 2048,
                 'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
                 'priority': 30,
                 'table': 0,
-                'strict': True,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
             }, {
                 'dl_dst': '12:34:56:78:cf:23',
                 'table': 5
             }, {
                 'dl_dst': '00:01:02:03:05:07',
-                'eth_type': 34887,
-                'mpls_label': 65792,
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_si': 256,
+                'nsh_spi': 256,
                 'table': 10
             }],
             self.deleted_flows
@@ -3106,11 +2129,2610 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.deleted_groups
         )
 
-    def test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy(self):
-        self._test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy(None)
+    def test_update_flow_rules_sf_node_empty_next_hops_mpls(self):
+        self._prepare_update_flow_rules_sf_node_empty_next_hops('mpls', None)
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+        self.assertEqual(
+            [{
+                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65791,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
 
-    def test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy_nh(self):
-        self._test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy('mpls')
+    def test_update_flow_rules_sf_node_empty_next_hops_nsh(self):
+        self._prepare_update_flow_rules_sf_node_empty_next_hops('nsh', None)
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+        self.assertEqual(
+            [{
+                'actions': (
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'decap(),decap(),'
+                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'dl_vlan': 0,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 255,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_empty_next_hops_no_proxy_mpls(self):
+        self._prepare_update_flow_rules_sf_node_empty_next_hops('mpls', 'mpls')
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+        self.assertEqual(
+            [{
+                'actions': 'strip_vlan, output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65791,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_empty_next_hops_no_proxy_nsh(self):
+        self._prepare_update_flow_rules_sf_node_empty_next_hops('nsh', 'nsh')
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+        self.assertEqual(
+            [{
+                'actions': 'strip_vlan, output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'dl_vlan': 0,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 255,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_src_node_empty_next_hops(self):
+        self.port_mapping = {
+            '2f1d2140-42ce-4979-9542-7ef25796e536': {
+                'port_name': 'dst_port',
+                'ofport': 42,
+                'vif_mac': '00:01:02:03:06:08',
+            }
+        }
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
+                'nsi': 254,
+                'ingress': None,
+                'next_hops': None,
+                'del_fcs': [],
+                'group_refcnt': 1,
+                'node_type': 'src_node',
+                'egress': u'2f1d2140-42ce-4979-9542-7ef25796e536',
+                'next_group_id': None,
+                'nsp': 256,
+                'add_fcs': [],
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
+            },
+            status
+        )
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+        self.assertEqual(
+            [],
+            self.added_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_src_node_empty_next_hops_add_fcs_del_fcs_mpls(
+            self):
+        self._test_update_flow_rules_src_empty_next_hops_a_d('mpls')
+
+    def test_update_flow_rules_src_node_empty_next_hops_add_fcs_del_fcs_nsh(
+            self):
+        self._test_update_flow_rules_src_empty_next_hops_a_d('nsh')
+
+    def test_update_flow_rules_src_node_empty_next_hops_a_d_no_proxy_mpls(
+            self):
+        self._prepare_update_flow_rules_src_node_empty_next_hops_a_d(
+            'mpls', 'mpls')
+        self.assertEqual(
+            [{
+                'actions': 'normal',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': u'10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            [{
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': u'10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True,
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_src_node_empty_next_hops_a_d_no_proxy_nsh(
+            self):
+        self._prepare_update_flow_rules_src_node_empty_next_hops_a_d(
+            'nsh', 'nsh')
+        self.assertEqual(
+            [{
+                'actions': 'normal',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': u'10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            [{
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': u'10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_empty_next_hops_add_fcs_del_fcs_mpls(
+            self):
+        self._prepare_update_flow_rules_sf_node_empty_next_hops_a_d(
+            'mpls', None)
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+        self.assertEqual(
+            [{
+                'actions': 'normal',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': u'10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': 'strip_vlan, pop_mpls:0x0800,output:42',
+                'dl_dst': '00:01:02:03:06:08',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65792,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            [{
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': u'10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True,
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_empty_next_hops_add_fcs_del_fcs_nsh(
+            self):
+        self._prepare_update_flow_rules_sf_node_empty_next_hops_a_d(
+            'nsh', None)
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+        self.assertEqual(
+            [{
+                'actions': 'normal',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': u'10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': (
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'decap(),decap(),'
+                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:42'),
+                'dl_dst': '00:01:02:03:06:08',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 256,
+                'dl_vlan': 0,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            [{
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': u'10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True,
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+
+    # this test exercises the last SF_NODE in a chain with encapsulation
+    def test_update_flow_rules_sf_node_empty_next_hops_a_d_no_proxy_mpls(self):
+        self._prepare_update_flow_rules_sf_node_empty_next_hops_a_d(
+            'mpls', 'mpls')
+        self.assertEqual(
+            [{
+                'actions': 'pop_mpls:0x0800,normal',
+                'eth_type': 34887,
+                'in_port': 42,
+                'mpls_label': 65791,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:42',
+                'dl_dst': '00:01:02:03:06:08',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65792,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            [{
+                'eth_type': 34887,
+                'in_port': 42,
+                'mpls_label': 65791,
+                'priority': 30,
+                'table': 0,
+                'strict': True,
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+
+    # this test exercises the last SF_NODE in a chain with encapsulation
+    def test_update_flow_rules_sf_node_empty_next_hops_a_d_no_proxy_nsh(self):
+        self._prepare_update_flow_rules_sf_node_empty_next_hops_a_d(
+            'nsh', 'nsh')
+        self.assertEqual(
+            [{
+                'actions': 'decap(),decap(),normal',
+                'eth_type': 35151,
+                'in_port': 42,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 255,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:42',
+                'dl_dst': '00:01:02:03:06:08',
+                'eth_type': 35151,
+                'dl_vlan': 0,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 256,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            [{
+                'eth_type': 35151,
+                'in_port': 42,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 255,
+                'priority': 30,
+                'table': 0,
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_src_node_next_hops_add_fcs_mpls(self):
+        self._prepare_update_flow_rules_src_node_next_hops_add_fcs(
+            'mpls', None, None)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:65791,'
+                    'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 2048,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_src_node_next_hops_add_fcs_nsh(self):
+        self._prepare_update_flow_rules_src_node_next_hops_add_fcs(
+            'nsh', None, None)
+        self.assertEqual(
+            [{
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 2048,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_src_node_next_hops_add_fcs_no_proxy_mpls(self):
+        self._prepare_update_flow_rules_src_node_next_hops_add_fcs(
+            'mpls', None, 'mpls')
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:65791,'
+                    'set_mpls_ttl:255,group:1'),
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_src_node_next_hops_add_fcs_no_proxy_nsh(self):
+        self._prepare_update_flow_rules_src_node_next_hops_add_fcs(
+            'nsh', None, 'nsh')
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_src_node_next_hops_same_host_add_fcs_mpls(self):
+        self._prepare_update_flow_rules_src_node_next_hops_same_host_a(
+            'mpls', None)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:65791,'
+                    'set_mpls_ttl:255,mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 2048,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_src_node_next_hops_same_host_add_fcs_nsh(self):
+        self._prepare_update_flow_rules_src_node_next_hops_same_host_a(
+            'nsh', None)
+        self.assertEqual(
+            [{
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 2048,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_src_node_next_hops_same_host_a_no_proxy_mpls(
+            self):
+        self._prepare_update_flow_rules_src_node_next_hops_same_host_a(
+            'mpls', 'mpls')
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:65791,'
+                    'set_mpls_ttl:255,group:1'),
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_src_node_next_hops_same_host_a_no_proxy_nsh(
+            self):
+        self._prepare_update_flow_rules_src_node_next_hops_same_host_a(
+            'nsh', 'nsh')
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_next_hops_add_fcs_mpls(self):
+        self._prepare_update_flow_rules_sf_node_next_hops_add_fcs(
+            'mpls', None, None)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:65791,'
+                    'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 2048,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65792,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_next_hops_add_fcs_nsh(self):
+        self._prepare_update_flow_rules_sf_node_next_hops_add_fcs(
+            'nsh', None, None)
+        self.assertEqual(
+            [{
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 2048,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': (
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'decap(),decap(),'
+                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 256,
+                'dl_vlan': 0,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_next_hops_add_fcs_nh_mpls(self):
+        self._prepare_update_flow_rules_sf_node_next_hops_add_fcs(
+            'mpls', None, 'mpls')
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:65791,'
+                    'set_mpls_ttl:255,group:1'),
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65792,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_next_hops_add_fcs_nh_nsh(self):
+        self._prepare_update_flow_rules_sf_node_next_hops_add_fcs(
+            'nsh', None, 'nsh')
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': (
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'decap(),decap(),'
+                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 256,
+                'dl_vlan': 0,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_next_hops_add_fcs_no_proxy_mpls(self):
+        self._test_update_flow_rules_sf_node_next_hops_add_fcs_no_proxy_mpls(
+            None)
+
+    def test_update_flow_rules_sf_node_next_hops_add_fcs_no_proxy_nsh(self):
+        self._test_update_flow_rules_sf_node_next_hops_add_fcs_no_proxy_nsh(
+            None)
+
+    def test_update_flow_rules_sf_node_next_hops_add_fcs_no_proxy_nh_mpls(
+            self):
+        self._test_update_flow_rules_sf_node_next_hops_add_fcs_no_proxy_mpls(
+            'mpls')
+
+    def test_update_flow_rules_sf_node_next_hops_add_fcs_no_proxy_nh_nsh(
+            self):
+        self._test_update_flow_rules_sf_node_next_hops_add_fcs_no_proxy_nsh(
+            'nsh')
+
+    def test_update_flow_rules_sf_node_next_hops_same_host_add_fcs_mpls(self):
+        self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
+            'mpls', None, None)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 2048,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65792,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_next_hops_same_host_add_fcs_nsh(self):
+        self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
+            'nsh', None, None)
+        self.assertEqual(
+            [{
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 2048,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': 'group:1',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': (
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'decap(),decap(),'
+                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 256,
+                'dl_vlan': 0,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_next_hops_same_host_add_fcs_nh_mpls(
+            self):
+        self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
+            'mpls', None, 'mpls')
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:65791,'
+                    'set_mpls_ttl:255,group:1'),
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65792,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_next_hops_same_host_add_fcs_nh_nsh(
+            self):
+        self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
+            'nsh', None, 'nsh')
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': (
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'decap(),decap(),'
+                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 256,
+                'dl_vlan': 0,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy_nh_mpls(
+            self):
+        self._test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy_mpls(
+            'mpls'
+        )
+
+    def test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy_nh_nsh(
+            self):
+        self._test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy_mpls(
+            'nsh'
+        )
+
+    def test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy_mpls(self):
+        self._test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy_mpls(
+            None)
+
+    def test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy_nsh(self):
+        self._test_update_flow_rules_sf_node_next_hops_same_h_a_no_proxy_nsh(
+            None)
+
+    def test_update_flow_rules_src_node_graph_dependent_same_h_a_mpls(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_a(
+            'mpls', '10.0.0.1', True)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:64252,'
+                    'set_mpls_ttl:252,group:1'),
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_update_flow_rules_src_node_graph_dependent_same_h_a_nsh(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_a(
+            'nsh', '10.0.0.1', True)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_update_flow_rules_src_node_graph_dependent_diff_h_a_mpls(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_a(
+            'mpls', '10.0.0.2', True)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:64252,'
+                    'set_mpls_ttl:252,group:1'),
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_update_flow_rules_src_node_graph_dependent_diff_h_a_nsh(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_a(
+            'nsh', '10.0.0.2', True)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_update_flow_rules_lastsf_node_graph_dependency_same_h_a_mpls(
+            self):
+        self._prepare_update_flow_rules_lastsf_node_graph_dependency_same_h_a(
+            'mpls', True)
+        self.assertEqual(
+            [{
+                'actions': 'load:0xf0c8->NXM_NX_REG0[],'
+                           'pop_mpls:0x0800,resubmit(,0)',
+                'eth_type': 34887,
+                'in_port': 42,
+                'mpls_label': 61640,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:42',
+                'dl_dst': '00:01:02:03:06:08',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 61641,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'eth_type': 34887,
+                'in_port': 42,
+                'mpls_label': 61640,
+                'priority': 30,
+                'table': 0,
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_update_flow_rules_lastsf_node_graph_dependency_same_h_a_nsh(
+            self):
+        self._prepare_update_flow_rules_lastsf_node_graph_dependency_same_h_a(
+            'nsh', True)
+        self.assertEqual(
+            [{
+                'actions': 'load:0xf0c8->NXM_NX_REG0[],'
+                           'decap(),decap(),resubmit(,0)',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 240,
+                'nsh_si': 200,
+                'in_port': 42,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:42',
+                'dl_dst': '00:01:02:03:06:08',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 240,
+                'nsh_si': 201,
+                'dl_vlan': 0,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 240,
+                'nsh_si': 200,
+                'in_port': 42,
+                'priority': 30,
+                'table': 0,
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_update_flow_rules_src_node_graph_dependent_join_same_h_mpls(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_join(
+            'mpls', '10.0.0.1', True)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:64252,'
+                    'set_mpls_ttl:252,group:1'),
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:64252,'
+                    'set_mpls_ttl:252,group:1'),
+                'reg0': 64100,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_update_flow_rules_src_node_graph_dependent_join_same_h_nsh(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_join(
+            'nsh', '10.0.0.1', True)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'reg0': 64100,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_update_flow_rules_sf_node_many_hops_all_no_proxy_mpls(self):
+        self._prepare_update_flow_rules_sf_node_many_hops_all_encap(
+            'mpls', 'mpls', 'mpls')
+        self._assert_update_flow_rules_sf_node_many_hops_no_proxy_mpls()
+
+    def test_update_flow_rules_sf_node_many_hops_all_no_proxy_nsh(self):
+        self._prepare_update_flow_rules_sf_node_many_hops_all_encap(
+            'nsh', 'nsh', 'nsh')
+        self._assert_update_flow_rules_sf_node_many_hops_no_proxy_nsh()
+
+    def test_update_flow_rules_sf_node_many_hops_all_mpls(self):
+        self._prepare_update_flow_rules_sf_node_many_hops_all_encap(
+            'mpls', None, 'mpls')
+
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:ab:cd',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:65791,'
+                    'set_mpls_ttl:255,group:1'),
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65792,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5),'
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:ab:cd, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_sf_node_many_hops_all_nsh(self):
+        self._prepare_update_flow_rules_sf_node_many_hops_all_encap(
+            'nsh', None, 'nsh')
+
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:ab:cd',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'actions': (
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'decap(),decap(),'
+                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 256,
+                'dl_vlan': 0,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5),'
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:ab:cd, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_reverse_ufr_src_node_graph_dependent_same_h_a_mpls(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_a(
+            'mpls', '10.0.0.1', False)  # notice on_add=False
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:64252,'
+                    'set_mpls_ttl:252,group:1'),
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_reverse_ufr_src_node_graph_dependent_same_h_a_nsh(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_a(
+            'nsh', '10.0.0.1', False)  # notice on_add=False
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_reverse_ufr_lastsf_node_graph_dependency_same_h_a_mpls(self):
+        # notice branch_point=False, which but could missing too, like in
+        # test_update_flow_rules_sf_node_empty_next_hops_a_d_no_proxy()
+        self._prepare_update_flow_rules_lastsf_node_graph_dependency_same_h_a(
+            'mpls', False)
+        self.assertEqual(
+            [{
+                'actions': 'pop_mpls:0x0800,normal',
+                'eth_type': 34887,
+                'in_port': 42,
+                'mpls_label': 61640,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:42',
+                'dl_dst': '00:01:02:03:06:08',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 61641,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'eth_type': 34887,
+                'in_port': 42,
+                'mpls_label': 61640,
+                'priority': 30,
+                'table': 0,
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_reverse_ufr_lastsf_node_graph_dependency_same_h_a_nsh(self):
+        # notice branch_point=False, which but could missing too, like in
+        # test_update_flow_rules_sf_node_empty_next_hops_a_d_no_proxy()
+        self._prepare_update_flow_rules_lastsf_node_graph_dependency_same_h_a(
+            'nsh', False)
+        self.assertEqual(
+            [{
+                'actions': 'decap(),decap(),normal',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 240,
+                'nsh_si': 200,
+                'in_port': 42,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan, output:42',
+                'dl_dst': '00:01:02:03:06:08',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 240,
+                'nsh_si': 201,
+                'dl_vlan': 0,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {},
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 240,
+                'nsh_si': 200,
+                'in_port': 42,
+                'priority': 30,
+                'table': 0,
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_reverse_ufr_src_node_graph_dependent_diff_h_a_mpls(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_a(
+            'mpls', '10.0.0.2', False)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:64252,'
+                    'set_mpls_ttl:252,group:1'),
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_reverse_ufr_src_node_graph_dependent_diff_h_a_nsh(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_a(
+            'nsh', '10.0.0.2', False)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,output:2'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_reverse_ufr_src_node_graph_dependent_join_same_h_mpls(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_join(
+            'mpls', '10.0.0.1', False)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 34887,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    'push_mpls:0x8847,set_mpls_label:64252,'
+                    'set_mpls_ttl:252,group:1'),
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }, {
+                'reg0': 64100,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_reverse_ufr_src_node_graph_dependent_join_same_h_nsh(self):
+        self._prepare_update_flow_rules_src_node_graph_dependent_join(
+            'nsh', '10.0.0.1', False)
+        self.assertEqual(
+            [{
+                'actions': (
+                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'dl_dst': '12:34:56:78:cf:23',
+                'eth_type': 35151,
+                'priority': 0,
+                'table': 5
+            }, {
+                'actions': (
+                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
+                    "encap(hdr=ethernet),"
+                    'group:1'),
+                'in_port': 42,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }],
+            self.added_flows
+        )
+        self.assertEqual(
+            {
+                1: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 1,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+        self.assertEqual(
+            [{
+                'reg0': 61640,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }, {
+                'reg0': 64100,
+                'eth_type': 2048,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_delete_flow_rules_sf_node_empty_del_fcs_mpls(self):
+        self._prepare_delete_flow_rules_sf_node_empty_del_fcs('mpls', None)
+        self.assertEqual(
+            [{
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'mpls_label': 65791,
+                'table': 10
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_delete_flow_rules_sf_node_empty_del_fcs_nsh(self):
+        self._prepare_delete_flow_rules_sf_node_empty_del_fcs('nsh', None)
+        self.assertEqual(
+            [{
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 255,
+                'table': 10
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_delete_flow_rules_sf_node_empty_del_fcs_no_proxy_mpls(self):
+        self._prepare_delete_flow_rules_sf_node_empty_del_fcs('mpls', 'mpls')
+        self.assertEqual(
+            [{
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'mpls_label': 65791,
+                'table': 10
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_delete_flow_rules_sf_node_empty_del_fcs_no_proxy_nsh(self):
+        self._prepare_delete_flow_rules_sf_node_empty_del_fcs('nsh', 'nsh')
+        self.assertEqual(
+            [{
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 255,
+                'table': 10
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_delete_flow_rules_src_node_empty_del_fcs_mpls(self):
+        self._test_delete_flow_rules_src_node_empty_del_fcs('mpls', None)
+
+    def test_delete_flow_rules_src_node_empty_del_fcs_nsh(self):
+        self._test_delete_flow_rules_src_node_empty_del_fcs('nsh', None)
+
+    def test_delete_flow_rules_src_node_empty_del_fcs_no_proxy_mpls(self):
+        self._test_delete_flow_rules_src_node_empty_del_fcs('mpls', 'mpls')
+
+    def test_delete_flow_rules_src_node_empty_del_fcs_no_proxy_nsh(self):
+        self._test_delete_flow_rules_src_node_empty_del_fcs('nsh', 'nsh')
+
+    def test_delete_flow_rules_sf_node_del_fcs_mpls(self):
+        self._prepare_delete_flow_rules_sf_node_del_fcs('mpls', None)
+        self.assertEqual(
+            [{
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True,
+            }, {
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'mpls_label': 65791,
+                'table': 10
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_delete_flow_rules_sf_node_del_fcs_nsh(self):
+        self._prepare_delete_flow_rules_sf_node_del_fcs('nsh', None)
+        self.assertEqual(
+            [{
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }, {
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 255,
+                'table': 10
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_delete_flow_rules_sf_node_del_fcs_no_proxy_mpls(self):
+        self._prepare_delete_flow_rules_sf_node_del_fcs('mpls', 'mpls')
+        self.assertEqual(
+            [{
+                'eth_type': 34887,
+                'in_port': 42,
+                'mpls_label': 65790,
+                'priority': 30,
+                'table': 0,
+                'strict': True,
+            }, {
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'mpls_label': 65791,
+                'table': 10
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_delete_flow_rules_sf_node_del_fcs_no_proxy_nsh(self):
+        self._prepare_delete_flow_rules_sf_node_del_fcs('nsh', 'nsh')
+        self.assertEqual(
+            [{
+                'eth_type': 35151,
+                'in_port': 42,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 254,
+                'priority': 30,
+                'table': 0,
+                'strict': True
+            }, {
+                'dl_dst': '00:01:02:03:05:07',
+                'eth_type': 35151,
+                'nsh_mdtype': 1,
+                'nsh_spi': 256,
+                'nsh_si': 255,
+                'table': 10
+            }],
+            self.deleted_flows
+        )
+        self.assertEqual(
+            [],
+            self.deleted_groups
+        )
+
+    def test_delete_flow_rules_src_node_del_fcs_mpls(self):
+        self._test_delete_flow_rules_src_node_del_fcs('mpls', None)
+
+    def test_delete_flow_rules_src_node_del_fcs_nsh(self):
+        self._test_delete_flow_rules_src_node_del_fcs('nsh', None)
+
+    def test_delete_flow_rules_src_node_del_fcs_no_proxy_mpls(self):
+        self._test_delete_flow_rules_src_node_del_fcs('mpls', 'mpls')
+
+    def test_delete_flow_rules_src_node_del_fcs_no_proxy_nsh(self):
+        self._test_delete_flow_rules_src_node_del_fcs('nsh', 'nsh')
+
+    def test_delete_flow_rules_src_node_next_hops_del_fcs_mpls(self):
+        self._test_delete_flow_rules_src_node_next_hops_del_fcs(
+            'mpls', None, None)
+
+    def test_delete_flow_rules_src_node_next_hops_del_fcs_nsh(self):
+        self._test_delete_flow_rules_src_node_next_hops_del_fcs(
+            'nsh', None, None)
+
+    def test_delete_flow_rules_src_node_next_hops_del_fcs_no_proxy_mpls(self):
+        self._test_delete_flow_rules_src_node_next_hops_del_fcs('mpls',
+                                                                'mpls', None)
+
+    def test_delete_flow_rules_src_node_next_hops_del_fcs_no_proxy_nsh(self):
+        self._test_delete_flow_rules_src_node_next_hops_del_fcs('nsh',
+                                                                'nsh',
+                                                                None)
+
+    def test_delete_flow_rules_src_node_next_hops_del_fcs_nh_mpls(self):
+        self._test_delete_flow_rules_src_node_next_hops_del_fcs('mpls',
+                                                                None, 'mpls')
+
+    def test_delete_flow_rules_src_node_next_hops_del_fcs_nh_nsh(self):
+        self._test_delete_flow_rules_src_node_next_hops_del_fcs('nsh',
+                                                                None, 'nsh')
+
+    def test_delete_flow_rules_src_node_next_hops_del_fcs_no_proxy_nh_mpls(
+            self):
+        self._test_delete_flow_rules_src_node_next_hops_del_fcs(
+            'mpls', 'mpls', 'mpls')
+
+    def test_delete_flow_rules_src_node_next_hops_del_fcs_no_proxy_nh_nsh(
+            self):
+        self._test_delete_flow_rules_src_node_next_hops_del_fcs(
+            'nsh', 'nsh', 'nsh')
+
+    def test_delete_flow_rules_sf_node_next_hops_del_fcs_mpls(self):
+        self._test_delete_flow_rules_sf_node_next_hops_del_fcs_mpls(None)
+
+    def test_delete_flow_rules_sf_node_next_hops_del_fcs_nsh(self):
+        self._test_delete_flow_rules_sf_node_next_hops_del_fcs_nsh(None)
+
+    def test_delete_flow_rules_sf_node_next_hops_del_fcs_nh_mpls(self):
+        self._test_delete_flow_rules_sf_node_next_hops_del_fcs_mpls('mpls')
+
+    def test_delete_flow_rules_sf_node_next_hops_del_fcs_nh_nsh(self):
+        self._test_delete_flow_rules_sf_node_next_hops_del_fcs_nsh('nsh')
+
+    def test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy_mpls(self):
+        self._test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy_mpls(
+            None)
+
+    def test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy_nsh(self):
+        self._test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy_nsh(
+            None)
+
+    def test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy_nh_mpls(
+            self):
+        self._test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy_mpls(
+            'mpls')
+
+    def test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy_nh_nsh(
+            self):
+        self._test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy_nsh(
+            'nsh')
 
     def test_init_agent_empty_flowrules(self):
         # in setUp we call _clear_local_entries() so whatever was done
@@ -3121,6 +4743,11 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             [{
                 'actions': 'resubmit(,10)',
                 'eth_type': 34887,
+                'priority': 20,
+                'table': 0
+            }, {
+                'actions': 'resubmit(,10)',
+                'eth_type': 35151,
                 'priority': 20,
                 'table': 0
             }, {

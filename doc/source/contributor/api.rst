@@ -160,8 +160,9 @@ One chain parameter option is currently defined. More parameter options can be a
 in future extensions to accommodate new requirements.
 The ``correlation`` parameter is used to specify the type of chain correlation mechanism.
 This parameter allows different correlation mechanisms to be selected.
-This will be set to "mpls" for now to be consistent with current OVS capability.
-If this parameter is not specified, it will default to "mpls".
+The chain correlation concept is equivalent to SFC Encapsulation,
+as defined in RFC 7665.
+The default is "mpls", but "nsh" is also supported.
 
 The ``sfc port chain create`` command returns the ID of a Port chain.
 

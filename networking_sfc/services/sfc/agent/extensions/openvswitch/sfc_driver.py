@@ -159,6 +159,8 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     # for ingress traffic
                     if pc_corr == 'mpls':
                         self._delete_flows_mpls(flowrule, vif_port)
+                    elif pc_corr == 'nsh':
+                        self._delete_flows_nsh(flowrule, vif_port)
         except Exception as e:
             flowrule_status_temp = {'id': flowrule['id'],
                                     'status': constants.STATUS_ERROR}
@@ -174,6 +176,9 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         self.br_int.install_goto(dest_table_id=INGRESS_TABLE,
                                  priority=PC_DEF_PRI,
                                  eth_type=constants.ETH_TYPE_MPLS)
+        self.br_int.install_goto(dest_table_id=INGRESS_TABLE,
+                                 priority=PC_DEF_PRI,
+                                 eth_type=constants.ETH_TYPE_NSH)
         self.br_int.install_drop(table_id=INGRESS_TABLE)
 
     def _parse_flow_classifier(self, flow_classifier):
@@ -335,6 +340,9 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     if pp_corr == 'mpls':
                         match_info = self._build_classification_match_sfc_mpls(
                             flowrule, match_info)
+                    elif pp_corr == 'nsh':
+                        match_info = self._build_classification_match_sfc_nsh(
+                            flowrule, match_info)
 
             for i in range(flow_count):
                 if branch_info:
@@ -399,7 +407,10 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     if pc_corr == 'mpls':
                         push_encap = self._build_push_mpls(flowrule['nsp'],
                                                            flowrule['nsi'])
-                        across_flow = push_encap + across_flow
+                    elif pc_corr == 'nsh':
+                        push_encap = self._build_push_nsh(flowrule['nsp'],
+                                                          flowrule['nsi'])
+                    across_flow = push_encap + across_flow
 
                 subnet_actions_list.append(across_flow)
 
@@ -413,6 +424,8 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 eth_type = constants.ETH_TYPE_IP
                 if pp_corr == 'mpls' or pp_corr_nh == 'mpls':
                     eth_type = constants.ETH_TYPE_MPLS
+                elif pp_corr == 'nsh' or pp_corr_nh == 'nsh':
+                    eth_type = constants.ETH_TYPE_NSH
 
                 if item.get('tap_enabled'):
                     self._add_tap_classification_flows(flowrule,
@@ -435,6 +448,9 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 if pc_corr == 'mpls':
                     enc_actions = self._build_push_mpls(flowrule['nsp'],
                                                         flowrule['nsi'])
+                elif pc_corr == 'nsh':
+                    enc_actions = self._build_push_nsh(flowrule['nsp'],
+                                                       flowrule['nsi'])
             if flowrule['fwd_path']:
                 enc_actions += "group:%d" % group_id
             else:
@@ -461,20 +477,29 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             end_of_chain_actions = 'normal'
             # at the end of the chain, the header must be removed (if used)
             if (node_type != constants.SRC_NODE) and pp_corr:
-                if pc_corr == 'mpls':
-                    branch_point = flowrule.get('branch_point')
-                    if branch_point:
-                        nsp = flowrule['nsp']
-                        nsi = flowrule['nsi']
-                        sfpi = (nsp << 8) | nsi
+                branch_point = flowrule.get('branch_point')
+                if branch_point:
+                    nsp = flowrule['nsp']
+                    nsi = flowrule['nsi']
+                    sfpi = (nsp << 8) | nsi
+                    if pc_corr == 'mpls':
                         end_of_chain_actions = (
                             'load:%s->NXM_NX_REG0[],'
                             'pop_mpls:0x%04x,resubmit(,0)' % (
                                 hex(sfpi), constants.ETH_TYPE_IP))
-                    else:
+                    elif pc_corr == 'nsh':
+                        end_of_chain_actions = (
+                            "load:%s->NXM_NX_REG0[],"
+                            "decap(),decap(),resubmit(,0)" % (
+                                hex(sfpi)))
+                else:
+                    if pc_corr == 'mpls':
                         end_of_chain_actions = ("pop_mpls:0x%04x,%s" % (
-                            constants.ETH_TYPE_IP,
-                            end_of_chain_actions))
+                                                constants.ETH_TYPE_IP,
+                                                end_of_chain_actions))
+                    elif pc_corr == 'nsh':
+                        end_of_chain_actions = ("decap(),decap(),%s" % (
+                                                end_of_chain_actions))
 
             if flowrule.get('tap_enabled'):
                 end_of_chain_actions += RESUBMIT_TAP_TABLE
@@ -512,22 +537,36 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             pp_corr = flowrule['pp_corr']
 
             # install br-int flow rule on table 0 for ingress traffic
+            # install an SFC Proxy if the port pair doesn't support the
+            # SFC encapsulation (pc_corr) specified in the chain
             if pc_corr == 'mpls':
                 if flowrule.get('tap_enabled'):
                     return self._add_tap_ingress_flow(flowrule, vif_port, vlan)
                 if pp_corr is None:
-                    # install an SFC Proxy if the port pair doesn't support the
-                    # SFC encapsulation (pc_corr) specified in the chain
                     match_field = self._build_proxy_sfc_mpls(flowrule,
                                                              vif_port, vlan)
                 elif pp_corr == 'mpls':
                     match_field = self._build_forward_sfc_mpls(flowrule,
                                                                vif_port, vlan)
+            elif pc_corr == 'nsh':
+                if pp_corr is None:
+                    match_field = self._build_proxy_sfc_nsh(flowrule,
+                                                            vif_port, vlan)
+                elif pp_corr == 'nsh':
+                    match_field = self._build_forward_sfc_nsh(flowrule,
+                                                              vif_port, vlan)
             self.br_int.add_flow(**match_field)
 
     def _build_classification_match_sfc_mpls(self, flowrule, match_info):
         match_info['eth_type'] = constants.ETH_TYPE_MPLS
         match_info['mpls_label'] = flowrule['nsp'] << 8 | flowrule['nsi']
+        return match_info
+
+    def _build_classification_match_sfc_nsh(self, flowrule, match_info):
+        match_info['eth_type'] = constants.ETH_TYPE_NSH
+        match_info['nsh_mdtype'] = 1
+        match_info['nsh_spi'] = flowrule['nsp']
+        match_info['nsh_si'] = flowrule['nsi']
         return match_info
 
     def _build_push_mpls(self, nsp, nsi):
@@ -536,6 +575,13 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             "set_mpls_label:%d,"
             "set_mpls_ttl:%d," %
             (constants.ETH_TYPE_MPLS, nsp << 8 | nsi, nsi))
+
+    def _build_push_nsh(self, nsp, nsi):
+        return (
+            "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+            "set_field:%s->nsh_spi,set_field:%s->nsh_si,"
+            "encap(hdr=ethernet)," %
+            (hex(nsp), hex(nsi)))
 
     def _build_ingress_common_match_field(self, vif_port, vlan):
         return dict(
@@ -550,6 +596,14 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         match_field['mpls_label'] = flowrule['nsp'] << 8 | flowrule['nsi'] + 1
         return match_field
 
+    def _build_ingress_match_field_sfc_nsh(self, flowrule, vif_port, vlan):
+        match_field = self._build_ingress_common_match_field(vif_port, vlan)
+        match_field['eth_type'] = constants.ETH_TYPE_NSH
+        match_field['nsh_mdtype'] = 1
+        match_field['nsh_spi'] = flowrule['nsp']
+        match_field['nsh_si'] = flowrule['nsi'] + 1
+        return match_field
+
     def _build_proxy_sfc_mpls(self, flowrule, vif_port, vlan):
         match_field = self._build_ingress_match_field_sfc_mpls(
             flowrule, vif_port, vlan)
@@ -558,8 +612,25 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         match_field['actions'] = actions
         return match_field
 
+    def _build_proxy_sfc_nsh(self, flowrule, vif_port, vlan):
+        match_field = self._build_ingress_match_field_sfc_nsh(
+            flowrule, vif_port, vlan)
+        actions = ("strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],"
+                   "decap(),decap(),"
+                   "move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:%s"
+                   "" % vif_port.ofport)
+        match_field['actions'] = actions
+        return match_field
+
     def _build_forward_sfc_mpls(self, flowrule, vif_port, vlan):
         match_field = self._build_ingress_match_field_sfc_mpls(
+            flowrule, vif_port, vlan)
+        actions = ("strip_vlan, output:%s" % vif_port.ofport)
+        match_field['actions'] = actions
+        return match_field
+
+    def _build_forward_sfc_nsh(self, flowrule, vif_port, vlan):
+        match_field = self._build_ingress_match_field_sfc_nsh(
             flowrule, vif_port, vlan)
         actions = ("strip_vlan, output:%s" % vif_port.ofport)
         match_field['actions'] = actions
@@ -805,3 +876,13 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
     def _clear_sfc_flow_on_tun_br(self):
         self.br_tun.delete_flows(table=0, eth_type=constants.ETH_TYPE_MPLS)
         self.br_tun.delete_flows(table=TAP_TUNNEL_OUTPUT_TABLE)
+
+    def _delete_flows_nsh(self, flowrule, vif_port):
+        self.br_int.delete_flows(
+            table=INGRESS_TABLE,
+            eth_type=constants.ETH_TYPE_NSH,
+            dl_dst=vif_port.vif_mac,
+            nsh_mdtype=1,
+            nsh_spi=flowrule['nsp'],
+            nsh_si=flowrule['nsi'] + 1
+        )
