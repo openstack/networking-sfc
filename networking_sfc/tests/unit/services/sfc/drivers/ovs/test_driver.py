@@ -302,6 +302,170 @@ class OVSSfcDriverTestCase(
                             update_flow_rules[flow1]['next_group_id']
                         )
 
+    def _test_create_port_chain_with_pp_fc_and_no_sfc_proxy(self, correlation):
+        with self.port(
+            name='port1',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as src_port, self.port(
+            name='ingress',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress, self.port(
+            name='egress',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as egress:
+            self.host_endpoint_mapping = {
+                'test': '10.0.0.1',
+            }
+            with self.flow_classifier(flow_classifier={
+                'source_port_range_min': 100,
+                'source_port_range_max': 200,
+                'destination_port_range_min': 300,
+                'destination_port_range_max': 400,
+                'ethertype': 'IPv4',
+                'source_ip_prefix': '10.100.0.0/16',
+                'destination_ip_prefix': '10.200.0.0/16',
+                'l7_parameters': {},
+                'protocol': 'tcp',
+                'logical_source_port': src_port['port']['id']
+            }) as fc:
+                with self.port_pair(port_pair={
+                    'ingress': ingress['port']['id'],
+                    'egress': egress['port']['id'],
+                    'service_function_parameters': {'correlation': correlation}
+                }) as pp:
+                    pp_context = sfc_ctx.PortPairContext(
+                        self.sfc_plugin, self.ctx,
+                        pp['port_pair']
+                    )
+                    self.driver.create_port_pair(pp_context)
+                    with self.port_pair_group(port_pair_group={
+                        'port_pairs': [pp['port_pair']['id']]
+                    }) as pg:
+                        pg_context = sfc_ctx.PortPairGroupContext(
+                            self.sfc_plugin, self.ctx,
+                            pg['port_pair_group']
+                        )
+                        self.driver.create_port_pair_group(pg_context)
+                        with self.port_chain(port_chain={
+                            'name': 'test1',
+                            'port_pair_groups': [pg['port_pair_group']['id']],
+                            'flow_classifiers': [fc['flow_classifier']['id']],
+                            'chain_parameters': {'correlation': correlation}
+                        }) as pc:
+                            pc_context = sfc_ctx.PortChainContext(
+                                self.sfc_plugin, self.ctx,
+                                pc['port_chain']
+                            )
+                            self.driver.create_port_chain(pc_context)
+                            self.wait()
+                            update_flow_rules = self.map_flow_rules(
+                                self.rpc_calls['update_flow_rules'])
+                            # flow1 - src_node
+                            flow1 = self.build_ingress_egress(
+                                None, src_port['port']['id'])
+                            # flow2 - sf_node
+                            flow2 = self.build_ingress_egress(
+                                ingress['port']['id'],
+                                egress['port']['id']
+                            )
+                            self.assertEqual(
+                                set(update_flow_rules.keys()),
+                                set([flow1, flow2]))
+
+                            add_fcs = update_flow_rules[flow1]['add_fcs']
+                            self.assertEqual(len(add_fcs), 1)
+                            self.assertDictContainsSubset({
+                                'destination_ip_prefix': '10.200.0.0/16',
+                                'destination_port_range_max': 400,
+                                'destination_port_range_min': 300,
+                                'ethertype': 'IPv4',
+                                'l7_parameters': {},
+                                'protocol': 'tcp',
+                                'source_ip_prefix': '10.100.0.0/16',
+                                'source_port_range_max': 200,
+                                'source_port_range_min': 100
+                            }, add_fcs[0])
+                            next_hops = self.next_hops_info(
+                                update_flow_rules[flow1].get('next_hops'))
+                            self.assertEqual(
+                                next_hops,
+                                {ingress['port']['mac_address']: '10.0.0.1'})
+                            self.assertIsNotNone(
+                                update_flow_rules[flow1]['next_group_id']
+                            )
+                            self.assertEqual(
+                                update_flow_rules[flow1]['node_type'],
+                                'src_node')
+
+                            add_fcs = update_flow_rules[flow2]['add_fcs']
+                            self.assertEqual(len(add_fcs), 1)
+                            self.assertDictContainsSubset({
+                                'destination_ip_prefix': '10.200.0.0/16',
+                                'destination_port_range_max': 400,
+                                'destination_port_range_min': 300,
+                                'ethertype': 'IPv4',
+                                'l7_parameters': {},
+                                'protocol': 'tcp',
+                                'source_ip_prefix': '10.100.0.0/16',
+                                'source_port_range_max': 200,
+                                'source_port_range_min': 100
+                            }, add_fcs[0])
+                            next_hops = self.next_hops_info(
+                                update_flow_rules[flow2].get('next_hops'))
+                            self.assertEqual(
+                                next_hops,
+                                {})
+                            self.assertIsNone(
+                                update_flow_rules[flow2]['next_group_id']
+                            )
+                            self.assertEqual(
+                                update_flow_rules[flow2]['node_type'],
+                                'sf_node')
+
+                            # src_node flow rule doesn't have pp_corr:
+                            self.assertEqual(
+                                update_flow_rules[flow1]['pp_corr'],
+                                None
+                            )
+                            # but the sf_node does:
+                            self.assertEqual(
+                                update_flow_rules[flow2]['pp_corr'],
+                                correlation
+                            )
+                            # sf_node from src_node's next_hops:
+                            self.assertEqual(
+                                update_flow_rules[flow1][
+                                    'next_hops'][0]['pp_corr'],
+                                correlation
+                            )
+                            # pc_corr should be present in any kind of node
+                            self.assertEqual(
+                                update_flow_rules[flow1]['pc_corr'],
+                                correlation
+                            )
+                            self.assertEqual(
+                                update_flow_rules[flow2]['pc_corr'],
+                                correlation
+                            )
+
+    def test_create_port_chain_with_pp_fc_and_no_sfc_proxy_mpls(self):
+        self._test_create_port_chain_with_pp_fc_and_no_sfc_proxy('mpls')
+
     def test_create_port_chain_with_flow_classifiers(self):
         with self.port(
             name='src',

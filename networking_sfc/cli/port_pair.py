@@ -70,9 +70,10 @@ class PortPairCreate(extension.ClientExtensionCreate, PortPair):
             type=utils.str2dict_type(optional_keys=['correlation',
                                                     'weight']),
             help=_('Dictionary of Service function parameters. '
-                   'Currently, only correlation=None and weight '
-                   'is supported. Weight is an integer that influences '
-                   'the selection of a port pair within a port pair group '
+                   'Currently, only correlation=None|mpls and weight '
+                   'is supported. Default correlation is None. Weight is '
+                   'an integer that influences the selection'
+                   'of a port pair within a port pair group '
                    'for a flow. The higher the weight, the more flows will '
                    'hash to the port pair. The default weight is 1.'))
 

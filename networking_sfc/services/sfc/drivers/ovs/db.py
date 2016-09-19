@@ -148,6 +148,7 @@ class PortPairDetail(model_base.BASEV2, model_base.HasId,
                                   backref='port_pair_detail',
                                   lazy="joined",
                                   cascade='all,delete')
+    correlation = sa.Column(sa.String(255), nullable=True)
 
 
 class PathNode(model_base.BASEV2, model_base.HasId, model_base.HasProject):
@@ -204,7 +205,8 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                'network_type': port['network_type'],
                'path_nodes': [{'pathnode_id': node['pathnode_id'],
                                'weight': node['weight']}
-                              for node in port['path_nodes']]
+                              for node in port['path_nodes']],
+               'correlation': port['correlation']
                }
 
         return self._fields(res, fields)
