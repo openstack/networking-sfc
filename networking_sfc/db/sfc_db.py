@@ -314,7 +314,7 @@ class SfcDbPlugin(
             self._validate_port_pair_groups(context, pg_ids)
             self._validate_flow_classifiers(context, fc_ids)
             assigned_chain_ids = {}
-            query = self._model_query(context, PortChain)
+            query = context.session.query(PortChain)
             for port_chain_db in query.all():
                 assigned_chain_ids[port_chain_db['chain_id']] = (
                     port_chain_db['id']
@@ -567,7 +567,7 @@ class SfcDbPlugin(
                 )
             }
             assigned_group_ids = {}
-            query = self._model_query(context, PortPairGroup)
+            query = context.session.query(PortPairGroup)
             for port_pair_group_db in query.all():
                 assigned_group_ids[port_pair_group_db['group_id']] = (
                     port_pair_group_db['id']
