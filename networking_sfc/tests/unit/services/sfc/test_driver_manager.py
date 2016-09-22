@@ -72,254 +72,156 @@ class DriverManagerTestCase(base.BaseTestCase):
             mock_driver1.initialize.assert_called_once_with()
             mock_driver2.initialize.assert_called_once_with()
 
-    def test_create_port_chain_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
+    def _test_method_called(self, method_name):
+        driver1 = mock.Mock()
+        driver2 = mock.Mock()
         with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
+            'dummy1': driver1,
+            'dummy2': driver2
         }) as manager:
             mocked_context = mock.Mock()
-            manager.create_port_chain(mocked_context)
-            mock_driver1.create_port_chain.assert_called_once_with(
+            getattr(manager, method_name)(mocked_context)
+            getattr(driver1, method_name).assert_called_once_with(
                 mocked_context)
-            mock_driver2.create_port_chain.assert_called_once_with(
+            getattr(driver2, method_name).assert_called_once_with(
                 mocked_context)
 
-    def test_create_port_chain_exception(self):
+    def _test_method_exception(self, method_name):
         mock_driver = mock.Mock()
-        mock_driver.create_port_chain = mock.Mock(
+        mock_method = mock.Mock(
             side_effect=sfc_exc.SfcException
         )
+        setattr(mock_driver, method_name, mock_method)
         with self.driver_manager_context({
             'dummy': mock_driver,
         }) as manager:
             mocked_context = mock.Mock()
             self.assertRaises(
                 sfc_exc.SfcDriverError,
-                manager.create_port_chain, mocked_context
-            )
+                getattr(manager, method_name), mocked_context)
 
-    def test_update_port_chain_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            manager.update_port_chain(mocked_context)
-            mock_driver1.update_port_chain.assert_called_once_with(
-                mocked_context)
-            mock_driver2.update_port_chain.assert_called_once_with(
-                mocked_context)
+    def test_create_port_chain_precommit_called(self):
+        self._test_method_called("create_port_chain_precommit")
 
-    def test_update_port_chain_exception(self):
-        mock_driver = mock.Mock()
-        mock_driver.update_port_chain = mock.Mock(
-            side_effect=sfc_exc.SfcException
-        )
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                sfc_exc.SfcDriverError,
-                manager.update_port_chain, mocked_context
-            )
+    def test_create_port_chain_precommit_exception(self):
+        self._test_method_exception("create_port_chain_precommit")
+
+    def test_create_port_chain_postcommit_called(self):
+        self._test_method_called("create_port_chain_postcommit")
+
+    def test_create_port_chain_postcommit_exception(self):
+        self._test_method_exception("create_port_chain_postcommit")
+
+    def test_update_port_chain_precommit_called(self):
+        self._test_method_called("update_port_chain_precommit")
+
+    def test_update_port_chain_precommit_exception(self):
+        self._test_method_exception("update_port_chain_precommit")
+
+    def test_update_port_chain_postcommit_called(self):
+        self._test_method_called("update_port_chain_postcommit")
+
+    def test_update_port_chain_postcommit_exception(self):
+        self._test_method_exception("update_port_chain_postcommit")
 
     def test_delete_port_chain_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            manager.delete_port_chain(mocked_context)
-            mock_driver1.delete_port_chain.assert_called_once_with(
-                mocked_context)
-            mock_driver2.delete_port_chain.assert_called_once_with(
-                mocked_context)
+        self._test_method_called("delete_port_chain")
 
     def test_delete_port_chain_exception(self):
-        mock_driver = mock.Mock()
-        mock_driver.delete_port_chain = mock.Mock(
-            side_effect=sfc_exc.SfcException
-        )
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                sfc_exc.SfcDriverError,
-                manager.delete_port_chain, mocked_context
-            )
+        self._test_method_exception("delete_port_chain")
 
-    def test_create_port_pair_group_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            manager.create_port_pair_group(mocked_context)
-            mock_driver1.create_port_pair_group.assert_called_once_with(
-                mocked_context)
-            mock_driver2.create_port_pair_group.assert_called_once_with(
-                mocked_context)
+    def test_delete_port_chain_precommit_called(self):
+        self._test_method_called("delete_port_chain_precommit")
 
-    def test_create_port_pair_group_exception(self):
-        mock_driver = mock.Mock()
-        mock_driver.create_port_pair_group = mock.Mock(
-            side_effect=sfc_exc.SfcException
-        )
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                sfc_exc.SfcDriverError,
-                manager.create_port_pair_group, mocked_context
-            )
+    def test_delete_port_chain_precommit_exception(self):
+        self._test_method_exception("delete_port_chain_precommit")
 
-    def test_update_port_pair_group_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            manager.update_port_pair_group(mocked_context)
-            mock_driver1.update_port_pair_group.assert_called_once_with(
-                mocked_context)
-            mock_driver2.update_port_pair_group.assert_called_once_with(
-                mocked_context)
+    def test_delete_port_chain_postcommit_called(self):
+        self._test_method_called("delete_port_chain_postcommit")
 
-    def test_update_port_pair_group_exception(self):
-        mock_driver = mock.Mock()
-        mock_driver.update_port_pair_group = mock.Mock(
-            side_effect=sfc_exc.SfcException
-        )
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                sfc_exc.SfcDriverError,
-                manager.update_port_pair_group, mocked_context
-            )
+    def test_delete_port_chain_postcommit_exception(self):
+        self._test_method_exception("delete_port_chain_postcommit")
+
+    def test_create_port_pair_group_precommit_called(self):
+        self._test_method_called("create_port_pair_group_precommit")
+
+    def test_create_port_pair_group_precommit_exception(self):
+        self._test_method_exception("create_port_pair_group_precommit")
+
+    def test_create_port_pair_group_postcommit_called(self):
+        self._test_method_called("create_port_pair_group_postcommit")
+
+    def test_create_port_pair_group_postcommit_exception(self):
+        self._test_method_exception("create_port_pair_group_postcommit")
+
+    def test_update_port_pair_group_precommit_called(self):
+        self._test_method_called("update_port_pair_group_precommit")
+
+    def test_update_port_pair_group_precommit_exception(self):
+        self._test_method_exception("update_port_pair_group_precommit")
+
+    def test_update_port_pair_group_postcommit_called(self):
+        self._test_method_called("update_port_pair_group_postcommit")
+
+    def test_update_port_pair_group_postcommit_exception(self):
+        self._test_method_exception("update_port_pair_group_postcommit")
 
     def test_delete_port_pair_group_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            manager.delete_port_pair_group(mocked_context)
-            mock_driver1.delete_port_pair_group.assert_called_once_with(
-                mocked_context)
-            mock_driver2.delete_port_pair_group.assert_called_once_with(
-                mocked_context)
+        self._test_method_called("delete_port_pair_group")
 
     def test_delete_port_pair_group_exception(self):
-        mock_driver = mock.Mock()
-        mock_driver.delete_port_pair_group = mock.Mock(
-            side_effect=sfc_exc.SfcException
-        )
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                sfc_exc.SfcDriverError,
-                manager.delete_port_pair_group, mocked_context
-            )
+        self._test_method_exception("delete_port_pair_group")
 
-    def test_create_port_pair_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            manager.create_port_pair(mocked_context)
-            mock_driver1.create_port_pair.assert_called_once_with(
-                mocked_context)
-            mock_driver2.create_port_pair.assert_called_once_with(
-                mocked_context)
+    def test_delete_port_pair_group_precommit_called(self):
+        self._test_method_called("delete_port_pair_group_precommit")
 
-    def test_create_port_pair_exception(self):
-        mock_driver = mock.Mock()
-        mock_driver.create_port_pair = mock.Mock(
-            side_effect=sfc_exc.SfcException
-        )
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                sfc_exc.SfcDriverError,
-                manager.create_port_pair, mocked_context
-            )
+    def test_delete_port_pair_group_precommit_exception(self):
+        self._test_method_exception("delete_port_pair_group_precommit")
 
-    def test_update_port_pair_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            manager.update_port_pair(mocked_context)
-            mock_driver1.update_port_pair.assert_called_once_with(
-                mocked_context)
-            mock_driver2.update_port_pair.assert_called_once_with(
-                mocked_context)
+    def test_delete_port_pair_group_postcommit_called(self):
+        self._test_method_called("delete_port_pair_group_postcommit")
 
-    def test_update_port_pair_exception(self):
-        mock_driver = mock.Mock()
-        mock_driver.update_port_pair = mock.Mock(
-            side_effect=sfc_exc.SfcException
-        )
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                sfc_exc.SfcDriverError,
-                manager.update_port_pair, mocked_context
-            )
+    def test_delete_port_pair_group_postcommit_exception(self):
+        self._test_method_exception("delete_port_pair_group_postcommit")
+
+    def test_create_port_pair_precommit_called(self):
+        self._test_method_called("create_port_pair_precommit")
+
+    def test_create_port_pair_precommit_exception(self):
+        self._test_method_exception("create_port_pair_precommit")
+
+    def test_create_port_pair_postcommit_called(self):
+        self._test_method_called("create_port_pair_postcommit")
+
+    def test_create_port_pair_postcommit_exception(self):
+        self._test_method_exception("create_port_pair_postcommit")
+
+    def test_update_port_pair_precommit_called(self):
+        self._test_method_called("update_port_pair_precommit")
+
+    def test_update_port_pair_precommit_exception(self):
+        self._test_method_exception("update_port_pair_precommit")
+
+    def test_update_port_pair_postcommit_called(self):
+        self._test_method_called("update_port_pair_postcommit")
+
+    def test_update_port_pair_postcommit_exception(self):
+        self._test_method_exception("update_port_pair_postcommit")
 
     def test_delete_port_pair_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            manager.delete_port_pair(mocked_context)
-            mock_driver1.delete_port_pair.assert_called_once_with(
-                mocked_context)
-            mock_driver2.delete_port_pair.assert_called_once_with(
-                mocked_context)
+        self._test_method_called("delete_port_pair")
 
     def test_delete_port_pair_exception(self):
-        mock_driver = mock.Mock()
-        mock_driver.delete_port_pair = mock.Mock(
-            side_effect=sfc_exc.SfcException
-        )
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                sfc_exc.SfcDriverError,
-                manager.delete_port_pair, mocked_context
-            )
+        self._test_method_exception("delete_port_pair")
+
+    def test_delete_port_pair_precommit_called(self):
+        self._test_method_called("delete_port_pair_precommit")
+
+    def test_delete_port_pair_precommit_exception(self):
+        self._test_method_exception("delete_port_pair_precommit")
+
+    def test_delete_port_pair_postcommit_called(self):
+        self._test_method_called("delete_port_pair_postcommit")
+
+    def test_delete_port_pair_postcommit_exception(self):
+        self._test_method_exception("delete_port_pair_postcommit")

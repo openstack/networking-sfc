@@ -35,6 +35,8 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
         self.fake_driver_manager = mock.Mock()
         self.fake_driver_manager_class.return_value = self.fake_driver_manager
         self.plugin_context = None
+        self.plugin_context_precommit = None
+        self.plugin_context_postcommit = None
         super(SfcPluginTestCase, self).setUp(
             core_plugin=core_plugin, sfc_plugin=sfc_plugin,
             ext_mgr=ext_mgr
@@ -43,28 +45,42 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
     def _record_context(self, plugin_context):
         self.plugin_context = plugin_context
 
+    def _record_context_precommit(self, plugin_context):
+        self.plugin_context_precommit = plugin_context
+
+    def _record_context_postcommit(self, plugin_context):
+        self.plugin_context_postcommit = plugin_context
+
     def test_create_port_chain_driver_manager_called(self):
-        self.fake_driver_manager.create_port_chain = mock.Mock(
-            side_effect=self._record_context)
+        self.fake_driver_manager.create_port_chain_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.create_port_chain_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port_pair_group(port_pair_group={}) as pg:
             with self.port_chain(port_chain={
                 'port_pair_groups': [pg['port_pair_group']['id']]
             }) as pc:
                 driver_manager = self.fake_driver_manager
-                driver_manager.create_port_chain.assert_called_once_with(
-                    mock.ANY
+                (driver_manager.create_port_chain_precommit
+                    .assert_called_once_with(mock.ANY))
+                (driver_manager.create_port_chain_postcommit
+                    .assert_called_once_with(mock.ANY))
+                self.assertIsInstance(
+                    self.plugin_context_precommit, sfc_ctx.PortChainContext
                 )
                 self.assertIsInstance(
-                    self.plugin_context, sfc_ctx.PortChainContext
+                    self.plugin_context_postcommit, sfc_ctx.PortChainContext
                 )
                 self.assertIn('port_chain', pc)
                 self.assertEqual(
-                    self.plugin_context.current, pc['port_chain'])
+                    self.plugin_context_precommit.current, pc['port_chain'])
+                self.assertEqual(
+                    self.plugin_context_postcommit.current, pc['port_chain'])
 
-    def test_create_port_chain_driver_manager_exception(self):
-        self.fake_driver_manager.create_port_chain = mock.Mock(
+    def test_create_port_chain_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.create_port_chain_precommit = mock.Mock(
             side_effect=sfc_exc.SfcDriverError(
-                method='create_port_chain'
+                method='create_port_chain_precommit'
             )
         )
         with self.port_pair_group(port_pair_group={}) as pg:
@@ -73,13 +89,33 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 {'port_pair_groups': [pg['port_pair_group']['id']]},
                 expected_res_status=500)
             self._test_list_resources('port_chain', [])
+        (self.fake_driver_manager.create_port_chain_postcommit
+            .assert_not_called())
+        self.fake_driver_manager.delete_port_chain.assert_not_called()
+
+    def test_create_port_chain_postcommit_driver_manager_exception(self):
+        self.fake_driver_manager.create_port_chain_postcommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='create_port_chain_postcommit'
+            )
+        )
+        with self.port_pair_group(port_pair_group={}) as pg:
+            self._create_port_chain(
+                self.fmt,
+                {'port_pair_groups': [pg['port_pair_group']['id']]},
+                expected_res_status=500)
+            self._test_list_resources('port_chain', [])
+        (self.fake_driver_manager.create_port_chain_precommit
+         .assert_called_once_with(mock.ANY))
         self.fake_driver_manager.delete_port_chain.assert_called_once_with(
             mock.ANY
         )
 
     def test_update_port_chain_driver_manager_called(self):
-        self.fake_driver_manager.update_port_chain = mock.Mock(
-            side_effect=self._record_context)
+        self.fake_driver_manager.update_port_chain_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.update_port_chain_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port_pair_group(port_pair_group={}) as pg:
             with self.port_chain(port_chain={
                 'name': 'test1',
@@ -94,25 +130,28 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                     req.get_response(self.ext_api)
                 )
                 driver_manager = self.fake_driver_manager
-                driver_manager.update_port_chain.assert_called_once_with(
-                    mock.ANY
+                (driver_manager.update_port_chain_precommit
+                 .assert_called_once_with(mock.ANY))
+                (driver_manager.update_port_chain_postcommit
+                 .assert_called_once_with(mock.ANY))
+                self.assertIsInstance(
+                    self.plugin_context_precommit, sfc_ctx.PortChainContext
                 )
                 self.assertIsInstance(
-                    self.plugin_context, sfc_ctx.PortChainContext
+                    self.plugin_context_postcommit, sfc_ctx.PortChainContext
                 )
                 self.assertIn('port_chain', pc)
                 self.assertIn('port_chain', res)
                 self.assertEqual(
-                    self.plugin_context.current, res['port_chain'])
+                    self.plugin_context_precommit.current, res['port_chain'])
                 self.assertEqual(
-                    self.plugin_context.original, pc['port_chain'])
+                    self.plugin_context_postcommit.current, res['port_chain'])
+                self.assertEqual(
+                    self.plugin_context_precommit.original, pc['port_chain'])
+                self.assertEqual(
+                    self.plugin_context_postcommit.original, pc['port_chain'])
 
-    def test_update_port_chain_driver_manager_exception(self):
-        self.fake_driver_manager.update_port_chain = mock.Mock(
-            side_effect=sfc_exc.SfcDriverError(
-                method='update_port_chain'
-            )
-        )
+    def _test_update_port_chain_driver_manager_exception(self, updated):
         with self.port_pair_group(port_pair_group={}) as pg:
             with self.port_chain(port_chain={
                 'name': 'test1',
@@ -125,7 +164,8 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                     pc['port_chain']['id']
                 )
                 updated_port_chain = copy.copy(original_port_chain)
-                updated_port_chain['name'] = 'test2'
+                if updated:
+                    updated_port_chain['name'] = 'test2'
                 res = req.get_response(self.ext_api)
                 self.assertEqual(500, res.status_int)
                 res = self._list('port_chains')
@@ -133,9 +173,29 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 self.assertItemsEqual(
                     res['port_chains'], [updated_port_chain])
 
+    def test_update_port_chain_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.update_port_chain_precommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='update_port_chain_precommit'
+            )
+        )
+        self._test_update_port_chain_driver_manager_exception(False)
+
+    def test_update_port_chain_postcommit_driver_manager_exception(self):
+        self.fake_driver_manager.update_port_chain_postcommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='update_port_chain_postcommit'
+            )
+        )
+        self._test_update_port_chain_driver_manager_exception(True)
+
     def test_delete_port_chain_manager_called(self):
         self.fake_driver_manager.delete_port_chain = mock.Mock(
             side_effect=self._record_context)
+        self.fake_driver_manager.delete_port_chain_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.delete_port_chain_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port_pair_group(port_pair_group={}) as pg:
             with self.port_chain(port_chain={
                 'name': 'test1',
@@ -147,21 +207,29 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 res = req.get_response(self.ext_api)
                 self.assertEqual(204, res.status_int)
                 driver_manager = self.fake_driver_manager
-                driver_manager.delete_port_chain.assert_called_once_with(
-                    mock.ANY
-                )
+                (driver_manager.delete_port_chain
+                 .assert_called_once_with(mock.ANY))
+                (driver_manager.delete_port_chain_precommit
+                 .assert_called_once_with(mock.ANY))
+                (driver_manager.delete_port_chain_postcommit
+                 .assert_called_once_with(mock.ANY))
                 self.assertIsInstance(
                     self.plugin_context, sfc_ctx.PortChainContext
                 )
+                self.assertIsInstance(
+                    self.plugin_context_precommit, sfc_ctx.PortChainContext
+                )
+                self.assertIsInstance(
+                    self.plugin_context_postcommit, sfc_ctx.PortChainContext
+                )
             self.assertIn('port_chain', pc)
             self.assertEqual(self.plugin_context.current, pc['port_chain'])
+            self.assertEqual(self.plugin_context_precommit.current,
+                             pc['port_chain'])
+            self.assertEqual(self.plugin_context_postcommit.current,
+                             pc['port_chain'])
 
-    def test_delete_port_chain_driver_manager_exception(self):
-        self.fake_driver_manager.delete_port_chain = mock.Mock(
-            side_effect=sfc_exc.SfcDriverError(
-                method='delete_port_chain'
-            )
-        )
+    def _test_delete_port_chain_driver_manager_exception(self):
         with self.port_pair_group(port_pair_group={
         }, do_delete=False) as pg:
             with self.port_chain(port_chain={
@@ -175,37 +243,84 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 self.assertEqual(500, res.status_int)
                 self._test_list_resources('port_chain', [pc])
 
+    def test_delete_port_chain_driver_manager_exception(self):
+        self.fake_driver_manager.delete_port_chain = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='delete_port_chain'
+            )
+        )
+        self._test_delete_port_chain_driver_manager_exception()
+
+    def test_delete_port_chain_driver_precommit_manager_exception(self):
+        self.fake_driver_manager.delete_port_chain_precommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='delete_port_chain_precommit'
+            )
+        )
+        self._test_delete_port_chain_driver_manager_exception()
+
     def test_create_port_pair_group_driver_manager_called(self):
-        self.fake_driver_manager.create_port_pair_group = mock.Mock(
-            side_effect=self._record_context)
+        self.fake_driver_manager.create_port_pair_group_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.create_port_pair_group_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port_pair_group(port_pair_group={}) as pc:
             fake_driver_manager = self.fake_driver_manager
-            fake_driver_manager.create_port_pair_group.assert_called_once_with(
-                mock.ANY
+            (fake_driver_manager.create_port_pair_group_precommit
+             .assert_called_once_with(mock.ANY))
+            (fake_driver_manager.create_port_pair_group_postcommit
+             .assert_called_once_with(mock.ANY))
+            self.assertIsInstance(
+                self.plugin_context_precommit, sfc_ctx.PortPairGroupContext
             )
             self.assertIsInstance(
-                self.plugin_context, sfc_ctx.PortPairGroupContext
+                self.plugin_context_postcommit, sfc_ctx.PortPairGroupContext
             )
             self.assertIn('port_pair_group', pc)
             self.assertEqual(
-                self.plugin_context.current, pc['port_pair_group'])
+                self.plugin_context_precommit.current, pc['port_pair_group'])
+            self.assertEqual(
+                self.plugin_context_postcommit.current, pc['port_pair_group'])
 
-    def test_create_port_pair_group_driver_manager_exception(self):
-        self.fake_driver_manager.create_port_pair_group = mock.Mock(
+    def test_create_port_pair_group_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.create_port_pair_group_precommit = mock.Mock(
             side_effect=sfc_exc.SfcDriverError(
-                method='create_port_pair_group'
+                method='create_port_pair_group_precommit'
             )
         )
         self._create_port_pair_group(self.fmt, {}, expected_res_status=500)
         self._test_list_resources('port_pair_group', [])
         driver_manager = self.fake_driver_manager
-        driver_manager.delete_port_pair_group.assert_called_once_with(
-            mock.ANY
+        (driver_manager.create_port_pair_group_precommit
+         .assert_called_once_with(mock.ANY))
+        driver_manager.create_port_pair_group_postcommit.assert_not_called()
+        driver_manager.delete_port_pair_group.assert_not_called()
+        driver_manager.delete_port_pair_group_precommit.assert_not_called()
+        driver_manager.delete_port_pair_group_postcommit.assert_not_called()
+
+    def test_create_port_pair_group_postcommit_driver_manager_exception(self):
+        self.fake_driver_manager.create_port_pair_group_postcommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='create_port_pair_group_postcommit'
+            )
         )
+        self._create_port_pair_group(self.fmt, {}, expected_res_status=500)
+        self._test_list_resources('port_pair_group', [])
+        driver_manager = self.fake_driver_manager
+        (driver_manager.create_port_pair_group_precommit
+         .assert_called_once_with(mock.ANY))
+        (driver_manager.delete_port_pair_group
+         .assert_called_once_with(mock.ANY))
+        (driver_manager.delete_port_pair_group_precommit
+         .assert_called_once_with(mock.ANY))
+        (driver_manager.delete_port_pair_group_postcommit
+         .assert_called_once_with(mock.ANY))
 
     def test_update_port_pair_group_driver_manager_called(self):
-        self.fake_driver_manager.update_port_pair_group = mock.Mock(
-            side_effect=self._record_context)
+        self.fake_driver_manager.update_port_pair_group_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.update_port_pair_group_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port_pair_group(port_pair_group={
             'name': 'test1'
         }) as pc:
@@ -218,25 +333,28 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 req.get_response(self.ext_api)
             )
             driver_manager = self.fake_driver_manager
-            driver_manager.update_port_pair_group.assert_called_once_with(
-                mock.ANY
+            (driver_manager.update_port_pair_group_precommit
+             .assert_called_once_with(mock.ANY))
+            (driver_manager.update_port_pair_group_postcommit
+             .assert_called_once_with(mock.ANY))
+            self.assertIsInstance(
+                self.plugin_context_precommit, sfc_ctx.PortPairGroupContext
             )
             self.assertIsInstance(
-                self.plugin_context, sfc_ctx.PortPairGroupContext
+                self.plugin_context_postcommit, sfc_ctx.PortPairGroupContext
             )
             self.assertIn('port_pair_group', pc)
             self.assertIn('port_pair_group', res)
             self.assertEqual(
-                self.plugin_context.current, res['port_pair_group'])
+                self.plugin_context_precommit.current, res['port_pair_group'])
             self.assertEqual(
-                self.plugin_context.original, pc['port_pair_group'])
+                self.plugin_context_postcommit.current, res['port_pair_group'])
+            self.assertEqual(
+                self.plugin_context_precommit.original, pc['port_pair_group'])
+            self.assertEqual(
+                self.plugin_context_postcommit.original, pc['port_pair_group'])
 
-    def test_update_port_pair_group_driver_manager_exception(self):
-        self.fake_driver_manager.update_port_pair_group = mock.Mock(
-            side_effect=sfc_exc.SfcDriverError(
-                method='update_port_pair_group'
-            )
-        )
+    def _test_update_port_pair_group_driver_manager_exception(self, updated):
         with self.port_pair_group(port_pair_group={
             'name': 'test1'
         }) as pc:
@@ -247,7 +365,8 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 pc['port_pair_group']['id']
             )
             updated_port_pair_group = copy.copy(original_port_pair_group)
-            updated_port_pair_group['name'] = 'test2'
+            if updated:
+                updated_port_pair_group['name'] = 'test2'
             res = req.get_response(self.ext_api)
             self.assertEqual(500, res.status_int)
             res = self._list('port_pair_groups')
@@ -255,9 +374,29 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
             self.assertItemsEqual(
                 res['port_pair_groups'], [updated_port_pair_group])
 
+    def test_update_port_pair_group_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.update_port_pair_group_precommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='update_port_pair_group_precommit'
+            )
+        )
+        self._test_update_port_pair_group_driver_manager_exception(False)
+
+    def test_update_port_pair_group_postcommit_driver_manager_exception(self):
+        self.fake_driver_manager.update_port_pair_group_postcommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='update_port_pair_group_postcommit'
+            )
+        )
+        self._test_update_port_pair_group_driver_manager_exception(True)
+
     def test_delete_port_pair_group_manager_called(self):
         self.fake_driver_manager.delete_port_pair_group = mock.Mock(
             side_effect=self._record_context)
+        self.fake_driver_manager.delete_port_pair_group_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.delete_port_pair_group_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port_pair_group(port_pair_group={
             'name': 'test1'
         }, do_delete=False) as pc:
@@ -270,19 +409,28 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
             driver_manager.delete_port_pair_group.assert_called_once_with(
                 mock.ANY
             )
+            (driver_manager.delete_port_pair_group_precommit
+             .assert_called_once_with(mock.ANY))
+            (driver_manager.delete_port_pair_group_postcommit
+             .assert_called_once_with(mock.ANY))
             self.assertIsInstance(
                 self.plugin_context, sfc_ctx.PortPairGroupContext
+            )
+            self.assertIsInstance(
+                self.plugin_context_precommit, sfc_ctx.PortPairGroupContext
+            )
+            self.assertIsInstance(
+                self.plugin_context_postcommit, sfc_ctx.PortPairGroupContext
             )
             self.assertIn('port_pair_group', pc)
             self.assertEqual(
                 self.plugin_context.current, pc['port_pair_group'])
+            self.assertEqual(
+                self.plugin_context_precommit.current, pc['port_pair_group'])
+            self.assertEqual(
+                self.plugin_context_postcommit.current, pc['port_pair_group'])
 
-    def test_delete_port_pair_group_driver_manager_exception(self):
-        self.fake_driver_manager.delete_port_pair_group = mock.Mock(
-            side_effect=sfc_exc.SfcDriverError(
-                method='delete_port_pair_group'
-            )
-        )
+    def _test_delete_port_pair_group_driver_manager_exception(self):
         with self.port_pair_group(port_pair_group={
             'name': 'test1'
         }, do_delete=False) as pc:
@@ -293,9 +441,27 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
             self.assertEqual(500, res.status_int)
             self._test_list_resources('port_pair_group', [pc])
 
+    def test_delete_port_pair_group_driver_manager_exception(self):
+        self.fake_driver_manager.delete_port_pair_group = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='delete_port_pair_group'
+            )
+        )
+        self._test_delete_port_pair_group_driver_manager_exception()
+
+    def test_delete_port_pair_group_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.delete_port_pair_group_precommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='delete_port_pair_group_precommit'
+            )
+        )
+        self._test_delete_port_pair_group_driver_manager_exception()
+
     def test_create_port_pair_driver_manager_called(self):
-        self.fake_driver_manager.create_port_pair = mock.Mock(
-            side_effect=self._record_context)
+        self.fake_driver_manager.create_port_pair_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.create_port_pair_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port(
             name='port1',
             device_id='default'
@@ -308,19 +474,26 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 'egress': dst_port['port']['id']
             }) as pc:
                 driver_manager = self.fake_driver_manager
-                driver_manager.create_port_pair.assert_called_once_with(
-                    mock.ANY
+                (driver_manager.create_port_pair_precommit
+                 .assert_called_once_with(mock.ANY))
+                (driver_manager.create_port_pair_postcommit
+                 .assert_called_once_with(mock.ANY))
+                self.assertIsInstance(
+                    self.plugin_context_precommit, sfc_ctx.PortPairContext
                 )
                 self.assertIsInstance(
-                    self.plugin_context, sfc_ctx.PortPairContext
+                    self.plugin_context_postcommit, sfc_ctx.PortPairContext
                 )
                 self.assertIn('port_pair', pc)
-                self.assertEqual(self.plugin_context.current, pc['port_pair'])
+                self.assertEqual(self.plugin_context_precommit.current,
+                                 pc['port_pair'])
+                self.assertEqual(self.plugin_context_postcommit.current,
+                                 pc['port_pair'])
 
-    def test_create_port_pair_driver_manager_exception(self):
-        self.fake_driver_manager.create_port_pair = mock.Mock(
+    def test_create_port_pair_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.create_port_pair_precommit = mock.Mock(
             side_effect=sfc_exc.SfcDriverError(
-                method='create_port_pair'
+                method='create_port_pair_precommit'
             )
         )
         with self.port(
@@ -339,13 +512,49 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 expected_res_status=500)
             self._test_list_resources('port_pair', [])
             driver_manager = self.fake_driver_manager
+            driver_manager.create_port_pair_postcommit.assert_not_called()
+            driver_manager.delete_port_pair.assert_not_called()
+
+    def test_create_port_pair_postcommit_driver_manager_exception(self):
+        self.fake_driver_manager.create_port_pair_postcommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='create_port_pair_postcommit'
+            )
+        )
+        with self.port(
+            name='port1',
+            device_id='default'
+        ) as src_port, self.port(
+            name='port2',
+            device_id='default'
+        ) as dst_port:
+            self._create_port_pair(
+                self.fmt,
+                {
+                    'ingress': src_port['port']['id'],
+                    'egress': dst_port['port']['id']
+                },
+                expected_res_status=500)
+            self._test_list_resources('port_pair', [])
+            driver_manager = self.fake_driver_manager
+            driver_manager.create_port_pair_precommit.assert_called_once_with(
+                mock.ANY
+            )
             driver_manager.delete_port_pair.assert_called_once_with(
+                mock.ANY
+            )
+            driver_manager.delete_port_pair_precommit.assert_called_once_with(
+                mock.ANY
+            )
+            driver_manager.delete_port_pair_postcommit.assert_called_once_with(
                 mock.ANY
             )
 
     def test_update_port_pair_driver_manager_called(self):
-        self.fake_driver_manager.update_port_pair = mock.Mock(
-            side_effect=self._record_context)
+        self.fake_driver_manager.update_port_pair_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.update_port_pair_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port(
             name='port1',
             device_id='default'
@@ -367,25 +576,28 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                     req.get_response(self.ext_api)
                 )
                 driver_manager = self.fake_driver_manager
-                driver_manager.update_port_pair.assert_called_once_with(
-                    mock.ANY
+                (driver_manager.update_port_pair_precommit
+                 .assert_called_once_with(mock.ANY))
+                (driver_manager.update_port_pair_postcommit
+                 .assert_called_once_with(mock.ANY))
+                self.assertIsInstance(
+                    self.plugin_context_precommit, sfc_ctx.PortPairContext
                 )
                 self.assertIsInstance(
-                    self.plugin_context, sfc_ctx.PortPairContext
+                    self.plugin_context_postcommit, sfc_ctx.PortPairContext
                 )
                 self.assertIn('port_pair', pc)
                 self.assertIn('port_pair', res)
                 self.assertEqual(
-                    self.plugin_context.current, res['port_pair'])
+                    self.plugin_context_precommit.current, res['port_pair'])
                 self.assertEqual(
-                    self.plugin_context.original, pc['port_pair'])
+                    self.plugin_context_postcommit.current, res['port_pair'])
+                self.assertEqual(
+                    self.plugin_context_precommit.original, pc['port_pair'])
+                self.assertEqual(
+                    self.plugin_context_postcommit.original, pc['port_pair'])
 
-    def test_update_port_pair_driver_manager_exception(self):
-        self.fake_driver_manager.update_port_pair = mock.Mock(
-            side_effect=sfc_exc.SfcDriverError(
-                method='update_port_pair'
-            )
-        )
+    def _test_update_port_pair_driver_manager_exception(self, updated):
         with self.port(
             name='port1',
             device_id='default'
@@ -405,16 +617,37 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                     pc['port_pair']['id']
                 )
                 updated_port_pair = copy.copy(original_port_pair)
-                updated_port_pair['name'] = 'test2'
+                if updated:
+                    updated_port_pair['name'] = 'test2'
                 res = req.get_response(self.ext_api)
                 self.assertEqual(500, res.status_int)
                 res = self._list('port_pairs')
                 self.assertIn('port_pairs', res)
                 self.assertItemsEqual(res['port_pairs'], [updated_port_pair])
 
+    def test_update_port_pair_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.update_port_pair_precommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='update_port_pair_precommit'
+            )
+        )
+        self._test_update_port_pair_driver_manager_exception(False)
+
+    def test_update_port_pair_postcommit_driver_manager_exception(self):
+        self.fake_driver_manager.update_port_pair_postcommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='update_port_pair_postcommit'
+            )
+        )
+        self._test_update_port_pair_driver_manager_exception(True)
+
     def test_delete_port_pair_manager_called(self):
         self.fake_driver_manager.delete_port_pair = mock.Mock(
             side_effect=self._record_context)
+        self.fake_driver_manager.delete_port_pair_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.delete_port_pair_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port(
             name='port1',
             device_id='default'
@@ -436,18 +669,23 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 fake_driver_manager.delete_port_pair.assert_called_once_with(
                     mock.ANY
                 )
+                (fake_driver_manager.delete_port_pair_precommit
+                 .assert_called_once_with(mock.ANY))
+                (fake_driver_manager.delete_port_pair_postcommit
+                 .assert_called_once_with(mock.ANY))
                 self.assertIsInstance(
                     self.plugin_context, sfc_ctx.PortPairContext
+                )
+                self.assertIsInstance(
+                    self.plugin_context_precommit, sfc_ctx.PortPairContext
+                )
+                self.assertIsInstance(
+                    self.plugin_context_postcommit, sfc_ctx.PortPairContext
                 )
                 self.assertIn('port_pair', pc)
                 self.assertEqual(self.plugin_context.current, pc['port_pair'])
 
-    def test_delete_port_pair_driver_manager_exception(self):
-        self.fake_driver_manager.delete_port_pair = mock.Mock(
-            side_effect=sfc_exc.SfcDriverError(
-                method='delete_port_pair'
-            )
-        )
+    def _test_delete_port_pair_driver_manager_exception(self):
         with self.port(
             name='port1',
             device_id='default'
@@ -466,3 +704,19 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 res = req.get_response(self.ext_api)
                 self.assertEqual(500, res.status_int)
                 self._test_list_resources('port_pair', [pc])
+
+    def test_delete_port_pair_driver_manager_exception(self):
+        self.fake_driver_manager.delete_port_pair = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='delete_port_pair'
+            )
+        )
+        self._test_delete_port_pair_driver_manager_exception()
+
+    def test_delete_port_pair_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.delete_port_pair_precommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='delete_port_pair_precommit'
+            )
+        )
+        self._test_delete_port_pair_driver_manager_exception()

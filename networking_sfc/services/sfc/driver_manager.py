@@ -85,29 +85,65 @@ class SfcDriverManager(stevedore.named.NamedExtensionManager):
                     method=method_name
                 )
 
-    def create_port_chain(self, context):
-        self._call_drivers("create_port_chain", context)
+    def create_port_chain_precommit(self, context):
+        self._call_drivers("create_port_chain_precommit", context)
 
-    def update_port_chain(self, context):
-        self._call_drivers("update_port_chain", context)
+    def create_port_chain_postcommit(self, context):
+        self._call_drivers("create_port_chain_postcommit", context)
+
+    def update_port_chain_precommit(self, context):
+        self._call_drivers("update_port_chain_precommit", context)
+
+    def update_port_chain_postcommit(self, context):
+        self._call_drivers("update_port_chain_postcommit", context)
 
     def delete_port_chain(self, context):
         self._call_drivers("delete_port_chain", context)
 
-    def create_port_pair(self, context):
-        self._call_drivers("create_port_pair", context)
+    def delete_port_chain_precommit(self, context):
+        self._call_drivers("delete_port_chain_precommit", context)
 
-    def update_port_pair(self, context):
-        self._call_drivers("update_port_pair", context)
+    def delete_port_chain_postcommit(self, context):
+        self._call_drivers("delete_port_chain_postcommit", context)
+
+    def create_port_pair_precommit(self, context):
+        self._call_drivers("create_port_pair_precommit", context)
+
+    def create_port_pair_postcommit(self, context):
+        self._call_drivers("create_port_pair_postcommit", context)
+
+    def update_port_pair_precommit(self, context):
+        self._call_drivers("update_port_pair_precommit", context)
+
+    def update_port_pair_postcommit(self, context):
+        self._call_drivers("update_port_pair_postcommit", context)
 
     def delete_port_pair(self, context):
         self._call_drivers("delete_port_pair", context)
 
-    def create_port_pair_group(self, context):
-        self._call_drivers("create_port_pair_group", context)
+    def delete_port_pair_precommit(self, context):
+        self._call_drivers("delete_port_pair_precommit", context)
 
-    def update_port_pair_group(self, context):
-        self._call_drivers("update_port_pair_group", context)
+    def delete_port_pair_postcommit(self, context):
+        self._call_drivers("delete_port_pair_postcommit", context)
+
+    def create_port_pair_group_precommit(self, context):
+        self._call_drivers("create_port_pair_group_precommit", context)
+
+    def create_port_pair_group_postcommit(self, context):
+        self._call_drivers("create_port_pair_group_postcommit", context)
+
+    def update_port_pair_group_precommit(self, context):
+        self._call_drivers("update_port_pair_group_precommit", context)
+
+    def update_port_pair_group_postcommit(self, context):
+        self._call_drivers("update_port_pair_group_postcommit", context)
 
     def delete_port_pair_group(self, context):
         self._call_drivers("delete_port_pair_group", context)
+
+    def delete_port_pair_group_precommit(self, context):
+        self._call_drivers("delete_port_pair_group_precommit", context)
+
+    def delete_port_pair_group_postcommit(self, context):
+        self._call_drivers("delete_port_pair_group_postcommit", context)

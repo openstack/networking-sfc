@@ -41,6 +41,8 @@ class FlowClassifierPluginTestCase(
         self.fake_driver_manager = mock.Mock()
         self.fake_driver_manager_class.return_value = self.fake_driver_manager
         self.plugin_context = None
+        self.plugin_context_precommit = None
+        self.plugin_context_postcommit = None
         super(FlowClassifierPluginTestCase, self).setUp(
             core_plugin=core_plugin,
             flowclassifier_plugin=flowclassifier_plugin,
@@ -50,11 +52,17 @@ class FlowClassifierPluginTestCase(
     def _record_context(self, plugin_context):
         self.plugin_context = plugin_context
 
+    def _record_context_precommit(self, plugin_context):
+        self.plugin_context_precommit = plugin_context
+
+    def _record_context_postcommit(self, plugin_context):
+        self.plugin_context_postcommit = plugin_context
+
     def test_create_flow_classifier_driver_manager_called(self):
-        self.fake_driver_manager.create_flow_classifier = mock.Mock(
-            side_effect=self._record_context)
         self.fake_driver_manager.create_flow_classifier_precommit = mock.Mock(
-            side_effect=self._record_context)
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.create_flow_classifier_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port(
             name='test1'
         ) as port:
@@ -67,20 +75,26 @@ class FlowClassifierPluginTestCase(
                 create_flow_classifier_precommit.assert_called_once_with(
                     mock.ANY
                 )
-                driver_manager.create_flow_classifier.assert_called_once_with(
-                    mock.ANY
+                (driver_manager.create_flow_classifier_postcommit
+                 .assert_called_once_with(mock.ANY))
+                self.assertIsInstance(
+                    self.plugin_context_precommit, fc_ctx.FlowClassifierContext
                 )
                 self.assertIsInstance(
-                    self.plugin_context, fc_ctx.FlowClassifierContext
-                )
+                    self.plugin_context_postcommit,
+                    fc_ctx.FlowClassifierContext)
                 self.assertIn('flow_classifier', fc)
                 self.assertEqual(
-                    self.plugin_context.current, fc['flow_classifier'])
+                    self.plugin_context_precommit.current,
+                    fc['flow_classifier'])
+                self.assertEqual(
+                    self.plugin_context_postcommit.current,
+                    fc['flow_classifier'])
 
-    def test_create_flow_classifier_driver_manager_exception(self):
-        self.fake_driver_manager.create_flow_classifier = mock.Mock(
+    def test_create_flow_classifier_postcommit_driver_manager_exception(self):
+        self.fake_driver_manager.create_flow_classifier_postcommit = mock.Mock(
             side_effect=fc_exc.FlowClassifierDriverError(
-                method='create_flow_classifier'
+                method='create_flow_classifier_postcommit'
             )
         )
         with self.port(
@@ -95,12 +109,15 @@ class FlowClassifierPluginTestCase(
             create_flow_classifier_precommit.assert_called_once_with(
                 mock.ANY
             )
-            driver_manager.create_flow_classifier.assert_called_once_with(
-                mock.ANY
-            )
+            (driver_manager.create_flow_classifier_postcommit
+             .assert_called_once_with(mock.ANY))
             driver_manager.delete_flow_classifier.assert_called_once_with(
                 mock.ANY
             )
+            (driver_manager.delete_flow_classifier_precommit
+             .assert_called_once_with(mock.ANY))
+            (driver_manager.delete_flow_classifier_postcommit
+             .assert_called_once_with(mock.ANY))
             self._test_list_resources('flow_classifier', [])
 
     def test_create_flow_classifier_precommit_driver_manager_exception(self):
@@ -121,13 +138,20 @@ class FlowClassifierPluginTestCase(
             create_flow_classifier_precommit.assert_called_once_with(
                 mock.ANY
             )
-            driver_manager.create_flow_classifier.assert_not_called()
+            (driver_manager.create_flow_classifier_postcommit
+             .assert_not_called())
             driver_manager.delete_flow_classifier.assert_not_called()
+            (driver_manager.delete_flow_classifier_precommit
+             .assert_not_called())
+            (driver_manager.delete_flow_classifier_postcommit
+             .assert_not_called())
             self._test_list_resources('flow_classifier', [])
 
     def test_update_flow_classifier_driver_manager_called(self):
-        self.fake_driver_manager.update_flow_classifier = mock.Mock(
-            side_effect=self._record_context)
+        self.fake_driver_manager.update_flow_classifier_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.update_flow_classifier_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port(
             name='test1'
         ) as port:
@@ -144,25 +168,27 @@ class FlowClassifierPluginTestCase(
                     req.get_response(self.ext_api)
                 )
                 driver_manager = self.fake_driver_manager
-                driver_manager.update_flow_classifier.assert_called_once_with(
-                    mock.ANY
-                )
+                (driver_manager.update_flow_classifier_precommit
+                 .assert_called_once_with(mock.ANY))
+                (driver_manager.update_flow_classifier_postcommit
+                 .assert_called_once_with(mock.ANY))
                 self.assertIsInstance(
-                    self.plugin_context, fc_ctx.FlowClassifierContext
+                    self.plugin_context_precommit, fc_ctx.FlowClassifierContext
                 )
+                self.assertIsInstance(self.plugin_context_postcommit,
+                                      fc_ctx.FlowClassifierContext)
                 self.assertIn('flow_classifier', fc)
                 self.assertIn('flow_classifier', res)
-                self.assertEqual(
-                    self.plugin_context.current, res['flow_classifier'])
-                self.assertEqual(
-                    self.plugin_context.original, fc['flow_classifier'])
+                self.assertEqual(self.plugin_context_precommit.current,
+                                 res['flow_classifier'])
+                self.assertEqual(self.plugin_context_postcommit.current,
+                                 res['flow_classifier'])
+                self.assertEqual(self.plugin_context_precommit.original,
+                                 fc['flow_classifier'])
+                self.assertEqual(self.plugin_context_postcommit.original,
+                                 fc['flow_classifier'])
 
-    def test_update_flow_classifier_driver_manager_exception(self):
-        self.fake_driver_manager.update_flow_classifier = mock.Mock(
-            side_effect=fc_exc.FlowClassifierDriverError(
-                method='update_flow_classifier'
-            )
-        )
+    def _test_update_flow_classifier_driver_manager_exception(self, updated):
         with self.port(
             name='test1'
         ) as port:
@@ -177,21 +203,47 @@ class FlowClassifierPluginTestCase(
                     fc['flow_classifier']['id']
                 )
                 updated_flow_classifier = copy.copy(original_flow_classifier)
-                updated_flow_classifier['name'] = 'test2'
+                if updated:
+                    updated_flow_classifier['name'] = 'test2'
                 res = req.get_response(self.ext_api)
                 self.assertEqual(500, res.status_int)
                 driver_manager = self.fake_driver_manager
-                driver_manager.update_flow_classifier.assert_called_once_with(
-                    mock.ANY
-                )
+                (driver_manager.update_flow_classifier_precommit
+                 .assert_called_once_with(mock.ANY))
+                if updated:
+                    (driver_manager.update_flow_classifier_postcommit
+                     .assert_called_once_with(mock.ANY))
+                else:
+                    (driver_manager.update_flow_classifier_postcommit
+                     .assert_not_called())
                 res = self._list('flow_classifiers')
                 self.assertIn('flow_classifiers', res)
                 self.assertItemsEqual(
                     res['flow_classifiers'], [updated_flow_classifier])
 
+    def test_update_flow_classifier_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.update_flow_classifier_precommit = mock.Mock(
+            side_effect=fc_exc.FlowClassifierDriverError(
+                method='update_flow_classifier_precommit'
+            )
+        )
+        self._test_update_flow_classifier_driver_manager_exception(False)
+
+    def test_update_flow_classifier_postcommit_driver_manager_exception(self):
+        self.fake_driver_manager.update_flow_classifier_postcommit = mock.Mock(
+            side_effect=fc_exc.FlowClassifierDriverError(
+                method='update_flow_classifier_postcommit'
+            )
+        )
+        self._test_update_flow_classifier_driver_manager_exception(True)
+
     def test_delete_flow_classifer_driver_manager_called(self):
         self.fake_driver_manager.delete_flow_classifier = mock.Mock(
             side_effect=self._record_context)
+        self.fake_driver_manager.delete_flow_classifier_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.delete_flow_classifier_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
         with self.port(
             name='test1'
         ) as port:
@@ -208,19 +260,27 @@ class FlowClassifierPluginTestCase(
                 driver_manager.delete_flow_classifier.assert_called_once_with(
                     mock.ANY
                 )
+                (driver_manager.delete_flow_classifier_precommit
+                 .assert_called_once_with(mock.ANY))
+                (driver_manager.delete_flow_classifier_postcommit
+                 .assert_called_once_with(mock.ANY))
                 self.assertIsInstance(
                     self.plugin_context, fc_ctx.FlowClassifierContext
                 )
+                self.assertIsInstance(
+                    self.plugin_context_precommit, fc_ctx.FlowClassifierContext
+                )
+                self.assertIsInstance(self.plugin_context_postcommit,
+                                      fc_ctx.FlowClassifierContext)
                 self.assertIn('flow_classifier', fc)
                 self.assertEqual(
                     self.plugin_context.current, fc['flow_classifier'])
+                self.assertEqual(self.plugin_context_precommit.current,
+                                 fc['flow_classifier'])
+                self.assertEqual(self.plugin_context_postcommit.current,
+                                 fc['flow_classifier'])
 
-    def test_delete_flow_classifier_driver_manager_exception(self):
-        self.fake_driver_manager.delete_flow_classifier = mock.Mock(
-            side_effect=fc_exc.FlowClassifierDriverError(
-                method='delete_flow_classifier'
-            )
-        )
+    def _test_delete_flow_classifier_driver_manager_exception(self):
         with self.port(
             name='test1'
         ) as port:
@@ -238,3 +298,19 @@ class FlowClassifierPluginTestCase(
                     mock.ANY
                 )
                 self._test_list_resources('flow_classifier', [fc])
+
+    def test_delete_flow_classifier_driver_manager_exception(self):
+        self.fake_driver_manager.delete_flow_classifier = mock.Mock(
+            side_effect=fc_exc.FlowClassifierDriverError(
+                method='delete_flow_classifier'
+            )
+        )
+        self._test_delete_flow_classifier_driver_manager_exception()
+
+    def test_delete_flow_classifier_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.delete_flow_classifier_precommit = mock.Mock(
+            side_effect=fc_exc.FlowClassifierDriverError(
+                method='delete_flow_classifier_precommit'
+            )
+        )
+        self._test_delete_flow_classifier_driver_manager_exception()

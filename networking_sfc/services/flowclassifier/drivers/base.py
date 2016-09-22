@@ -17,21 +17,41 @@ import six
 
 
 @six.add_metaclass(abc.ABCMeta)
-class FlowClassifierDriverBase(object):
-    """Flow Classifier Driver Base Class."""
+class FlowClassifierDriverBaseLegacy(object):
+    """Flow Classifier Driver Base Class for legacy driver interface"""
 
     @abc.abstractmethod
     def create_flow_classifier(self, context):
         pass
 
     @abc.abstractmethod
-    def delete_flow_classifier(self, context):
-        pass
-
-    @abc.abstractmethod
     def update_flow_classifier(self, context):
         pass
+
+
+@six.add_metaclass(abc.ABCMeta)
+class FlowClassifierDriverBase(FlowClassifierDriverBaseLegacy):
+    """Flow Classifier Driver Base Class."""
 
     @abc.abstractmethod
     def create_flow_classifier_precommit(self, context):
         pass
+
+    def create_flow_classifier_postcommit(self, context):
+        self.create_flow_classifier(context)
+
+    @abc.abstractmethod
+    def delete_flow_classifier(self, context):
+        pass
+
+    def delete_flow_classifier_precommit(self, context):
+        pass
+
+    def delete_flow_classifier_postcommit(self, context):
+        pass
+
+    def update_flow_classifier_precommit(self, context):
+        pass
+
+    def update_flow_classifier_postcommit(self, context):
+        self.update_flow_classifier(context)

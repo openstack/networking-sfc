@@ -17,15 +17,11 @@ import six
 
 
 @six.add_metaclass(abc.ABCMeta)
-class SfcDriverBase(object):
-    """SFC Driver Base Class."""
+class SfcDriverBaseLegacy(object):
+    """SFC Driver Base Class for legacy interface."""
 
     @abc.abstractmethod
     def create_port_chain(self, context):
-        pass
-
-    @abc.abstractmethod
-    def delete_port_chain(self, context):
         pass
 
     @abc.abstractmethod
@@ -37,10 +33,6 @@ class SfcDriverBase(object):
         pass
 
     @abc.abstractmethod
-    def delete_port_pair(self, context):
-        pass
-
-    @abc.abstractmethod
     def update_port_pair(self, context):
         pass
 
@@ -49,9 +41,76 @@ class SfcDriverBase(object):
         pass
 
     @abc.abstractmethod
+    def update_port_pair_group(self, context):
+        pass
+
+
+@six.add_metaclass(abc.ABCMeta)
+class SfcDriverBase(SfcDriverBaseLegacy):
+    """SFC Driver Base Class."""
+
+    def create_port_chain_precommit(self, context):
+        pass
+
+    def create_port_chain_postcommit(self, context):
+        self.create_port_chain(context)
+
+    @abc.abstractmethod
+    def delete_port_chain(self, context):
+        pass
+
+    def delete_port_chain_precommit(self, context):
+        pass
+
+    def delete_port_chain_postcommit(self, context):
+        pass
+
+    def update_port_chain_precommit(self, context):
+        pass
+
+    def update_port_chain_postcommit(self, context):
+        self.update_port_chain(context)
+
+    def create_port_pair_precommit(self, context):
+        pass
+
+    def create_port_pair_postcommit(self, context):
+        self.create_port_pair(context)
+
+    @abc.abstractmethod
+    def delete_port_pair(self, context):
+        pass
+
+    def delete_port_pair_precommit(self, context):
+        pass
+
+    def delete_port_pair_postcommit(self, context):
+        pass
+
+    def update_port_pair_precommit(self, context):
+        pass
+
+    def update_port_pair_postcommit(self, context):
+        self.update_port_pair(context)
+
+    def create_port_pair_group_precommit(self, context):
+        pass
+
+    def create_port_pair_group_postcommit(self, context):
+        self.create_port_pair_group(context)
+
+    @abc.abstractmethod
     def delete_port_pair_group(self, context):
         pass
 
-    @abc.abstractmethod
-    def update_port_pair_group(self, context):
+    def delete_port_pair_group_precommit(self, context):
         pass
+
+    def delete_port_pair_group_postcommit(self, context):
+        pass
+
+    def update_port_pair_group_precommit(self, context):
+        pass
+
+    def update_port_pair_group_postcommit(self, context):
+        self.update_port_pair_group(context)
