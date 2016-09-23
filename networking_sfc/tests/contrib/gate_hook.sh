@@ -5,8 +5,8 @@ set -ex
 VENV=${1:-"dsvm-functional"}
 
 GATE_DEST=$BASE/new
-NEUTRON_PATH=$GATE_DEST/networking-sfc
-GATE_HOOKS=$NEUTRON_PATH/networking_sfc/tests/contrib/hooks
+NETWORKING_SFC_PATH=$GATE_DEST/networking-sfc
+GATE_HOOKS=$NETWORKING_SFC_PATH/networking_sfc/tests/contrib/hooks
 DEVSTACK_PATH=$GATE_DEST/devstack
 LOCAL_CONF=$DEVSTACK_PATH/local.conf
 
@@ -38,20 +38,13 @@ case $VENV in
     IS_GATE=True
 
     source $DEVSTACK_PATH/functions
-    source $NEUTRON_PATH/devstack/lib/ovs
+    source $NETWORKING_SFC_PATH/devstack/lib/ovs
 
-    if [[ "$VENV" =~ "dsvm-functional" ]] ; then
-        source $NEUTRON_PATH/tools/configure_for_func_testing.sh
-        configure_host_for_func_testing
-    fi
+    source $NETWORKING_SFC_PATH/tools/configure_for_func_testing.sh
 
-    # The OVS_BRANCH variable is used by git checkout. In the case below
-    # we use a commit on branch-2.5 that fixes compilation with the
-    # latest ubuntu trusty kernel.
-    OVS_BRANCH=v2.4.0
-    remove_ovs_packages
-    compile_ovs True /usr /var
-    start_new_ovs
+    configure_host_for_func_testing
+
+    upgrade_ovs_if_necessary
 
     load_conf_hook iptables_verify
     load_conf_hook ovs

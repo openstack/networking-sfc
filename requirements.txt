@@ -46,4 +46,4 @@ python-novaclient!=2.33.0,>=2.29.0 # Apache-2.0
 # This project does depend on neutron as a library, but the
 # openstack tooling does not play nicely with projects that
 # are not publicly available in pypi.
-# -e git+https://git.openstack.org/openstack/neutron#egg=neutron
+# So neutron installation is done via tools/tox_install.sh
