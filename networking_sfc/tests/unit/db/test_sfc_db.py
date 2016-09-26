@@ -338,6 +338,17 @@ class SfcDbPluginTestCase(
                 'chain_parameters': {'correlation': 'mpls'}
             })
 
+    def test_create_port_chain_all_fields_with_chain_id(self):
+        with self.port_pair_group(port_pair_group={}) as pg:
+            self._test_create_port_chain({
+                'port_pair_groups': [pg['port_pair_group']['id']],
+                'flow_classifiers': [],
+                'name': 'abc',
+                'description': 'def',
+                'chain_parameters': {'correlation': 'mpls'},
+                'chain_id': 99
+            })
+
     def test_create_port_chain_multi_port_pair_groups(self):
         with self.port_pair_group(
             port_pair_group={}
@@ -409,6 +420,24 @@ class SfcDbPluginTestCase(
                 'chain_parameters': {'correlation': 'mpls'},
                 'port_pair_groups': [pg['port_pair_group']['id']]
             })
+
+    def test_create_port_chains_with_conflicting_chain_ids(self):
+        with self.port_pair_group(
+            port_pair_group={}, do_delete=False
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}, do_delete=False
+        ) as pg2:
+            self._create_port_chain(
+                self.fmt, {
+                    'port_pair_groups': [pg1['port_pair_group']['id']],
+                    'chain_id': 88
+                }, expected_res_status=201)
+            self._create_port_chain(
+                self.fmt, {
+                    'port_pair_groups': [pg2['port_pair_group']['id']],
+                    'chain_id': 88
+                }, expected_res_status=400
+            )
 
     def test_create_port_chain_with_none_flow_classifiers(self):
         with self.port_pair_group(port_pair_group={}) as pg:
