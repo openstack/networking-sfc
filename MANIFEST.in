@@ -1,5 +1,10 @@
 include AUTHORS
 include ChangeLog
+
+include networking_sfc/db/migration/README
+include networking_sfc/db/migration/alembic_migrations/script.py.mako
+recursive-include networking_sfc/db/migration/alembic_migrations/versions *
+
 exclude .gitignore
 exclude .gitreview
 
