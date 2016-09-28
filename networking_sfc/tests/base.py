@@ -32,6 +32,7 @@ from neutron.plugins.ml2.drivers import type_flat
 from neutron.plugins.ml2.drivers import type_local
 from neutron.plugins.ml2.drivers import type_tunnel
 from neutron.plugins.ml2.drivers import type_vlan
+from neutron.plugins.ml2.drivers import type_vxlan   # noqa
 from neutron.plugins.ml2 import managers as ml2_manager
 from neutron.plugins.ml2 import plugin as ml2_plugin
 from neutron import quota as quota_log
