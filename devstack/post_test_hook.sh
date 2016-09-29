@@ -43,7 +43,7 @@ set -e
 
 echo "Running networking-sfc test suite"
 sudo -H -u $owner $sudo_env tox -eall-plugin -- $DEVSTACK_GATE_TEMPEST_REGEX
-sudo -H -u $owner $sudo_env tox -eall-plugin -- "^(?:networking_sfc\.tests\.tempest_plugin).*$"
+sudo -H -u $owner $sudo_env tox -eall-plugin -- "^(?:networking_sfc\.tests\.tempest_plugin).*$" --concurrency=0
 
 echo "Some post-process info"
 neutron net-list
