@@ -329,7 +329,7 @@ class SfcDbPlugin(
                 if not chain_id:
                     raise ext_sfc.PortChainUnavailableChainId()
             else:
-                if chain_id not in assigned_chain_ids:
+                if chain_id in assigned_chain_ids:
                     raise ext_sfc.PortChainChainIdInConflict(
                         chain_id=chain_id, pc_id=assigned_chain_ids[chain_id])
             port_chain_db = PortChain(id=uuidutils.generate_uuid(),
