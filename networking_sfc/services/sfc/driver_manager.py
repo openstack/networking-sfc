@@ -1,4 +1,4 @@
-# Copyright 2015 Futurewei. All rights reserved.
+# Copyright 2017 Futurewei. All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -88,11 +88,13 @@ class SfcDriverManager(NamedExtensionManager):
             self.native_bulk_support &= getattr(driver.obj,
                                                 'native_bulk_support', True)
 
-    def _call_drivers(self, method_name, context):
+    def _call_drivers(self, method_name, context, raise_orig_exc=False):
         """Helper method for calling a method across all SFC drivers.
 
         :param method_name: name of the method to call
         :param context: context parameter to pass to each method call
+        :param raise_orig_exc: whether or not to raise the original
+        driver exception, or use a general one
         """
         for driver in self.ordered_drivers:
             try:
@@ -104,12 +106,16 @@ class SfcDriverManager(NamedExtensionManager):
                     _LE("SFC driver '%(name)s' failed in %(method)s"),
                     {'name': driver.name, 'method': method_name}
                 )
-                raise sfc_exc.SfcDriverError(
-                    method=method_name
-                )
+                if raise_orig_exc:
+                    raise
+                else:
+                    raise sfc_exc.SfcDriverError(
+                        method=method_name
+                    )
 
     def create_port_chain_precommit(self, context):
-        self._call_drivers("create_port_chain_precommit", context)
+        self._call_drivers("create_port_chain_precommit", context,
+                           raise_orig_exc=True)
 
     def create_port_chain_postcommit(self, context):
         self._call_drivers("create_port_chain_postcommit", context)

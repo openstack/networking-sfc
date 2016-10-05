@@ -1,4 +1,4 @@
-# Copyright 2015 Futurewei. All rights reserved.
+# Copyright 2017 Futurewei. All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -90,7 +90,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 expected_res_status=500)
             self._test_list_resources('port_chain', [])
         (self.fake_driver_manager.create_port_chain_postcommit
-            .assert_not_called())
+         .assert_not_called())
         self.fake_driver_manager.delete_port_chain.assert_not_called()
 
     def test_create_port_chain_postcommit_driver_manager_exception(self):

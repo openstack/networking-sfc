@@ -1,4 +1,4 @@
-# Copyright 2015 Futurewei. All rights reserved.
+# Copyright 2017 Futurewei. All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -65,7 +65,8 @@ class DriverManagerTestCase(base.BaseTestCase):
         self._test_method_called("create_port_chain_precommit")
 
     def test_create_port_chain_precommit_exception(self):
-        self._test_method_exception("create_port_chain_precommit")
+        self._test_method_exception("create_port_chain_precommit",
+                                    sfc_exc.SfcException)
 
     def test_create_port_chain_postcommit_called(self):
         self._test_method_called("create_port_chain_postcommit")

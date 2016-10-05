@@ -1,4 +1,4 @@
-# Copyright 2015 Futurewei. All rights reserved.
+# Copyright 2017 Futurewei. All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -910,7 +910,7 @@ class FlowClassifierDbPluginTestCase(
                     self.fmt, {
                         'source_port_range_min': 99,
                         'protocol': lib_const.PROTO_NAME_TCP,
-                        'logical_source_port': port['port']['id'],
+                        'logical_source_port': port['port']['id']
                     },
                     expected_res_status=400
                 )

@@ -1,4 +1,4 @@
-# Copyright 2015 Futurewei. All rights reserved.
+# Copyright 2017 Futurewei. All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -32,6 +32,10 @@ class DummyDriver(sfc_driver.SfcDriverBase):
 
     @log_helpers.log_method_call
     def update_port_chain(self, context):
+        pass
+
+    @log_helpers.log_method_call
+    def create_port_chain_precommit(self, context):
         pass
 
     @log_helpers.log_method_call

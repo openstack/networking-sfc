@@ -106,35 +106,3 @@ class OVSFlowClassifierDriverTestCase(
                 fc_exc.FlowClassifierBadRequest,
                 self.driver.create_flow_classifier_precommit,
                 fc_context)
-
-    def test_create_flow_classifier_precommit_logical_destination_port(self):
-        with self.port(
-            name='port1',
-            device_owner='compute',
-            device_id='test',
-            arg_list=(
-                portbindings.HOST_ID,
-            ),
-            **{portbindings.HOST_ID: 'test'}
-        ) as src_port, self.port(
-            name='port2',
-            device_owner='compute',
-            device_id='test',
-            arg_list=(
-                portbindings.HOST_ID,
-            ),
-            **{portbindings.HOST_ID: 'test'}
-        ) as dst_port:
-            with self.flow_classifier(flow_classifier={
-                'name': 'test1',
-                'logical_source_port': src_port['port']['id'],
-                'logical_destination_port': dst_port['port']['id']
-            }) as fc:
-                fc_context = fc_ctx.FlowClassifierContext(
-                    self.flowclassifier_plugin, self.ctx,
-                    fc['flow_classifier']
-                )
-                self.assertRaises(
-                    fc_exc.FlowClassifierBadRequest,
-                    self.driver.create_flow_classifier_precommit,
-                    fc_context)

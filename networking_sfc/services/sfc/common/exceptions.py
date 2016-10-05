@@ -1,4 +1,4 @@
-# Copyright 2015 Futurewei.  All rights reserved.
+# Copyright 2017 Futurewei.  All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -30,7 +30,7 @@ class SfcException(exceptions.NeutronException):
 
 class SfcBadRequest(exceptions.BadRequest, SfcException):
     """Base for SFC driver bad request exceptions returned to user."""
-    pass
+    message = _("%(message)s")
 
 
 class SfcNoSubnetGateway(SfcDriverError):

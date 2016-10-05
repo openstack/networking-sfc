@@ -49,6 +49,9 @@ INGRESS_TABLE = 10
 PC_DEF_PRI = 20
 PC_INGRESS_PRI = 30
 
+# Reverse group number offset for dump_group
+REVERSE_GROUP_NUMBER_OFFSET = 7000
+
 
 class SfcOVSAgentDriver(sfc.SfcAgentDriver):
     """This class will support MPLS frame
@@ -92,6 +95,10 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         self._clear_sfc_flow_on_int_br()
 
     def update_flow_rules(self, flowrule, flowrule_status):
+        if flowrule['fwd_path'] is False and flowrule['node_type'] == \
+                'sf_node':
+            flowrule['ingress'], flowrule['egress'] = flowrule['egress'], \
+                flowrule['ingress']
         try:
             LOG.debug('update_flow_rule, flowrule = %s', flowrule)
 
@@ -110,6 +117,10 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             LOG.error(_LE("update_flow_rules failed"))
 
     def delete_flow_rule(self, flowrule, flowrule_status):
+        if flowrule['fwd_path'] is False and flowrule['node_type'] == \
+                'sf_node':
+            flowrule['ingress'], flowrule['egress'] = flowrule['egress'], \
+                flowrule['ingress']
         try:
             LOG.debug("delete_flow_rule, flowrule = %s", flowrule)
 
@@ -123,10 +134,20 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 # delete group table, need to check again
                 group_id = flowrule.get('next_group_id', None)
                 if group_id and flowrule.get('group_refcnt', None) <= 1:
-                    self.br_int.delete_group(group_id=group_id)
+                    if flowrule['fwd_path']:
+                        self.br_int.delete_group(group_id=group_id)
+                    else:
+                        self.br_int.delete_group(group_id=group_id +
+                                                 REVERSE_GROUP_NUMBER_OFFSET)
                     for item in flowrule['next_hops']:
-                        self.br_int.delete_flows(table=ACROSS_SUBNET_TABLE,
-                                                 dl_dst=item['mac_address'])
+                        if flowrule['fwd_path']:
+                            self.br_int.delete_flows(
+                                table=ACROSS_SUBNET_TABLE,
+                                dl_dst=item['in_mac_address'])
+                        else:
+                            self.br_int.delete_flows(
+                                table=ACROSS_SUBNET_TABLE,
+                                dl_dst=item['mac_address'])
 
             if flowrule['ingress'] is not None:
                 # delete table INGRESS_TABLE ingress match flow rule
@@ -213,9 +234,9 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 source_port_masks,
                 destination_port_masks)
 
-    def _get_flow_infos_from_flow_classifier(self, flow_classifier):
+    def _get_flow_infos_from_flow_classifier(self, flow_classifier, flowrule):
         flow_infos = []
-        nw_src, nw_dst = ((None, ) * 2)
+        nw_src, nw_dst, tp_src, tp_dst = ((None, ) * 4)
 
         if "IPv4" != flow_classifier['ethertype']:
             LOG.error(_LE("Current portchain agent only supports IPv4"))
@@ -225,42 +246,60 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         dl_type, nw_proto, source_port_masks, destination_port_masks = (
             self._parse_flow_classifier(flow_classifier))
 
-        if flow_classifier['source_ip_prefix']:
-            nw_src = flow_classifier['source_ip_prefix']
+        if flowrule['fwd_path']:
+            if flow_classifier['source_ip_prefix']:
+                nw_src = flow_classifier['source_ip_prefix']
+            else:
+                nw_src = '0.0.0.0/0.0.0.0'
+            if flow_classifier['destination_ip_prefix']:
+                nw_dst = flow_classifier['destination_ip_prefix']
+            else:
+                nw_dst = '0.0.0.0/0.0.0.0'
         else:
-            nw_src = '0.0.0.0/0.0.0.0'
-        if flow_classifier['destination_ip_prefix']:
-            nw_dst = flow_classifier['destination_ip_prefix']
-        else:
-            nw_dst = '0.0.0.0/0.0.0.0'
+            if flow_classifier['source_ip_prefix']:
+                nw_src = flow_classifier['destination_ip_prefix']
+            else:
+                nw_src = '0.0.0.0/0.0.0.0'
+            if flow_classifier['destination_ip_prefix']:
+                nw_dst = flow_classifier['source_ip_prefix']
+            else:
+                nw_dst = '0.0.0.0/0.0.0.0'
 
         if source_port_masks and destination_port_masks:
             for destination_port in destination_port_masks:
                 for source_port in source_port_masks:
+                    if flowrule['fwd_path']:
+                        tp_src = '%s' % source_port
+                        tp_dst = '%s' % destination_port
+                    else:
+                        tp_dst = '%s' % source_port
+                        tp_src = '%s' % destination_port
                     if nw_proto is None:
                         flow_infos.append({'dl_type': dl_type,
                                            'nw_src': nw_src,
                                            'nw_dst': nw_dst,
-                                           'tp_src': '%s' % source_port,
-                                           'tp_dst': '%s' % destination_port})
+                                           'tp_src': tp_src,
+                                           'tp_dst': tp_dst})
                     else:
                         flow_infos.append({'dl_type': dl_type,
                                            'nw_proto': nw_proto,
                                            'nw_src': nw_src,
                                            'nw_dst': nw_dst,
-                                           'tp_src': '%s' % source_port,
-                                           'tp_dst': '%s' % destination_port})
+                                           'tp_src': tp_src,
+                                           'tp_dst': tp_dst})
 
         return flow_infos
 
-    def _get_flow_infos_from_flow_classifier_list(self, flow_classifier_list):
+    def _get_flow_infos_from_flow_classifier_list(self, flow_classifier_list,
+                                                  flowrule):
         flow_infos = []
 
         if not flow_classifier_list:
             return flow_infos
         for flow_classifier in flow_classifier_list:
             flow_infos.extend(
-                self._get_flow_infos_from_flow_classifier(flow_classifier))
+                self._get_flow_infos_from_flow_classifier(flow_classifier,
+                                                          flowrule))
 
         return flow_infos
 
@@ -277,7 +316,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 priority = PC_INGRESS_PRI
 
         for flow_info in self._get_flow_infos_from_flow_classifier_list(
-                flow_classifier_list):
+                flow_classifier_list, flowrule):
             match_info = dict(inport_match)
             match_info.update(flow_info)
             if add_flow:
@@ -301,10 +340,18 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             buckets = []
             vlan = self._get_vlan_by_port(flowrule['egress'])
             for item in next_hops:
-                bucket = ('bucket=weight=%d, mod_dl_dst:%s, resubmit(,%d)' % (
-                    item['weight'],
-                    item['mac_address'],
-                    ACROSS_SUBNET_TABLE))
+                if flowrule['fwd_path']:
+                    bucket = (
+                        'bucket=weight=%d, mod_dl_dst:%s, resubmit(,%d)' % (
+                            item['weight'],
+                            item['in_mac_address'],
+                            ACROSS_SUBNET_TABLE))
+                else:
+                    bucket = (
+                        'bucket=weight=%d, mod_dl_dst:%s, resubmit(,%d)' % (
+                            item['weight'],
+                            item['mac_address'],
+                            ACROSS_SUBNET_TABLE))
                 buckets.append(bucket)
                 subnet_actions_list = []
                 push_mpls = ('push_mpls:0x8847, '
@@ -322,23 +369,43 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     subnet_actions = 'output:%s' % self.patch_tun_ofport
                 subnet_actions_list.append(subnet_actions)
 
-                self.br_int.add_flow(
-                    table=ACROSS_SUBNET_TABLE,
-                    priority=0,
-                    dl_dst=item['mac_address'],
-                    dl_type=0x0800,
-                    actions="%s" % ','.join(subnet_actions_list))
+                if flowrule['fwd_path']:
+                    self.br_int.add_flow(
+                        table=ACROSS_SUBNET_TABLE,
+                        priority=0,
+                        dl_dst=item['in_mac_address'],
+                        dl_type=0x0800,
+                        actions="%s" % ','.join(subnet_actions_list))
+                else:
+                    self.br_int.add_flow(
+                        table=ACROSS_SUBNET_TABLE,
+                        priority=0,
+                        dl_dst=item['mac_address'],
+                        dl_type=0x0800,
+                        actions="%s" % ','.join(subnet_actions_list))
 
-            buckets = ','.join(buckets)
             group_content = self.br_int.dump_group_for_id(group_id)
-            if group_content.find('group_id=%d' % group_id) == -1:
-                self.br_int.add_group(group_id=group_id,
-                                      type='select',
-                                      buckets=buckets)
+            buckets = ','.join(buckets)
+            if flowrule['fwd_path']:
+                if group_content.find('group_id=%d' % group_id) == -1:
+                    self.br_int.add_group(group_id=group_id,
+                                          type='select',
+                                          buckets=buckets)
+                else:
+                    self.br_int.mod_group(group_id=group_id,
+                                          type='select',
+                                          buckets=buckets)
             else:
-                self.br_int.mod_group(group_id=group_id,
-                                      type='select',
-                                      buckets=buckets)
+                # set different id for rev_group
+                rev_group_id = group_id + REVERSE_GROUP_NUMBER_OFFSET
+                if group_content.find('group_id=%d' % (rev_group_id)) == -1:
+                    self.br_int.add_group(group_id=rev_group_id,
+                                          type='select',
+                                          buckets=buckets)
+                else:
+                    self.br_int.mod_group(group_id=rev_group_id,
+                                          type='select',
+                                          buckets=buckets)
 
             # 2nd, install br-int flow rule on table 0  for egress traffic
             # for egress traffic

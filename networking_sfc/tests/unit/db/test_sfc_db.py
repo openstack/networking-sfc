@@ -1,4 +1,4 @@
-# Copyright 2015 Futurewei. All rights reserved.
+# Copyright 2017 Futurewei. All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -344,7 +344,7 @@ class SfcDbPluginTestCase(
                 'flow_classifiers': [],
                 'name': 'abc',
                 'description': 'def',
-                'chain_parameters': {'correlation': 'mpls'}
+                'chain_parameters': {'symmetric': False, 'correlation': 'mpls'}
             })
 
     def test_create_port_chain_all_fields_with_chain_id(self):
@@ -354,8 +354,19 @@ class SfcDbPluginTestCase(
                 'flow_classifiers': [],
                 'name': 'abc',
                 'description': 'def',
-                'chain_parameters': {'correlation': 'mpls'},
+                'chain_parameters': {'symmetric': False,
+                                     'correlation': 'mpls'},
                 'chain_id': 99
+            })
+
+    def test_create_port_chain_all_fields_with_symmetric(self):
+        with self.port_pair_group(port_pair_group={}) as pg:
+            self._test_create_port_chain({
+                'port_pair_groups': [pg['port_pair_group']['id']],
+                'flow_classifiers': [],
+                'name': 'abc',
+                'description': 'def',
+                'chain_parameters': {'symmetric': True, 'correlation': 'mpls'}
             })
 
     def test_create_port_chain_multi_port_pair_groups(self):
@@ -426,7 +437,8 @@ class SfcDbPluginTestCase(
     def test_create_port_chain_with_default_chain_parameters(self):
         with self.port_pair_group(port_pair_group={}) as pg:
             self._test_create_port_chain({
-                'chain_parameters': {'correlation': 'mpls'},
+                'chain_parameters': {'symmetric': False,
+                                     'correlation': 'mpls'},
                 'port_pair_groups': [pg['port_pair_group']['id']]
             })
 

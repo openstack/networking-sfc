@@ -127,10 +127,10 @@ class CLITestV20PortChainExtensionJSON(test_cli20.CLITestV20Base):
         name = 'myname'
         myid = 'myid'
         args = [name, '--port-pair-group', FAKE_port_pair_group1_UUID,
-                '--chain-parameters', 'symmetric=true']
+                '--chain-parameters', 'symmetric=True']
         position_names = ['name', 'port_pair_groups', 'chain_parameters']
         position_values = [name, [FAKE_port_pair_group1_UUID],
-                           {'symmetric': 'true'}]
+                           {'symmetric': 'True'}]
         self._test_create_resource(resource, cmd, name, myid, args,
                                    position_names, position_values)
 

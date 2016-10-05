@@ -1,4 +1,4 @@
-# Copyright 2015 Futurewei. All rights reserved.
+# Copyright 2017 Futurewei. All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -115,7 +115,15 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
     def test_create_port_chain_all_fields(self):
         self._test_create_port_chain(description='desc',
                                      name='test1',
-                                     chain_parameters={'correlation': 'mpls'},
+                                     chain_parameters={'symmetric': False,
+                                                       'correlation': 'mpls'},
+                                     flow_classifiers=[])
+
+    def test_create_port_chain_all_fields_with_symmetric(self):
+        self._test_create_port_chain(description='desc',
+                                     name='test1',
+                                     chain_parameters={'symmetric': True,
+                                                       'correlation': 'mpls'},
                                      flow_classifiers=[])
 
     def test_create_port_chain_none_chain_parameters(self):
@@ -188,7 +196,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         tenant_id = _uuid()
         data = {'port_chain': {
             'port_pair_groups': [_uuid()],
-            'chain_parameters': {'correlation': 'def'},
+            'chain_parameters': {'symmetric': False, 'correlation': 'def'},
             'tenant_id': tenant_id, 'project_id': tenant_id
         }}
         self.assertRaises(

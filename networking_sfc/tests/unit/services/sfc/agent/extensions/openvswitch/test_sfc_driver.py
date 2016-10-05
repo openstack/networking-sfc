@@ -428,7 +428,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'next_group_id': None,
                 'nsp': 256,
                 'add_fcs': [],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -474,7 +475,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'next_group_id': None,
                 'nsp': 256,
                 'add_fcs': [],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -533,7 +535,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'ethertype': u'IPv4',
                     'destination_port_range_max': 100,
                 }],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -622,7 +625,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'ethertype': u'IPv4',
                     'destination_port_range_max': 100,
                 }],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -699,7 +703,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'segment_id': 33,
                     'gw_mac': '00:01:02:03:06:09',
                     'cidr': '10.0.0.0/8',
-                    'mac_address': '12:34:56:78:cf:23'
+                    'in_mac_address': '12:34:56:78:cf:23'
                 }],
                 'del_fcs': [],
                 'group_refcnt': 1,
@@ -718,7 +722,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'ethertype': 'IPv4',
                     'destination_port_range_max': 100,
                 }],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -791,7 +796,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'segment_id': 33,
                     'gw_mac': '00:01:02:03:06:09',
                     'cidr': '10.0.0.0/8',
-                    'mac_address': '12:34:56:78:cf:23'
+                    'in_mac_address': '12:34:56:78:cf:23'
                 }],
                 'del_fcs': [],
                 'group_refcnt': 1,
@@ -810,7 +815,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'ethertype': 'IPv4',
                     'destination_port_range_max': 100,
                 }],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -889,7 +895,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'segment_id': 33,
                     'gw_mac': '00:01:02:03:06:09',
                     'cidr': '10.0.0.0/8',
-                    'mac_address': '12:34:56:78:cf:23'
+                    'in_mac_address': '12:34:56:78:cf:23'
                 }],
                 'del_fcs': [],
                 'group_refcnt': 1,
@@ -908,7 +914,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'ethertype': 'IPv4',
                     'destination_port_range_max': 100,
                 }],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -995,7 +1002,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'segment_id': 33,
                     'gw_mac': '00:01:02:03:06:09',
                     'cidr': '10.0.0.0/8',
-                    'mac_address': '12:34:56:78:cf:23'
+                    'in_mac_address': '12:34:56:78:cf:23'
                 }],
                 'del_fcs': [],
                 'group_refcnt': 1,
@@ -1014,7 +1021,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'ethertype': 'IPv4',
                     'destination_port_range_max': 100,
                 }],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -1068,6 +1076,171 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.group_mapping
         )
 
+    def test_update_flowrules_srcnode_no_nexthops_add_del_fcs_symmetric(self):
+        self.port_mapping = {
+            '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
+                'port_name': 'src_port',
+                'ofport': 32,
+                'vif_mac': '00:01:02:03:05:07',
+            },
+            '29e38fb2-a643-43b1-baa8-a86596461cd5': {
+                'port_name': 'dst_port',
+                'ofport': 42,
+                'vif_mac': '00:01:02:03:06:08',
+            }
+        }
+        for flow_rule in self.node_flowrules:
+            if flow_rule['fwd_path']:
+                status = []
+                self.agent.update_flow_rules(
+                    {
+                        'nsi': 255,
+                        'ingress': None,
+                        'next_hops': None,
+                        'del_fcs': [{
+                            'source_port_range_min': 100,
+                            'destination_ip_prefix': u'10.200.0.0/16',
+                            'protocol': u'tcp',
+                            'l7_parameters': {},
+                            'source_port_range_max': 100,
+                            'source_ip_prefix': u'10.100.0.0/16',
+                            'destination_port_range_min': 100,
+                            'ethertype': u'IPv4',
+                            'destination_port_range_max': 100,
+                        }],
+                        'group_refcnt': 1,
+                        'node_type': 'src_node',
+                        'egress': u'29e38fb2-a643-43b1-baa8-a86596461cd5',
+                        'next_group_id': None,
+                        'nsp': 256,
+                        'add_fcs': [{
+                            'source_port_range_min': 100,
+                            'destination_ip_prefix': u'10.200.0.0/16',
+                            'protocol': u'tcp',
+                            'l7_parameters': {},
+                            'source_port_range_max': 100,
+                            'source_ip_prefix': u'10.100.0.0/16',
+                            'destination_port_range_min': 100,
+                            'ethertype': u'IPv4',
+                            'destination_port_range_max': 100,
+                        }],
+                        'id': uuidutils.generate_uuid(),
+                        'fwd_path': True
+                    },
+                    status
+                )
+                self.assertEqual(
+                    [],
+                    self.executed_cmds
+                )
+                self.assertEqual(
+                    self.default_flow_rules + [{
+                        'actions': 'normal',
+                        'dl_type': 2048,
+                        'in_port': 42,
+                        'nw_dst': u'10.200.0.0/16',
+                        'nw_proto': 6,
+                        'nw_src': u'10.100.0.0/16',
+                        'priority': 30,
+                        'table': 0,
+                        'tp_dst': '0x64/0xffff',
+                        'tp_src': '0x64/0xffff'
+                    }],
+                    self.added_flows
+                )
+                self.assertEqual(
+                    self.default_delete_flow_rules + [{
+                        'dl_type': 2048,
+                        'in_port': 42,
+                        'nw_dst': u'10.200.0.0/16',
+                        'nw_proto': 6,
+                        'nw_src': u'10.100.0.0/16',
+                        'table': 0,
+                        'tp_dst': '0x64/0xffff',
+                        'tp_src': '0x64/0xffff'
+                    }],
+                    self.deleted_flows
+                )
+                self.assertEqual(
+                    {},
+                    self.group_mapping
+                )
+            else:
+                status = []
+                self.agent.update_flow_rules(
+                    {
+                        'nsi': 255,
+                        'ingress': None,
+                        'next_hops': None,
+                        'del_fcs': [{
+                            'source_port_range_min': 100,
+                            'destination_ip_prefix': u'10.100.0.0/16',
+                            'protocol': u'tcp',
+                            'l7_parameters': {},
+                            'source_port_range_max': 100,
+                            'source_ip_prefix': u'10.200.0.0/16',
+                            'destination_port_range_min': 100,
+                            'ethertype': u'IPv4',
+                            'destination_port_range_max': 100,
+                        }],
+                        'group_refcnt': 1,
+                        'node_type': 'src_node',
+                        'egress': u'8768d2b3-746d-4868-ae0e-e81861c2b4e6',
+                        'next_group_id': None,
+                        'nsp': 256,
+                        'add_fcs': [{
+                            'source_port_range_min': 100,
+                            'destination_ip_prefix': u'10.100.0.0/16',
+                            'protocol': u'tcp',
+                            'l7_parameters': {},
+                            'source_port_range_max': 100,
+                            'source_ip_prefix': u'10.200.0.0/16',
+                            'destination_port_range_min': 100,
+                            'ethertype': u'IPv4',
+                            'destination_port_range_max': 100,
+                        }],
+                        'id': uuidutils.generate_uuid(),
+                        'fwd_path': False
+                    },
+                    status
+                )
+                self.assertEqual(
+                    [],
+                    self.executed_cmds
+                )
+                self.assertEqual(
+                    self.default_flow_rules + [{
+                        'actions': 'normal',
+                        'dl_type': 2048,
+                        'in_port': 32,
+                        'nw_dst': u'10.100.0.0/16',
+                        'nw_proto': 6,
+                        'nw_src': u'10.200.0.0/16',
+                        'priority': 30,
+                        'table': 0,
+                        'tp_dst': '0x64/0xffff',
+                        'tp_src': '0x64/0xffff'
+                    }],
+                    self.added_flows
+                )
+                self.assertEqual(
+                    self.default_delete_flow_rules + [{
+                        'dl_type': 2048,
+                        'in_port': 32,
+                        'nw_dst': u'10.100.0.0/16',
+                        'nw_proto': 6,
+                        'nw_src': u'10.200.0.0/16',
+                        'table': 0,
+                        'tp_dst': '0x64/0xffff',
+                        'tp_src': '0x64/0xffff'
+                    }],
+                    self.deleted_flows
+                )
+                self.assertEqual(
+                    {},
+                    self.group_mapping
+                )
+
     def test_delete_flow_rules_sf_node_empty_del_fcs(self):
         self.port_mapping = {
             'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579': {
@@ -1094,7 +1267,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'next_group_id': None,
                 'nsp': 256,
                 'add_fcs': [],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -1144,7 +1318,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'next_group_id': None,
                 'nsp': 256,
                 'add_fcs': [],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -1199,7 +1374,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'next_group_id': None,
                 'nsp': 256,
                 'add_fcs': [],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -1269,7 +1445,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'next_group_id': None,
                 'nsp': 256,
                 'add_fcs': [],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -1325,7 +1502,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'local_endpoint': '10.0.0.2',
                     'ingress': '8768d2b3-746d-4868-ae0e-e81861c2b4e6',
                     'weight': 1,
-                    'mac_address': '12:34:56:78:cf:23'
+                    'in_mac_address': '12:34:56:78:cf:23'
                 }],
                 'add_fcs': [],
                 'group_refcnt': 1,
@@ -1344,7 +1521,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'ethertype': 'IPv4',
                     'destination_port_range_max': 100,
                 }],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )
@@ -1401,7 +1579,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'local_endpoint': '10.0.0.2',
                     'ingress': '8768d2b3-746d-4868-ae0e-e81861c2b4e6',
                     'weight': 1,
-                    'mac_address': '12:34:56:78:cf:23'
+                    'in_mac_address': '12:34:56:78:cf:23'
                 }],
                 'add_fcs': [],
                 'group_refcnt': 1,
@@ -1420,7 +1598,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'ethertype': 'IPv4',
                     'destination_port_range_max': 100,
                 }],
-                'id': uuidutils.generate_uuid()
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True
             },
             status
         )

@@ -1,4 +1,4 @@
-# Copyright 2015 Futurewei. All rights reserved.
+# Copyright 2017 Futurewei. All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -139,6 +139,7 @@ class PortPairDetail(model_base.BASEV2, model_base.HasId,
     ingress = sa.Column(sa.String(36), nullable=True)
     egress = sa.Column(sa.String(36), nullable=True)
     host_id = sa.Column(sa.String(255), nullable=False)
+    in_mac_address = sa.Column(sa.String(32))
     mac_address = sa.Column(sa.String(32), nullable=False)
     network_type = sa.Column(sa.String(8))
     segment_id = sa.Column(sa.Integer)
@@ -164,6 +165,8 @@ class PathNode(model_base.BASEV2, model_base.HasId, model_base.HasProject):
                                         cascade='all,delete')
     next_group_id = sa.Column(sa.Integer)
     next_hop = sa.Column(sa.String(512))
+    fwd_path = sa.Column(sa.Boolean(),
+                         nullable=False)
 
 
 class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
@@ -182,7 +185,8 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                'status': node['status'],
                'portpair_details': [pair_detail['portpair_id']
                                     for pair_detail in node['portpair_details']
-                                    ]
+                                    ],
+               'fwd_path': node['fwd_path']
                }
 
         return self._fields(res, fields)
@@ -196,6 +200,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                'segment_id': port['segment_id'],
                'local_endpoint': port['local_endpoint'],
                'mac_address': port['mac_address'],
+               'in_mac_address': port['in_mac_address'],
                'network_type': port['network_type'],
                'path_nodes': [{'pathnode_id': node['pathnode_id'],
                                'weight': node['weight']}
@@ -219,14 +224,14 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
             raise NodeNotFound(node_id=id)
         return node
 
-    def _get_port_detail(self, id):
+    def _get_port_pair_detail(self, id):
         try:
             port = self._get_by_id(self.admin_context, PortPairDetail, id)
         except exc.NoResultFound:
             raise PortPairDetailNotFound(port_id=id)
         return port
 
-    def create_port_detail(self, port):
+    def create_port_pair_detail(self, port):
         with self.admin_context.session.begin(subtransactions=True):
             args = self._filter_non_model_columns(port, PortPairDetail)
             args['id'] = uuidutils.generate_uuid()
@@ -305,11 +310,12 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                     node_obj[key] = pds
                 else:
                     node_obj[key] = value
+
             return self._make_pathnode_dict(node_obj)
 
-    def delete_port_detail(self, id):
+    def delete_port_pair_detail(self, id):
         with self.admin_context.session.begin(subtransactions=True):
-            port_obj = self._get_port_detail(id)
+            port_obj = self._get_port_pair_detail(id)
             self.admin_context.session.delete(port_obj)
 
     def delete_path_node(self, id):
@@ -319,7 +325,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
 
     def get_port_detail(self, id):
         with self.admin_context.session.begin(subtransactions=True):
-            port_obj = self._get_port_detail(id)
+            port_obj = self._get_port_pair_detail(id)
             return self._make_port_detail_dict(port_obj)
 
     def get_port_detail_without_exception(self, id):
