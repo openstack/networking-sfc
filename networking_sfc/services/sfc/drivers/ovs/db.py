@@ -64,7 +64,7 @@ def singleton(class_):
 @singleton
 class IDAllocation(object):
     def __init__(self, context):
-        # Get the inital range from conf file.
+        # Get the initial range from conf file.
         conf_obj = {'group': [1, 255], 'portchain': [256, 65536]}
         self.conf_obj = conf_obj
         self.session = context.session
