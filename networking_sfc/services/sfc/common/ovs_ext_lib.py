@@ -12,22 +12,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import collections
 import six
 
+from neutron.agent.common import ovs_lib
+from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
+    as ovs_consts
+from neutron.plugins.ml2.drivers.openvswitch.agent.ovs_agent_extension_api \
+    import OVSCookieBridge
 from neutron_lib import exceptions
 from oslo_log import log as logging
 
-from neutron.agent.common import ovs_lib
-from neutron.agent.common import utils
-from neutron.plugins.common import constants
-from neutron.plugins.ml2.drivers.openvswitch.agent.openflow.ovs_ofctl import (
-    ovs_bridge)
-
-from networking_sfc._i18n import _, _LE
-
-# Special return value for an invalid OVS ofport
-INVALID_OFPORT = '-1'
+from networking_sfc._i18n import _
 
 LOG = logging.getLogger(__name__)
 
@@ -54,92 +49,43 @@ def get_port_mask(min_port, max_port):
     return masks
 
 
-class OVSBridgeExt(ovs_bridge.OVSAgentBridge):
-    def setup_controllers(self, conf):
-        self.set_protocols("[]")
-        self.del_controller()
+class SfcOVSBridgeExt(OVSCookieBridge):
 
-    def dump_flows_full_match(self, flow_str):
-        retval = None
-        flows = self.run_ofctl("dump-flows", [flow_str])
-        if flows:
-            retval = '\n'.join(item for item in flows.splitlines()
-                               if 'NXST' not in item and 'OFPST' not in item)
-        return retval
+    def __init__(self, ovs_bridge):
+        super(SfcOVSBridgeExt, self).__init__(ovs_bridge)
+        # OpenFlow 1.1 for groups
+        self.of_version = ovs_consts.OPENFLOW11
 
-    def mod_flow(self, **kwargs):
-        flow_copy = kwargs.copy()
-        flow_copy.pop('actions')
-        flow_str = ovs_lib._build_flow_expr_str(flow_copy, 'del')
-        dump_flows = self.dump_flows_full_match(flow_str)
-        if dump_flows == '':
-            self.do_action_flows('add', [kwargs])
-        else:
-            self.do_action_flows('mod', [kwargs])
-
-    def add_nsh_tunnel_port(self, port_name, remote_ip, local_ip,
-                            tunnel_type=constants.TYPE_GRE,
-                            vxlan_udp_port=constants.VXLAN_UDP_PORT,
-                            dont_fragment=True,
-                            in_nsp=None,
-                            in_nsi=None):
-        attrs = [('type', tunnel_type)]
-        # This is an OrderedDict solely to make a test happy
-        options = collections.OrderedDict()
-        vxlan_uses_custom_udp_port = (
-            tunnel_type == constants.TYPE_VXLAN and
-            vxlan_udp_port != constants.VXLAN_UDP_PORT
-        )
-        if vxlan_uses_custom_udp_port:
-            options['dst_port'] = vxlan_udp_port
-        options['df_default'] = str(dont_fragment).lower()
-        options['remote_ip'] = 'flow'
-        options['local_ip'] = local_ip
-        options['in_key'] = 'flow'
-        options['out_key'] = 'flow'
-        if in_nsp is not None and in_nsi is not None:
-            options['nsp'] = str(in_nsp)
-            options['nsi'] = str(in_nsi)
-        elif in_nsp is None and in_nsi is None:
-            options['nsp'] = 'flow'
-            options['nsi'] = 'flow'
-        attrs.append(('options', options))
-        ofport = self.add_port(port_name, *attrs)
-        if (
-            tunnel_type == constants.TYPE_VXLAN and
-            ofport == INVALID_OFPORT
-        ):
-            LOG.error(
-                _LE('Unable to create VXLAN tunnel port for service chain. '
-                    'Please ensure that an openvswitch version that supports '
-                    'VXLAN for service chain is installed.')
-            )
-        return ofport
+    def set_protocols(self, protocols):
+        self.of_version = protocols[-1]
+        self.bridge.set_protocols(protocols)
 
     def run_ofctl(self, cmd, args, process_input=None):
-        # We need to dump-groups according to group Id,
-        # which is a feature of OpenFlow1.5
-        full_args = [
-            "ovs-ofctl", "-O openflow13", cmd, self.br_name
-        ] + args
-        LOG.debug('execute ovs command %s %s', full_args, process_input)
-        try:
-            return utils.execute(full_args, run_as_root=True,
-                                 process_input=process_input)
-        except Exception as e:
-            LOG.exception(e)
-            LOG.error(_LE("Unable to execute %(args)s."),
-                      {'args': full_args})
+        return self.bridge.run_ofctl(
+            cmd, ["-O " + self.of_version] + args, process_input)
+
+    def do_action_flows(self, action, kwargs_list):
+        # We force our own run_ofctl to keep OpenFlow version parameter
+        for kw in kwargs_list:
+            kw.setdefault('cookie', self._cookie)
+
+            if action is 'mod' or action is 'del':
+                kw['cookie'] = ovs_lib.check_cookie_mask(str(kw['cookie']))
+
+        flow_strs = [ovs_lib._build_flow_expr_str(kw, action)
+                     for kw in kwargs_list]
+        self.run_ofctl('%s-flows' % action, ['-'], '\n'.join(flow_strs))
 
     def do_action_groups(self, action, kwargs_list):
         group_strs = [_build_group_expr_str(kw, action) for kw in kwargs_list]
         if action == 'add' or action == 'del':
-            self.run_ofctl('%s-groups' % action, ['-'], '\n'.join(group_strs))
+            cmd = '%s-groups' % action
         elif action == 'mod':
-            self.run_ofctl('%s-group' % action, ['-'], '\n'.join(group_strs))
+            cmd = '%s-group' % action
         else:
             msg = _("Action is illegal")
             raise exceptions.InvalidInput(error_message=msg)
+        self.run_ofctl(cmd, ['-'], '\n'.join(group_strs))
 
     def add_group(self, **kwargs):
         self.do_action_groups('add', [kwargs])

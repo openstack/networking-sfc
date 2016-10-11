@@ -8,6 +8,7 @@ function networking_sfc_install {
 function networking_sfc_configure_common {
     _neutron_service_plugin_class_add $NEUTRON_FLOWCLASSIFIER_PLUGIN
     _neutron_service_plugin_class_add $NEUTRON_SFC_PLUGIN
+    iniset /$Q_PLUGIN_CONF_FILE agent extensions "sfc"
     iniset $NEUTRON_CONF DEFAULT service_plugins $Q_SERVICE_PLUGIN_CLASSES
     iniadd $NEUTRON_CONF sfc drivers $NEUTRON_SFC_DRIVERS
     iniadd $NEUTRON_CONF flowclassifier drivers $NEUTRON_FLOWCLASSIFIER_DRIVERS

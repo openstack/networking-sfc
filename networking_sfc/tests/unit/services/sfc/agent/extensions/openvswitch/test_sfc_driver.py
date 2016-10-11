@@ -1,16 +1,17 @@
-# Copyright 2015 Huawei.  All rights reserved.
+# Copyright 2015 Huawei.
+# Copyright 2016 Red Hat, Inc.
 #
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#         http://www.apache.org/licenses/LICENSE-2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import mock
 import six
@@ -20,57 +21,62 @@ from oslo_utils import uuidutils
 
 from neutron.agent.common import ovs_lib
 from neutron.agent.common import utils
-from neutron.agent import rpc as agent_rpc
-from neutron import context
-from neutron.tests.unit.plugins.ml2.drivers.openvswitch.agent \
-    import ovs_test_base
+from neutron.plugins.ml2.drivers.openvswitch.agent import (
+    ovs_agent_extension_api as ovs_ext_api)
+from neutron.plugins.ml2.drivers.openvswitch.agent.openflow.ovs_ofctl import (
+    ovs_bridge)
 
-from networking_sfc.services.sfc.agent import agent
-from networking_sfc.services.sfc.agent import br_int
-from networking_sfc.services.sfc.agent import br_phys
-from networking_sfc.services.sfc.agent import br_tun
+from neutron.tests.unit.plugins.ml2.drivers.openvswitch.agent import (
+    ovs_test_base)
+
+from networking_sfc.services.sfc.agent.extensions.openvswitch import sfc_driver
 from networking_sfc.services.sfc.common import ovs_ext_lib
 
 
-class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
-    def setUp(self):
-        super(OVSSfcAgentTestCase, self).setUp()
-        mock.patch(
-            'neutron.agent.common.ovs_lib.OVSBridge.get_ports_attributes',
-            return_value=[]
-        ).start()
+class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
+    def _clear_local_entries(self):
         self.executed_cmds = []
         self.node_flowrules = []
-        self.backup_plugin_rpc = agent.SfcPluginApi
-        self.plugin_rpc = mock.Mock()
-        self.plugin_rpc.get_flowrules_by_host_portid = mock.Mock(
-            side_effect=self.mock_get_flowrules_by_host_portid
-        )
-        self.plugin_rpc.get_all_src_node_flowrules = mock.Mock(
-            side_effect=self.mock_get_all_src_node_flowrules
-        )
-        agent.SfcPluginApi = mock.Mock(
-            return_value=self.plugin_rpc
-        )
-        self.create_consumers = mock.patch.object(
-            agent_rpc, "create_consumers",
-            self.mock_create_consumers
-        )
-        self.create_consumers.start()
+        self.added_flows = []
+        self.deleted_flows = []
+        self.group_mapping = {}
+        self.deleted_groups = []
+        self.port_mapping = {}
+
+    def setUp(self):
+        cfg.CONF.set_override('local_ip', '10.0.0.1', 'OVS')
+        super(SfcAgentDriverTestCase, self).setUp()
+        self._clear_local_entries()
+
         self.execute = mock.patch.object(
             utils, "execute", self.mock_execute,
             spec=utils.execute)
         self.execute.start()
-        self.added_flows = []
-        self.add_flow = mock.patch.object(
-            ovs_lib.OVSBridge, "add_flow", self.mock_add_flow
+
+        self.set_protocols = mock.patch(
+            'neutron.agent.common.ovs_lib.OVSBridge.set_protocols')
+        self.set_protocols.start()
+        self.add_flow = mock.patch(
+            "neutron.agent.common.ovs_lib.OVSBridge.add_flow",
+            self.mock_add_flow
         )
         self.add_flow.start()
-        self.deleted_flows = []
+        self.add_flow_cookie = mock.patch(
+            'neutron.plugins.ml2.drivers.openvswitch.agent'
+            + '.ovs_agent_extension_api.OVSCookieBridge.add_flow',
+            self.mock_add_flow
+        )
+        self.add_flow_cookie.start()
         self.delete_flows = mock.patch.object(
             ovs_lib.OVSBridge, "delete_flows", self.mock_delete_flows
         )
         self.delete_flows.start()
+        self.delete_flows_cookie = mock.patch(
+            'neutron.plugins.ml2.drivers.openvswitch'
+            + '.agent.ovs_agent_extension_api.OVSCookieBridge.delete_flows',
+            self.mock_delete_flows
+        )
+        self.delete_flows_cookie.start()
         self.int_patch = 1
         self.tun_patch = 2
         self.default_port_mapping = {
@@ -81,14 +87,13 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'ofport': self.tun_patch
             }
         }
-        self.port_mapping = {}
         self.get_vif_port_by_id = mock.patch.object(
             ovs_lib.OVSBridge, "get_vif_port_by_id",
             self.mock_get_vif_port_by_id
         )
         self.get_vif_port_by_id.start()
         self.get_vlan_by_port = mock.patch.object(
-            agent.OVSSfcAgent, "_get_vlan_by_port",
+            sfc_driver.SfcOVSAgentDriver, "_get_vlan_by_port",
             self.mock_get_vlan_by_port
         )
         self.get_vlan_by_port.start()
@@ -102,12 +107,7 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.mock_set_secure_mode
         )
         self.set_secure_mode.start()
-        self.protocols = []
-        self.set_protocols = mock.patch.object(
-            ovs_lib.OVSBridge, "set_protocols",
-            self.mock_set_protocols
-        )
-        self.set_protocols.start()
+
         self.del_controller = mock.patch.object(
             ovs_lib.OVSBridge, "del_controller",
             self.mock_del_controller
@@ -166,36 +166,35 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.group_mapping = {}
         self.deleted_groups = []
         self.dump_group_for_id = mock.patch.object(
-            ovs_ext_lib.OVSBridgeExt, "dump_group_for_id",
+            ovs_ext_lib.SfcOVSBridgeExt, "dump_group_for_id",
             self.mock_dump_group_for_id
         )
         self.dump_group_for_id.start()
         self.add_group = mock.patch.object(
-            ovs_ext_lib.OVSBridgeExt, "add_group",
+            ovs_ext_lib.SfcOVSBridgeExt, "add_group",
             self.mock_add_group
         )
         self.add_group.start()
         self.mod_group = mock.patch.object(
-            ovs_ext_lib.OVSBridgeExt, "mod_group",
+            ovs_ext_lib.SfcOVSBridgeExt, "mod_group",
             self.mock_mod_group
         )
         self.mod_group.start()
         self.delete_group = mock.patch.object(
-            ovs_ext_lib.OVSBridgeExt, "delete_group",
+            ovs_ext_lib.SfcOVSBridgeExt, "delete_group",
             self.mock_delete_group
         )
         self.delete_group.start()
-        self.local_ip = '10.0.0.1'
-        self.bridge_classes = {
-            'br_int': br_int.OVSIntegrationBridge,
-            'br_phys': br_phys.OVSPhysicalBridge,
-            'br_tun': br_tun.OVSTunnelBridge,
-        }
-        cfg.CONF.set_override('tunnel_types', ['vxlan', 'gre'], 'AGENT')
-        cfg.CONF.set_override('local_ip', self.local_ip, 'OVS')
-        self.context = context.get_admin_context_without_session()
+
+        self.sfc_driver = sfc_driver.SfcOVSAgentDriver()
+        self.agent_api = ovs_ext_api.OVSAgentExtensionAPI(
+            ovs_bridge.OVSAgentBridge('br-int'),
+            ovs_bridge.OVSAgentBridge('br-tun'))
+        self.sfc_driver.consume_api(self.agent_api)
+        self.sfc_driver.initialize()
+
         self.default_flow_rules = [{
-            'actions': 'resubmit(,10)', 'dl_type': 34887,
+            'actions': 'resubmit(,10)', 'eth_type': 34887,
             'priority': 20, 'table': 0
         }, {
             'actions': 'drop', 'priority': 0, 'table': 10
@@ -205,24 +204,6 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
         }, {
             'table': 10
         }]
-        self.init_agent()
-
-    def init_agent(self):
-        self.added_flows = []
-        self.deleted_flows = []
-        self.group_mapping = {}
-        self.deleted_groups = []
-        self.agent = agent.OVSSfcAgent(
-            self.bridge_classes,
-            cfg.CONF
-        )
-
-    def mock_create_consumers(
-        self, endpoints, prefix, topic_details, start_listening=True
-    ):
-        self.added_flows = []
-        self.deleted_flows = []
-        return mock.Mock()
 
     def mock_delete_group(self, group_id):
         if group_id == 'all':
@@ -252,9 +233,6 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
 
     def mock_set_secure_mode(self):
         pass
-
-    def mock_set_protocols(self, protocols):
-        self.protocols = protocols
 
     def mock_del_controller(self):
         pass
@@ -293,7 +271,7 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 port_values['ofport'],
                 port_id,
                 port_values['vif_mac'],
-                self.agent.int_br
+                self.sfc_driver.br_int
             )
 
     def mock_get_vlan_by_port(self, port_id):
@@ -308,7 +286,7 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     port_values['ofport'],
                     port_id,
                     port_values['vif_mac'],
-                    self.agent.int_br
+                    self.sfc_driver.br_int
                 )
             )
         return vif_ports
@@ -396,16 +374,16 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.executed_cmds.append(' '.join(cmd))
 
     def tearDown(self):
-        agent.SfcPluginApi = self.backup_plugin_rpc
-        self.create_consumers.stop()
         self.execute.stop()
+        self.set_protocols.stop()
         self.add_flow.stop()
+        self.add_flow_cookie.stop()
         self.delete_flows.stop()
+        self.delete_flows_cookie.stop()
         self.get_vif_port_by_id.stop()
         self.get_vlan_by_port.stop()
         self.get_port_ofport.stop()
         self.set_secure_mode.stop()
-        self.set_protocols.stop()
         self.del_controller.stop()
         self.get_bridges.stop()
         self.get_vif_ports.stop()
@@ -421,43 +399,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.add_group.stop()
         self.mod_group.stop()
         self.delete_group.stop()
-        self.node_flowrules = []
-        self.added_flows = []
-        self.deleted_flows = []
-        self.group_mapping = {}
-        self.deleted_groups = []
-        self.port_mapping = {}
-        super(OVSSfcAgentTestCase, self).tearDown()
-
-    def test_update_empty_flow_rules(self):
-        self.port_mapping = {
-            'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579': {
-                'port_name': 'src_port',
-                'ofport': 6,
-                'vif_mac': '00:01:02:03:05:07',
-            },
-            '2f1d2140-42ce-4979-9542-7ef25796e536': {
-                'port_name': 'dst_port',
-                'ofport': 42,
-                'vif_mac': '00:01:02:03:06:08',
-            }
-        }
-        self.agent.update_flow_rules(
-            self.context, flowrule_entries={
-            }
-        )
-        self.assertEqual(
-            [],
-            self.executed_cmds
-        )
-        self.assertEqual(
-            self.default_flow_rules + [],
-            self.added_flows
-        )
-        self.assertEqual(
-            {},
-            self.group_mapping
-        )
+        self._clear_local_entries()
+        super(SfcAgentDriverTestCase, self).tearDown()
 
     def test_update_flow_rules_sf_node_empty_next_hops(self):
         self.port_mapping = {
@@ -472,8 +415,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'vif_mac': '00:01:02:03:06:08',
             }
         }
-        self.agent.update_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
                 'nsi': 254,
                 'ingress': u'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579',
                 'next_hops': None,
@@ -485,7 +429,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'nsp': 256,
                 'add_fcs': [],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -516,8 +461,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'vif_mac': '00:01:02:03:06:08',
             }
         }
-        self.agent.update_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
                 'nsi': 254,
                 'ingress': None,
                 'next_hops': None,
@@ -529,7 +475,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'nsp': 256,
                 'add_fcs': [],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -553,8 +500,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         }
 
-        self.agent.update_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
                 'nsi': 255,
                 'ingress': None,
                 'next_hops': None,
@@ -586,7 +534,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'destination_port_range_max': 100,
                 }],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -639,8 +588,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             }
         }
 
-        self.agent.update_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
                 'nsi': 255,
                 'ingress': '2f1d2140-42ce-4979-9542-7ef25796e536',
                 'next_hops': None,
@@ -672,7 +622,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'destination_port_range_max': 100,
                 }],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -732,8 +683,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'vif_mac': '00:01:02:03:06:08',
             }
         }
-        self.agent.update_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
                 'nsi': 255,
                 'ingress': None,
                 'next_hops': [{
@@ -765,7 +717,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'destination_port_range_max': 100,
                 }],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -822,8 +775,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'vif_mac': '00:01:02:03:06:08',
             }
         }
-        self.agent.update_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
                 'nsi': 255,
                 'ingress': None,
                 'next_hops': [{
@@ -855,7 +809,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'destination_port_range_max': 100,
                 }],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -918,8 +873,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             },
 
         }
-        self.agent.update_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
                 'nsi': 255,
                 'ingress': '6331a00d-779b-462b-b0e4-6a65aa3164ef',
                 'next_hops': [{
@@ -951,7 +907,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'destination_port_range_max': 100,
                 }],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -1022,8 +979,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
             },
 
         }
-        self.agent.update_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
                 'nsi': 255,
                 'ingress': '6331a00d-779b-462b-b0e4-6a65aa3164ef',
                 'next_hops': [{
@@ -1055,7 +1013,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'destination_port_range_max': 100,
                 }],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -1120,8 +1079,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'vif_mac': '00:01:02:03:06:08',
             }
         }
-        self.agent.delete_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.delete_flow_rule(
+            {
                 'nsi': 254,
                 'ingress': u'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579',
                 'next_hops': None,
@@ -1133,7 +1093,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'nsp': 256,
                 'add_fcs': [],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -1168,8 +1129,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'vif_mac': '00:01:02:03:06:08',
             }
         }
-        self.agent.delete_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.delete_flow_rule(
+            {
                 'nsi': 254,
                 'ingress': None,
                 'next_hops': None,
@@ -1181,7 +1143,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'nsp': 256,
                 'add_fcs': [],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -1211,8 +1174,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'vif_mac': '00:01:02:03:06:08',
             }
         }
-        self.agent.delete_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.delete_flow_rule(
+            {
                 'nsi': 254,
                 'ingress': u'dd7374b9-a6ac-4a66-a4a6-7d3dee2a1579',
                 'next_hops': None,
@@ -1234,7 +1198,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'nsp': 256,
                 'add_fcs': [],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -1278,8 +1243,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'vif_mac': '00:01:02:03:06:08',
             }
         }
-        self.agent.delete_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.delete_flow_rule(
+            {
                 'nsi': 254,
                 'ingress': None,
                 'next_hops': None,
@@ -1301,7 +1267,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'nsp': 256,
                 'add_fcs': [],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -1340,8 +1307,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'vif_mac': '00:01:02:03:06:08',
             }
         }
-        self.agent.delete_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.delete_flow_rule(
+            {
                 'nsi': 255,
                 'ingress': None,
                 'next_hops': [{
@@ -1373,7 +1341,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'destination_port_range_max': 100,
                 }],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -1413,8 +1382,9 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'vif_mac': '00:01:02:03:06:08',
             }
         }
-        self.agent.delete_flow_rules(
-            self.context, flowrule_entries={
+        status = []
+        self.sfc_driver.delete_flow_rule(
+            {
                 'nsi': 255,
                 'ingress': '8768d2b3-746d-4868-ae0e-e81861c2b4e6',
                 'next_hops': [{
@@ -1446,7 +1416,8 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'destination_port_range_max': 100,
                 }],
                 'id': uuidutils.generate_uuid()
-            }
+            },
+            status
         )
         self.assertEqual(
             [],
@@ -1479,12 +1450,10 @@ class OVSSfcAgentTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
 
     def test_init_agent_empty_flowrules(self):
-        self.node_flowrules = []
-        self.init_agent()
         self.assertEqual(
             [{
                 'actions': 'resubmit(,10)',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 20,
                 'table': 0
             }, {
