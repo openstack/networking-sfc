@@ -433,7 +433,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -479,7 +480,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -538,7 +540,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 --strict -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -567,7 +571,16 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'tp_dst': '0x64/0xffff',
                 'tp_src': '0x64/0xffff'
             }],
-            self.deleted_flows
+            [{'table': 5},
+             {'table': 10},
+             {'dl_type': 2048,
+              'in_port': 42,
+              'nw_dst': u'10.200.0.0/16',
+              'nw_proto': 6,
+              'nw_src': u'10.100.0.0/16',
+              'table': 0,
+              'tp_dst': '0x64/0xffff',
+              'tp_src': '0x64/0xffff'}]
         )
         self.assertEqual(
             {},
@@ -626,7 +639,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 --strict -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -663,7 +678,16 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'tp_dst': '0x64/0xffff',
                 'tp_src': '0x64/0xffff'
             }],
-            self.deleted_flows
+            [{'table': 5},
+             {'table': 10},
+             {'dl_type': 2048,
+              'in_port': 42,
+              'nw_dst': u'10.200.0.0/16',
+              'nw_proto': 6,
+              'nw_src': u'10.100.0.0/16',
+              'table': 0,
+              'tp_dst': '0x64/0xffff',
+              'tp_src': '0x64/0xffff'}]
         )
         self.assertEqual(
             {},
@@ -721,7 +745,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -813,7 +838,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -911,7 +937,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -1017,7 +1044,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -1097,7 +1125,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -1107,7 +1137,12 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'mpls_label': 65791,
                 'table': 10
             }],
-            self.deleted_flows
+            [{'table': 5},
+             {'table': 10},
+             {'dl_dst': '00:01:02:03:05:07',
+              'dl_type': 34887,
+              'mpls_label': 65791,
+              'table': 10}]
         )
         self.assertEqual(
             [
@@ -1147,12 +1182,13 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -'],
             self.executed_cmds
         )
         self.assertEqual(
             self.default_delete_flow_rules + [],
-            self.deleted_flows
+            [{'table': 5}, {'table': 10}]
         )
         self.assertEqual(
             [
@@ -1202,7 +1238,10 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 --strict -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -1221,7 +1260,20 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'mpls_label': 65791,
                 'table': 10
             }],
-            self.deleted_flows
+            [{'table': 5},
+             {'table': 10},
+             {'dl_type': 2048,
+              'in_port': 42,
+              'nw_dst': u'10.200.0.0/16',
+              'nw_proto': 6,
+              'nw_src': '10.100.0.0/16',
+              'table': 0,
+              'tp_dst': '0x64/0xffff',
+              'tp_src': '0x64/0xffff'},
+             {'dl_dst': '00:01:02:03:05:07',
+              'dl_type': 34887,
+              'mpls_label': 65791,
+              'table': 10}]
         )
         self.assertEqual(
             [
@@ -1271,7 +1323,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 --strict -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -1285,7 +1339,16 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'tp_dst': '0x64/0xffff',
                 'tp_src': '0x64/0xffff'
             }],
-            self.deleted_flows
+            [{'table': 5},
+             {'table': 10},
+             {'dl_type': 2048,
+              'in_port': 42,
+              'nw_dst': u'10.200.0.0/16',
+              'nw_proto': 6,
+              'nw_src': '10.100.0.0/16',
+              'table': 0,
+              'tp_dst': '0x64/0xffff',
+              'tp_src': '0x64/0xffff'}]
         )
         self.assertEqual(
             [
@@ -1345,7 +1408,10 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 --strict -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -1362,7 +1428,17 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'dl_dst': '12:34:56:78:cf:23',
                 'table': 5
             }],
-            self.deleted_flows
+            [{'table': 5},
+             {'table': 10},
+             {'dl_type': 2048,
+              'in_port': 42,
+              'nw_dst': u'10.200.0.0/16',
+              'nw_proto': 6,
+              'nw_src': '10.100.0.0/16',
+              'table': 0,
+              'tp_dst': '0x64/0xffff',
+              'tp_src': '0x64/0xffff'},
+             {'dl_dst': '12:34:56:78:cf:23', 'table': 5}]
         )
         self.assertEqual(
             ['all', 1],
@@ -1420,7 +1496,11 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             status
         )
         self.assertEqual(
-            [],
+            ['ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 --strict -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -',
+             'ovs-ofctl del-flows br-int -O OpenFlow13 -'],
             self.executed_cmds
         )
         self.assertEqual(
@@ -1442,7 +1522,21 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'mpls_label': 65792,
                 'table': 10
             }],
-            self.deleted_flows
+            [{'table': 5},
+             {'table': 10},
+             {'dl_type': 2048,
+              'in_port': 42,
+              'nw_dst': u'10.200.0.0/16',
+              'nw_proto': 6,
+              'nw_src': '10.100.0.0/16',
+              'table': 0,
+              'tp_dst': '0x64/0xffff',
+              'tp_src': '0x64/0xffff'},
+             {'dl_dst': '12:34:56:78:cf:23', 'table': 5},
+             {'dl_dst': '00:01:02:03:05:07',
+              'dl_type': 34887,
+              'mpls_label': 65792,
+              'table': 10}]
         )
         self.assertEqual(
             ['all', 1],
