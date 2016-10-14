@@ -44,6 +44,14 @@ extensions_path = ':'.join(extensions.__path__ + nextensions.__path__)
 class SfcDbPluginTestCaseBase(
     base.BaseTestCase
 ):
+    def _assert_port_chain_equal(self, res_port_chain, expected):
+        # Flow classifiers are stored in a list, only check items for them
+        for k, v in six.iteritems(expected):
+            if type(v) is list:
+                self.assertItemsEqual(res_port_chain[k], v)
+            else:
+                self.assertEqual(res_port_chain[k], v)
+
     def _create_port_chain(
         self, fmt, port_chain=None, expected_res_status=None, **kwargs
     ):
@@ -790,8 +798,7 @@ class SfcDbPluginTestCase(
                     self.fmt, req.get_response(self.ext_api)
                 )
                 expected = self._get_expected_port_chain(pc['port_chain'])
-                for k, v in six.iteritems(expected):
-                    self.assertEqual(res['port_chain'][k], v)
+                self._assert_port_chain_equal(res['port_chain'], expected)
 
     def test_show_port_chain_noexist(self):
         req = self.new_show_request(
@@ -842,16 +849,18 @@ class SfcDbPluginTestCase(
                         )
                         expected = pc['port_chain']
                         expected.update(updates)
-                        for k, v in six.iteritems(expected):
-                            self.assertEqual(res['port_chain'][k], v)
+                        self._assert_port_chain_equal(
+                            res['port_chain'], expected
+                        )
                         req = self.new_show_request(
                             'port_chains', pc['port_chain']['id']
                         )
                         res = self.deserialize(
                             self.fmt, req.get_response(self.ext_api)
                         )
-                        for k, v in six.iteritems(expected):
-                            self.assertEqual(res['port_chain'][k], v)
+                        self._assert_port_chain_equal(
+                            res['port_chain'], expected
+                        )
 
     def test_update_port_chain_remove_flow_classifiers(self):
         with self.port(
@@ -897,16 +906,18 @@ class SfcDbPluginTestCase(
                         )
                         expected = pc['port_chain']
                         expected.update(updates)
-                        for k, v in six.iteritems(expected):
-                            self.assertEqual(res['port_chain'][k], v)
+                        self._assert_port_chain_equal(
+                            res['port_chain'], expected
+                        )
                         req = self.new_show_request(
                             'port_chains', pc['port_chain']['id']
                         )
                         res = self.deserialize(
                             self.fmt, req.get_response(self.ext_api)
                         )
-                        for k, v in six.iteritems(expected):
-                            self.assertEqual(res['port_chain'][k], v)
+                        self._assert_port_chain_equal(
+                            res['port_chain'], expected
+                        )
 
     def test_update_port_chain_replace_flow_classifiers(self):
         with self.port(
@@ -947,16 +958,18 @@ class SfcDbPluginTestCase(
                         )
                         expected = pc['port_chain']
                         expected.update(updates)
-                        for k, v in six.iteritems(expected):
-                            self.assertEqual(res['port_chain'][k], v)
+                        self._assert_port_chain_equal(
+                            res['port_chain'], expected
+                        )
                         req = self.new_show_request(
                             'port_chains', pc['port_chain']['id']
                         )
                         res = self.deserialize(
                             self.fmt, req.get_response(self.ext_api)
                         )
-                        for k, v in six.iteritems(expected):
-                            self.assertEqual(res['port_chain'][k], v)
+                        self._assert_port_chain_equal(
+                            res['port_chain'], expected
+                        )
 
     def test_update_port_chain_flow_classifiers_basic_the_same(self):
         with self.port(
@@ -999,16 +1012,18 @@ class SfcDbPluginTestCase(
                         )
                         expected = pc['port_chain']
                         expected.update(updates)
-                        for k, v in six.iteritems(expected):
-                            self.assertEqual(res['port_chain'][k], v)
+                        self._assert_port_chain_equal(
+                            res['port_chain'], expected
+                        )
                         req = self.new_show_request(
                             'port_chains', pc['port_chain']['id']
                         )
                         res = self.deserialize(
                             self.fmt, req.get_response(self.ext_api)
                         )
-                        for k, v in six.iteritems(expected):
-                            self.assertEqual(res['port_chain'][k], v)
+                        self._assert_port_chain_equal(
+                            res['port_chain'], expected
+                        )
 
     def test_update_port_chain_conflict_flow_classifiers(self):
         with self.port(
@@ -1080,16 +1095,14 @@ class SfcDbPluginTestCase(
                 )
                 expected = pc['port_chain']
                 expected.update(updates)
-                for k, v in six.iteritems(expected):
-                    self.assertEqual(res['port_chain'][k], v)
+                self._assert_port_chain_equal(res['port_chain'], expected)
                 req = self.new_show_request(
                     'port_chains', pc['port_chain']['id']
                 )
                 res = self.deserialize(
                     self.fmt, req.get_response(self.ext_api)
                 )
-                for k, v in six.iteritems(expected):
-                    self.assertEqual(res['port_chain'][k], v)
+                self._assert_port_chain_equal(res['port_chain'], expected)
 
     def test_update_port_chain_remove_port_pair_groups(self):
         with self.port_pair_group(
@@ -1118,16 +1131,14 @@ class SfcDbPluginTestCase(
                 )
                 expected = pc['port_chain']
                 expected.update(updates)
-                for k, v in six.iteritems(expected):
-                    self.assertEqual(res['port_chain'][k], v)
+                self._assert_port_chain_equal(res['port_chain'], expected)
                 req = self.new_show_request(
                     'port_chains', pc['port_chain']['id']
                 )
                 res = self.deserialize(
                     self.fmt, req.get_response(self.ext_api)
                 )
-                for k, v in six.iteritems(expected):
-                    self.assertEqual(res['port_chain'][k], v)
+                self._assert_port_chain_equal(res['port_chain'], expected)
 
     def test_update_port_chain_replace_port_pair_groups(self):
         with self.port_pair_group(
@@ -1151,16 +1162,14 @@ class SfcDbPluginTestCase(
                 )
                 expected = pc['port_chain']
                 expected.update(updates)
-                for k, v in six.iteritems(expected):
-                    self.assertEqual(res['port_chain'][k], v)
+                self._assert_port_chain_equal(res['port_chain'], expected)
                 req = self.new_show_request(
                     'port_chains', pc['port_chain']['id']
                 )
                 res = self.deserialize(
                     self.fmt, req.get_response(self.ext_api)
                 )
-                for k, v in six.iteritems(expected):
-                    self.assertEqual(res['port_chain'][k], v)
+                self._assert_port_chain_equal(res['port_chain'], expected)
 
     def test_update_port_chain_chain_parameters(self):
         with self.port_pair_group(
