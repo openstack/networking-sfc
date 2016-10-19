@@ -1,4 +1,5 @@
 # Copyright 2017 Futurewei. All rights reserved.
+# Copyright 2017 Intel Corporation.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -175,3 +176,21 @@ class SfcDriverManager(NamedExtensionManager):
 
     def delete_port_pair_group_postcommit(self, context):
         self._call_drivers("delete_port_pair_group_postcommit", context)
+
+    def create_service_graph_precommit(self, context):
+        self._call_drivers("create_service_graph_precommit", context)
+
+    def create_service_graph_postcommit(self, context):
+        self._call_drivers("create_service_graph_postcommit", context)
+
+    def update_service_graph_precommit(self, context):
+        self._call_drivers("update_service_graph_precommit", context)
+
+    def update_service_graph_postcommit(self, context):
+        self._call_drivers("update_service_graph_postcommit", context)
+
+    def delete_service_graph_precommit(self, context):
+        self._call_drivers("delete_service_graph_precommit", context)
+
+    def delete_service_graph_postcommit(self, context):
+        self._call_drivers("delete_service_graph_postcommit", context)

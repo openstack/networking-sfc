@@ -38,6 +38,11 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
         Update port pair
         Delete port pair
         Show port pair
+        List Service Graphs
+        Create Service Graph
+        Update Service Graph
+        Delete Service Graph
+        Show Service Graphs
     """
     @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076469')
     def test_create_port_pair_different_ingress_egress(self):

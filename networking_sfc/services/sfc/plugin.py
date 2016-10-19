@@ -19,6 +19,7 @@ from oslo_utils import excutils
 from neutron.db import api as db_api
 
 from networking_sfc.db import sfc_db
+from networking_sfc.extensions import servicegraph as sg_ext
 from networking_sfc.extensions import sfc as sfc_ext
 from networking_sfc.services.sfc.common import context as sfc_ctx
 from networking_sfc.services.sfc.common import exceptions as sfc_exc
@@ -31,7 +32,7 @@ LOG = logging.getLogger(__name__)
 class SfcPlugin(sfc_db.SfcDbPlugin):
     """SFC plugin implementation."""
 
-    supported_extension_aliases = [sfc_ext.SFC_EXT]
+    supported_extension_aliases = [sfc_ext.SFC_EXT, sg_ext.SG_EXT]
     path_prefix = sfc_ext.SFC_PREFIX
 
     def __init__(self):
@@ -240,3 +241,15 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
                 portpairgroup_context)
         self.driver_manager.delete_port_pair_group_postcommit(
             portpairgroup_context)
+
+    @log_helpers.log_method_call
+    def create_service_graph(self, context, service_graph):
+        pass
+
+    @log_helpers.log_method_call
+    def update_service_graph(self, context, id, service_graph):
+        pass
+
+    @log_helpers.log_method_call
+    def delete_service_graph(self, context, id):
+        pass

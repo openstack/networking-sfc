@@ -1,4 +1,5 @@
 # Copyright 2015 Futurewei. All rights reserved.
+# Copyright 2017 Intel Corporation.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -115,3 +116,21 @@ class SfcDriverBase(SfcDriverBaseLegacy):
 
     def update_port_pair_group_postcommit(self, context):
         self.update_port_pair_group(context)
+
+    def create_service_graph_precommit(self, context):
+        pass
+
+    def create_service_graph_postcommit(self, context):
+        pass
+
+    def update_service_graph_precommit(self, context):
+        pass
+
+    def update_service_graph_postcommit(self, context):
+        pass
+
+    def delete_service_graph_precommit(self, context):
+        pass
+
+    def delete_service_graph_postcommit(self, context):
+        pass

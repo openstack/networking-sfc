@@ -61,3 +61,27 @@ class DummyDriver(sfc_driver.SfcDriverBase):
     @log_helpers.log_method_call
     def update_port_pair(self, context):
         pass
+
+    @log_helpers.log_method_call
+    def create_service_graph_precommit(self, context):
+        pass
+
+    @log_helpers.log_method_call
+    def create_service_graph_postcommit(self, context):
+        pass
+
+    @log_helpers.log_method_call
+    def update_service_graph_precommit(self, context):
+        pass
+
+    @log_helpers.log_method_call
+    def update_service_graph_postcommit(self, context):
+        pass
+
+    @log_helpers.log_method_call
+    def delete_service_graph_precommit(self, context):
+        pass
+
+    @log_helpers.log_method_call
+    def delete_service_graph_postcommit(self, context):
+        pass

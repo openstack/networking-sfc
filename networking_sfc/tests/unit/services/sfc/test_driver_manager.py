@@ -187,3 +187,39 @@ class DriverManagerTestCase(base.BaseTestCase):
 
     def test_delete_port_pair_postcommit_exception(self):
         self._test_method_exception("delete_port_pair_postcommit")
+
+    def test_create_service_graph_precommit_called(self):
+        self._test_method_called("create_service_graph_precommit")
+
+    def test_create_service_graph_precommit_exception(self):
+        self._test_method_exception("create_service_graph_precommit")
+
+    def test_create_service_graph_postcommit_called(self):
+        self._test_method_called("create_service_graph_postcommit")
+
+    def test_create_service_graph_postcommit_exception(self):
+        self._test_method_exception("create_service_graph_postcommit")
+
+    def test_update_service_graph_precommit_called(self):
+        self._test_method_called("update_service_graph_precommit")
+
+    def test_update_service_graph_precommit_exception(self):
+        self._test_method_exception("update_service_graph_precommit")
+
+    def test_update_service_graph_postcommit_called(self):
+        self._test_method_called("update_service_graph_postcommit")
+
+    def test_update_service_graph_postcommit_exception(self):
+        self._test_method_exception("update_service_graph_postcommit")
+
+    def test_delete_service_graph_precommit_called(self):
+        self._test_method_called("delete_service_graph_precommit")
+
+    def test_delete_service_graph_precommit_exception(self):
+        self._test_method_exception("delete_service_graph_precommit")
+
+    def test_delete_service_graph_postcommit_called(self):
+        self._test_method_called("delete_service_graph_postcommit")
+
+    def test_delete_service_graph_postcommit_exception(self):
+        self._test_method_exception("delete_service_graph_postcommit")
