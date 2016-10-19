@@ -73,13 +73,10 @@ class PortPairGroupCreate(extension.ClientExtensionCreate, PortPairGroup):
         add_common_arguments(parser)
         parser.add_argument(
             '--port-pair-group-parameters',
-            metavar=(
-                'type=TYPE[,service_type=SERVICE_TYPE'
-                ',lb_fields=LB_FIELDS]'),
-            type=utils.str2dict,
+            metavar='[lb_fields=LB_FIELDS]',
+            type=utils.str2dict_type(optional_keys=['lb_fields']),
             help=_('Dictionary of Port pair group parameters. '
-                   'Currently, only service_type=[l2,l3] and '
-                   '\'&\' separated string of the lb_fields '
+                   'Currently, only \'&\' separated string of the lb_fields '
                    'are supported.'))
 
     def args2body(self, parsed_args):
