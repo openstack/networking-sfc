@@ -299,11 +299,13 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 self.br_int.add_flow(
                     table=ovs_consts.LOCAL_SWITCHING,
                     priority=priority,
-                    actions=actions, **match_info
+                    actions=actions,
+                    **match_info
                 )
             else:
                 self.br_int.delete_flows(
                     table=ovs_consts.LOCAL_SWITCHING,
+                    priority=priority,
                     **match_info
                 )
 
