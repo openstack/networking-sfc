@@ -70,7 +70,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         port_chain = data['port_chain']
         chain_params = port_chain.get('chain_parameters') or dict()
         chain_params.setdefault('correlation', 'mpls')
-        chain_params.setdefault('symmetric', 'false')
+        chain_params.setdefault('symmetric', False)
         ret = {'port_chain': {
             'description': port_chain.get('description') or '',
             'name': port_chain.get('name') or '',
@@ -127,7 +127,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
     def test_create_port_chain_multiple_chain_parameters(self):
         self._test_create_port_chain(chain_parameters={
             'correlation': 'mpls',
-            'symmetric': 'true'
+            'symmetric': True
         })
 
     def test_create_port_chain_empty_port_pair_groups(self):
@@ -894,3 +894,10 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
 
     def test_port_pair_delete(self):
         self._test_entity_delete('port_pair')
+
+    # NOTE(scsnow): move to neutron-lib
+    def test_validate_list_of_allowed_values(self):
+        data = ['eth_src', 'eth_src', 'illegal']
+        allowed_values = ['eth_src', 'eth_src']
+        msg = sfc_ext.validate_list_of_allowed_values(data, allowed_values)
+        self.assertIn("Illegal values in a list:", msg)
