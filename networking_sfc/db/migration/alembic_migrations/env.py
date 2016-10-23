@@ -13,6 +13,7 @@
 #    under the License.
 
 from alembic import context
+from neutron_lib.db import model_base
 from oslo_config import cfg
 import sqlalchemy as sa
 from sqlalchemy import event
@@ -20,7 +21,6 @@ from sqlalchemy import event
 from neutron.db.migration.alembic_migrations import external
 from neutron.db.migration import autogen
 from neutron.db.migration.connection import DBConnection
-from neutron.db import model_base
 
 from networking_sfc.db.migration.models import head  # noqa
 
