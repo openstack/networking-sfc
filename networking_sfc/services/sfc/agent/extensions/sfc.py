@@ -19,11 +19,12 @@ from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
-from neutron.agent.l2 import l2_agent_extension
 from neutron.agent import rpc as agent_rpc
 from neutron.common import rpc as n_rpc
 from neutron.common import topics
 from neutron import manager
+
+from neutron_lib.agent import l2_extension
 
 from networking_sfc.services.sfc.drivers.ovs import rpc_topics as sfc_topics
 from networking_sfc._i18n import _LE, _LI
@@ -71,7 +72,7 @@ class SfcAgentDriver(object):
         """Delete a flow rule in driver."""
 
 
-class SfcAgentExtension(l2_agent_extension.L2AgentExtension):
+class SfcAgentExtension(l2_extension.L2AgentExtension):
 
     def initialize(self, connection, driver_type):
         """Initialize agent extension."""
