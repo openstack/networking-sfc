@@ -29,8 +29,8 @@ from sqlalchemy.orm import exc
 from neutron.api.v2.attributes import DESCRIPTION_MAX_LEN
 from neutron.api.v2.attributes import NAME_MAX_LEN
 from neutron.db import common_db_mixin
-from neutron.db import model_base
 from neutron.db import models_v2
+from neutron_lib.db import model_base
 
 from networking_sfc._i18n import _LI
 from networking_sfc.db import flowclassifier_db as fc_db

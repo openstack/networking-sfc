@@ -19,13 +19,13 @@ from sqlalchemy import orm
 from sqlalchemy.orm import exc
 from sqlalchemy import sql
 
+from neutron_lib.db import model_base
 from neutron_lib import exceptions as n_exc
 from oslo_log import helpers as log_helpers
 from oslo_utils import uuidutils
 
 from neutron import context as n_context
 from neutron.db import common_db_mixin
-from neutron.db import model_base
 
 from networking_sfc._i18n import _
 

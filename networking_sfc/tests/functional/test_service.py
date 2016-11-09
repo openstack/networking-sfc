@@ -19,7 +19,7 @@ import signal
 
 from oslo_config import cfg
 
-from neutron.agent.linux import utils
+from neutron.common import utils
 from neutron.tests.functional import test_server
 
 from networking_sfc.services.flowclassifier.common import (  # noqa

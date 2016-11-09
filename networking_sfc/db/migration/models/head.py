@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.db import model_base
+from neutron_lib.db import model_base
 
 from networking_sfc.db import flowclassifier_db  # noqa
 from networking_sfc.db import sfc_db  # noqa
