@@ -15,7 +15,6 @@
 #
 
 import sys
-import uuid
 
 import mock
 
@@ -24,8 +23,10 @@ from neutronclient.tests.unit import test_cli20
 
 from networking_sfc.cli import port_pair as pp
 
-ingress_port_UUID = str(uuid.uuid4())
-egress_port_UUID = str(uuid.uuid4())
+from oslo_utils import uuidutils
+
+ingress_port_UUID = uuidutils.generate_uuid()
+egress_port_UUID = uuidutils.generate_uuid()
 
 
 class CLITestV20PortPairExtensionJSON(test_cli20.CLITestV20Base):

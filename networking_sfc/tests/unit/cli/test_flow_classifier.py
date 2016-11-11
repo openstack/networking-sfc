@@ -15,7 +15,6 @@
 #
 
 import sys
-import uuid
 
 import mock
 
@@ -24,8 +23,10 @@ from neutronclient.tests.unit import test_cli20
 
 from networking_sfc.cli import flow_classifier as fc
 
-source_port_UUID = str(uuid.uuid4())
-destination_port_UUID = str(uuid.uuid4())
+from oslo_utils import uuidutils
+
+source_port_UUID = uuidutils.generate_uuid()
+destination_port_UUID = uuidutils.generate_uuid()
 
 
 class CLITestV20FCExtensionJSON(test_cli20.CLITestV20Base):

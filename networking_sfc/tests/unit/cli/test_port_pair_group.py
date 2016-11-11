@@ -15,7 +15,6 @@
 #
 
 import sys
-import uuid
 
 import mock
 
@@ -24,10 +23,12 @@ from neutronclient.tests.unit import test_cli20
 
 from networking_sfc.cli import port_pair_group as pg
 
-pp1 = str(uuid.uuid4())
-pp2 = str(uuid.uuid4())
-pp3 = str(uuid.uuid4())
-pp4 = str(uuid.uuid4())
+from oslo_utils import uuidutils
+
+pp1 = uuidutils.generate_uuid()
+pp2 = uuidutils.generate_uuid()
+pp3 = uuidutils.generate_uuid()
+pp4 = uuidutils.generate_uuid()
 
 
 class CLITestV20PortGroupExtensionJSON(test_cli20.CLITestV20Base):

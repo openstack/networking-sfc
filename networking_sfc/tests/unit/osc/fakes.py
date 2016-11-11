@@ -16,9 +16,9 @@
 import argparse
 import copy
 import mock
-import uuid
 
 from osc_lib.tests import utils
+from oslo_utils import uuidutils
 
 
 class TestNeutronClientOSCV2(utils.TestCommand):
@@ -48,13 +48,13 @@ class FakePortPair(object):
 
         # Set default attributes.
         port_pair_attrs = {
-            'id': uuid.uuid4().hex,
+            'id': uuidutils.generate_uuid(),
             'name': 'port-pair-name',
             'description': 'description',
-            'ingress': uuid.uuid4().hex,
-            'egress': uuid.uuid4().hex,
+            'ingress': uuidutils.generate_uuid(),
+            'egress': uuidutils.generate_uuid(),
             'service_function_parameter': '{weight: 1, correlation: None}',
-            'project_id': uuid.uuid4().hex
+            'project_id': uuidutils.generate_uuid(),
         }
 
         # Overwrite default attributes.
@@ -97,13 +97,13 @@ class FakePortPairGroup(object):
 
         # Set default attributes.
         port_pair_group_attrs = {
-            'id': uuid.uuid4().hex,
-            'group_id': uuid.uuid4().hex,
+            'id': uuidutils.generate_uuid(),
+            'group_id': uuidutils.generate_uuid(),
             'name': 'port-pair-group-name',
             'description': 'description',
-            'port_pairs': uuid.uuid4().hex,
+            'port_pairs': uuidutils.generate_uuid(),
             'port_pair_group_parameters': '{"lb_fields": []}',
-            'project_id': uuid.uuid4().hex
+            'project_id': uuidutils.generate_uuid(),
         }
 
         # port_pair_group_attrs default attributes.
@@ -146,20 +146,20 @@ class FakeFlowClassifier(object):
 
         # Set default attributes.
         flow_classifier_attrs = {
-            'id': uuid.uuid4().hex,
+            'id': uuidutils.generate_uuid(),
             'destination_ip_prefix': '2.2.2.2/32',
             'destination_port_range_max': '90',
             'destination_port_range_min': '80',
             'ethertype': 'Ipv4',
-            'logical_destination_port': uuid.uuid4().hex,
-            'logical_source_port': uuid.uuid4().hex,
+            'logical_destination_port': uuidutils.generate_uuid(),
+            'logical_source_port': uuidutils.generate_uuid(),
             'name': 'port-pair-group-name',
             'description': 'fc_description',
             'protocol': 'tcp',
             'source_ip_prefix': '1.1.1.1/32',
             'source_port_range_max': '20',
             'source_port_range_min': '10',
-            'project_id': uuid.uuid4().hex,
+            'project_id': uuidutils.generate_uuid(),
             'l7_parameters': '{}',
             'no_flow_classiifier': 'True'
         }
@@ -203,14 +203,14 @@ class FakePortChain(object):
 
         # Set default attributes.
         port_chain_attrs = {
-            'id': uuid.uuid4().hex,
-            'chain_id': uuid.uuid4().hex,
+            'id': uuidutils.generate_uuid(),
+            'chain_id': uuidutils.generate_uuid(),
             'name': 'port-pair-group-name',
             'description': 'description',
-            'port_pair_groups': uuid.uuid4().hex,
-            'flow_classifiers': uuid.uuid4().hex,
+            'port_pair_groups': uuidutils.generate_uuid(),
+            'flow_classifiers': uuidutils.generate_uuid(),
             'chain_parameters': '{"correlation": mpls}',
-            'project_id': uuid.uuid4().hex,
+            'project_id': uuidutils.generate_uuid(),
         }
 
         # port_pair_group_attrs default attributes.

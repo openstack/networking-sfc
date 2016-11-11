@@ -15,7 +15,6 @@
 #
 
 import sys
-import uuid
 
 import mock
 
@@ -24,12 +23,14 @@ from neutronclient.tests.unit import test_cli20
 
 from networking_sfc.cli import port_chain as pc
 
-FAKE_port_pair_group1_UUID = str(uuid.uuid4())
-FAKE_port_pair_group2_UUID = str(uuid.uuid4())
-FAKE_FC1_UUID = str(uuid.uuid4())
-FAKE_FC2_UUID = str(uuid.uuid4())
-FAKE_PARAM1_UUID = str(uuid.uuid4())
-FAKE_PARAM2_UUID = str(uuid.uuid4())
+from oslo_utils import uuidutils
+
+FAKE_port_pair_group1_UUID = uuidutils.generate_uuid()
+FAKE_port_pair_group2_UUID = uuidutils.generate_uuid()
+FAKE_FC1_UUID = uuidutils.generate_uuid()
+FAKE_FC2_UUID = uuidutils.generate_uuid()
+FAKE_PARAM1_UUID = uuidutils.generate_uuid()
+FAKE_PARAM2_UUID = uuidutils.generate_uuid()
 
 
 class CLITestV20PortChainExtensionJSON(test_cli20.CLITestV20Base):
