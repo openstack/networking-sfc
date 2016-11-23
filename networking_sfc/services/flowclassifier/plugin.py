@@ -12,11 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron_lib.plugins import directory
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_utils import excutils
-
-from neutron import manager
 
 from networking_sfc._i18n import _LE
 from networking_sfc.db import flowclassifier_db as fc_db
@@ -42,8 +41,7 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
 
     def _get_port(self, context, id):
         port = super(FlowClassifierPlugin, self)._get_port(context, id)
-        core_plugin = manager.NeutronManager.get_plugin()
-        return core_plugin.get_port(context, port['id'])
+        return directory.get_plugin().get_port(context, port['id'])
 
     @log_helpers.log_method_call
     def create_flow_classifier(self, context, flow_classifier):

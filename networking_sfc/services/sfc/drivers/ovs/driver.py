@@ -14,6 +14,7 @@
 
 import netaddr
 
+from neutron_lib.plugins import directory
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
@@ -22,7 +23,6 @@ from neutron.common import constants as nc_const
 from neutron.common import rpc as n_rpc
 from neutron import context as n_context
 from neutron.db import api as db_api
-from neutron import manager
 
 from neutron.plugins.common import constants as np_const
 from neutron.plugins.ml2.drivers.l2pop import db as l2pop_db
@@ -129,7 +129,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         if not flow_rule.get('next_hops', None):
             return pop_ports
         pop_host = flow_rule['host_id']
-        core_plugin = manager.NeutronManager.get_plugin()
+        core_plugin = directory.get_plugin()
         drivers = core_plugin.mechanism_manager.mech_drivers
         l2pop_driver = drivers.get('l2population', None)
         if l2pop_driver is None:
@@ -201,7 +201,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         self._call_on_l2pop_driver(flow_rule, "remove_fdb_entries")
 
     def _get_subnet(self, tenant_id, cidr):
-        core_plugin = manager.NeutronManager.get_plugin()
+        core_plugin = directory.get_plugin()
         filters = {'tenant_id': [tenant_id]}
         subnets = core_plugin.get_subnets(self.admin_context, filters=filters)
         cidr_set = netaddr.IPSet([cidr])
@@ -212,7 +212,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 return subnet
 
     def _get_subnet_by_port(self, id):
-        core_plugin = manager.NeutronManager.get_plugin()
+        core_plugin = directory.get_plugin()
         port = core_plugin.get_port(self.admin_context, id)
         for ip in port['fixed_ips']:
             subnet = core_plugin.get_subnet(self.admin_context,
@@ -512,7 +512,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         next_hops = jsonutils.loads(flow_rule['next_hop'])
         if not next_hops:
             return None
-        core_plugin = manager.NeutronManager.get_plugin()
+        core_plugin = directory.get_plugin()
         for member in next_hops:
             detail = {}
             port_detail = self.get_port_detail_by_filter(
@@ -632,8 +632,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         # Get the portchain flow classifiers
         fc_plugin = (
-            manager.NeutronManager.get_service_plugins().get(
-                flowclassifier.FLOW_CLASSIFIER_EXT)
+            directory.get_plugin(flowclassifier.FLOW_CLASSIFIER_EXT)
         )
         if not fc_plugin:
             LOG.warning(_LW("Not found the flow classifier service plugin"))
@@ -783,7 +782,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         service_insert_type): tuple
         """
 
-        core_plugin = manager.NeutronManager.get_plugin()
+        core_plugin = directory.get_plugin()
         port_detail = core_plugin.get_port(self.admin_context, portpair_id)
         host_id, local_ip, network_type, segment_id, mac_address = (
             (None, ) * 5)
@@ -864,11 +863,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
     def get_flowrules_by_host_portid(self, context, host, port_id):
         port_chain_flowrules = []
-        sfc_plugin = (
-            manager.NeutronManager.get_service_plugins().get(
-                sfc.SFC_EXT
-            )
-        )
+        sfc_plugin = directory.get_plugin(sfc.SFC_EXT)
         if not sfc_plugin:
             return port_chain_flowrules
         try:
