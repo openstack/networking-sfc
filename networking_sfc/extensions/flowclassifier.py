@@ -18,6 +18,7 @@ from abc import abstractmethod
 import six
 
 from neutron_lib.api import converters
+from neutron_lib.api import extensions
 from neutron_lib import constants as const
 from neutron_lib import exceptions as neutron_exc
 from oslo_config import cfg
@@ -28,10 +29,10 @@ from neutron.api.v2 import resource_helper
 from neutron.services import service_base
 
 from networking_sfc._i18n import _
-from networking_sfc import extensions
+from networking_sfc import extensions as sfc_extensions
 
 cfg.CONF.import_opt('api_extensions_path', 'neutron.common.config')
-neutron_ext.append_api_extensions_path(extensions.__path__)
+neutron_ext.append_api_extensions_path(sfc_extensions.__path__)
 FLOW_CLASSIFIER_EXT = "flow_classifier"
 FLOW_CLASSIFIER_PREFIX = "/sfc"
 
@@ -239,7 +240,7 @@ flow_classifier_quota_opts = [
 cfg.CONF.register_opts(flow_classifier_quota_opts, 'QUOTAS')
 
 
-class Flowclassifier(neutron_ext.ExtensionDescriptor):
+class Flowclassifier(extensions.ExtensionDescriptor):
     """Flow Classifier extension."""
 
     @classmethod
