@@ -19,6 +19,7 @@ import six
 
 from neutron_lib.api import converters
 from neutron_lib import constants as const
+from neutron_lib.db import constants as db_const
 from neutron_lib import exceptions as neutron_exc
 from oslo_config import cfg
 
@@ -170,17 +171,17 @@ RESOURCE_ATTRIBUTE_MAP = {
         'name': {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': None,
-            'validate': {'type:string': attr.NAME_MAX_LEN},
+            'validate': {'type:string': db_const.NAME_FIELD_SIZE},
             'convert_to': normalize_string},
         'description': {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': None,
-            'validate': {'type:string': attr.DESCRIPTION_MAX_LEN},
+            'validate': {'type:string': db_const.DESCRIPTION_FIELD_SIZE},
             'convert_to': normalize_string},
         'tenant_id': {
             'allow_post': True, 'allow_put': False,
             'is_visible': True,
-            'validate': {'type:string': attr.TENANT_ID_MAX_LEN},
+            'validate': {'type:string': db_const.PROJECT_ID_FIELD_SIZE},
             'required_by_policy': True},
         'ethertype': {
             'allow_post': True, 'allow_put': False,

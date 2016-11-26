@@ -26,10 +26,9 @@ from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm import exc
 
-from neutron.api.v2.attributes import DESCRIPTION_MAX_LEN
-from neutron.api.v2.attributes import NAME_MAX_LEN
 from neutron.db import common_db_mixin
 from neutron.db import models_v2
+from neutron_lib.db import constants as db_const
 from neutron_lib.db import model_base
 
 from networking_sfc._i18n import _LI
@@ -100,8 +99,8 @@ class PortPair(model_base.BASEV2, model_base.HasId, model_base.HasProject):
 
     """
     __tablename__ = 'sfc_port_pairs'
-    name = sa.Column(sa.String(NAME_MAX_LEN))
-    description = sa.Column(sa.String(DESCRIPTION_MAX_LEN))
+    name = sa.Column(sa.String(db_const.NAME_FIELD_SIZE))
+    description = sa.Column(sa.String(db_const.DESCRIPTION_FIELD_SIZE))
     ingress = sa.Column(
         sa.String(UUID_LEN),
         sa.ForeignKey('ports.id', ondelete='RESTRICT'),
@@ -147,8 +146,8 @@ class PortPairGroup(model_base.BASEV2, model_base.HasId,
     """Represents a port pair group model."""
     __tablename__ = 'sfc_port_pair_groups'
     group_id = sa.Column(sa.Integer(), unique=True, nullable=False)
-    name = sa.Column(sa.String(NAME_MAX_LEN))
-    description = sa.Column(sa.String(DESCRIPTION_MAX_LEN))
+    name = sa.Column(sa.String(db_const.NAME_FIELD_SIZE))
+    description = sa.Column(sa.String(db_const.DESCRIPTION_FIELD_SIZE))
     port_pairs = orm.relationship(
         PortPair,
         backref='port_pair_group'
@@ -166,8 +165,8 @@ class PortChain(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents a Neutron service function Port Chain."""
     __tablename__ = 'sfc_port_chains'
     chain_id = sa.Column(sa.Integer(), unique=True, nullable=False)
-    name = sa.Column(sa.String(NAME_MAX_LEN))
-    description = sa.Column(sa.String(DESCRIPTION_MAX_LEN))
+    name = sa.Column(sa.String(db_const.NAME_FIELD_SIZE))
+    description = sa.Column(sa.String(db_const.DESCRIPTION_FIELD_SIZE))
     chain_group_associations = orm.relationship(
         ChainGroupAssoc,
         backref='port_chain',

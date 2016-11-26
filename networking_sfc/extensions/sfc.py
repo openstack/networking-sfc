@@ -19,11 +19,11 @@ import six
 
 from neutron_lib.api import converters as lib_converters
 from neutron_lib.api import validators as lib_validators
+from neutron_lib.db import constants as db_const
 from neutron_lib import exceptions as neutron_exc
 from oslo_config import cfg
 
 from neutron.api import extensions as neutron_ext
-from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
 from neutron.services import service_base
 
@@ -161,17 +161,17 @@ RESOURCE_ATTRIBUTE_MAP = {
         'name': {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': '',
-            'validate': {'type:string': attr.NAME_MAX_LEN},
+            'validate': {'type:string': db_const.NAME_FIELD_SIZE},
         },
         'description': {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': '',
-            'validate': {'type:string': attr.DESCRIPTION_MAX_LEN},
+            'validate': {'type:string': db_const.DESCRIPTION_FIELD_SIZE},
         },
         'tenant_id': {
             'allow_post': True, 'allow_put': False,
             'is_visible': True,
-            'validate': {'type:string': attr.TENANT_ID_MAX_LEN},
+            'validate': {'type:string': db_const.PROJECT_ID_FIELD_SIZE},
             'required_by_policy': True
         },
         'ingress': {
@@ -219,17 +219,17 @@ RESOURCE_ATTRIBUTE_MAP = {
         'name': {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': '',
-            'validate': {'type:string': attr.NAME_MAX_LEN},
+            'validate': {'type:string': db_const.NAME_FIELD_SIZE},
         },
         'description': {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': '',
-            'validate': {'type:string': attr.DESCRIPTION_MAX_LEN},
+            'validate': {'type:string': db_const.DESCRIPTION_FIELD_SIZE},
         },
         'tenant_id': {
             'allow_post': True, 'allow_put': False,
             'is_visible': True,
-            'validate': {'type:string': attr.TENANT_ID_MAX_LEN},
+            'validate': {'type:string': db_const.PROJECT_ID_FIELD_SIZE},
             'required_by_policy': True
         },
         'port_pair_groups': {
@@ -275,17 +275,17 @@ RESOURCE_ATTRIBUTE_MAP = {
         'name': {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': '',
-            'validate': {'type:string': attr.NAME_MAX_LEN},
+            'validate': {'type:string': db_const.NAME_FIELD_SIZE},
         },
         'description': {
             'allow_post': True, 'allow_put': True,
             'is_visible': True, 'default': '',
-            'validate': {'type:string': attr.DESCRIPTION_MAX_LEN},
+            'validate': {'type:string': db_const.DESCRIPTION_FIELD_SIZE},
         },
         'tenant_id': {
             'allow_post': True, 'allow_put': False,
             'is_visible': True,
-            'validate': {'type:string': attr.TENANT_ID_MAX_LEN},
+            'validate': {'type:string': db_const.PROJECT_ID_FIELD_SIZE},
             'required_by_policy': True
         },
         'port_pairs': {

@@ -23,8 +23,6 @@ Create Date: 2015-09-30 17:54:35.852573
 from alembic import op
 import sqlalchemy as sa
 
-from neutron.api.v2 import attributes as attr
-
 # revision identifiers, used by Alembic.
 revision = '9768e6a66c9'
 down_revision = '24fc7241aa5'
@@ -33,13 +31,13 @@ down_revision = '24fc7241aa5'
 def upgrade():
     op.create_table(
         'sfc_flow_classifiers',
-        sa.Column('tenant_id', sa.String(length=attr.TENANT_ID_MAX_LEN),
+        sa.Column('tenant_id', sa.String(length=255),
                   nullable=True, index=True),
         sa.Column('id', sa.String(length=36), nullable=False),
-        sa.Column('name', sa.String(length=attr.NAME_MAX_LEN), nullable=True),
+        sa.Column('name', sa.String(length=255), nullable=True),
         sa.Column('ethertype', sa.String(length=40), nullable=True),
         sa.Column('protocol', sa.String(length=40), nullable=True),
-        sa.Column('description', sa.String(length=attr.DESCRIPTION_MAX_LEN),
+        sa.Column('description', sa.String(length=255),
                   nullable=True),
         sa.Column('source_port_range_min', sa.Integer(), nullable=True),
         sa.Column('source_port_range_max', sa.Integer(), nullable=True),
