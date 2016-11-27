@@ -23,8 +23,6 @@ Create Date: 2015-09-11 11:37:19.349951
 from alembic import op
 import sqlalchemy as sa
 
-from neutron.api.v2 import attributes as attr
-
 # revision identifiers, used by Alembic.
 revision = 'c3e178d4a985'
 down_revision = '9768e6a66c9'
@@ -34,22 +32,22 @@ def upgrade():
     op.create_table(
         'sfc_port_pair_groups',
         sa.Column('id', sa.String(length=36), nullable=False),
-        sa.Column('tenant_id', sa.String(length=attr.TENANT_ID_MAX_LEN),
+        sa.Column('tenant_id', sa.String(length=255),
                   nullable=True, index=True),
-        sa.Column('name', sa.String(length=attr.NAME_MAX_LEN),
+        sa.Column('name', sa.String(length=255),
                   nullable=True),
-        sa.Column('description', sa.String(length=attr.DESCRIPTION_MAX_LEN),
+        sa.Column('description', sa.String(length=255),
                   nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
 
     op.create_table(
         'sfc_port_pairs',
-        sa.Column('tenant_id', sa.String(length=attr.TENANT_ID_MAX_LEN),
+        sa.Column('tenant_id', sa.String(length=255),
                   nullable=True, index=True),
         sa.Column('id', sa.String(length=36), nullable=False),
-        sa.Column('name', sa.String(length=attr.NAME_MAX_LEN), nullable=True),
-        sa.Column('description', sa.String(length=attr.DESCRIPTION_MAX_LEN),
+        sa.Column('name', sa.String(length=255), nullable=True),
+        sa.Column('description', sa.String(length=255),
                   nullable=True),
         sa.Column('ingress', sa.String(length=36), nullable=False),
         sa.Column('egress', sa.String(length=36), nullable=False),
@@ -67,12 +65,12 @@ def upgrade():
 
     op.create_table(
         'sfc_port_chains',
-        sa.Column('tenant_id', sa.String(length=attr.TENANT_ID_MAX_LEN),
+        sa.Column('tenant_id', sa.String(length=255),
                   nullable=True, index=True),
         sa.Column('id', sa.String(length=36), nullable=False),
-        sa.Column('name', sa.String(length=attr.NAME_MAX_LEN),
+        sa.Column('name', sa.String(length=255),
                   nullable=True),
-        sa.Column('description', sa.String(length=attr.DESCRIPTION_MAX_LEN),
+        sa.Column('description', sa.String(length=255),
                   nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
