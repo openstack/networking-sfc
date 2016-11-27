@@ -14,8 +14,6 @@
 #    under the License.
 
 
-import logging
-
 from osc_lib.command import command
 from osc_lib import utils
 
@@ -24,7 +22,6 @@ from neutronclient.common import utils as nc_utils
 from networking_sfc._i18n import _
 from networking_sfc.osc import common
 
-LOG = logging.getLogger(__name__)
 
 SFC_COMMON_PREFIX = "/sfc"
 FLOW_CLASSIFIERS_PATH = SFC_COMMON_PREFIX + "/flow_classifiers"
