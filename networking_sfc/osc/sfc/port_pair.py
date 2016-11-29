@@ -68,7 +68,7 @@ class CreatePortPair(command.ShowOne):
         client = self.app.client_manager.neutronclient
         attrs = _get_common_attrs(self.app.client_manager, parsed_args)
         obj = common.create_sfc_resource(self, client, resource, attrs)
-        columns = _get_columns(obj[resource])
+        columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
         return columns, data
 
@@ -152,13 +152,9 @@ class ShowPortPair(command.ShowOne):
         id = common.find_sfc_resource(self, client, resource,
                                       parsed_args.port_pair)
         obj = common.show_sfc_resource(self, client, resource, id)
-        columns = _get_columns(obj[resource])
+        columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
         return columns, data
-
-
-def _get_columns(item):
-    return tuple(sorted(list(item.keys())))
 
 
 def _get_common_attrs(client_manager, parsed_args, is_create=True):

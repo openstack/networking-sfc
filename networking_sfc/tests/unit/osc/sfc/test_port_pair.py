@@ -139,8 +139,8 @@ class TestShowPortPair(fakes.TestNeutronClientOSCV2):
         _pp['id'],
         _pp['ingress'],
         _pp['name'],
-        _pp['service_function_parameter'],
-        _pp['tenant_id']
+        _pp['project_id'],
+        _pp['service_function_parameter']
     )
     _port_pair = {'port_pair': _pp}
     _port_pair_id = _pp['id']
@@ -150,8 +150,8 @@ class TestShowPortPair(fakes.TestNeutronClientOSCV2):
         'id',
         'ingress',
         'name',
-        'service_function_parameter',
-        'tenant_id'
+        'project_id',
+        'service_function_parameter'
     )
 
     def setUp(self):

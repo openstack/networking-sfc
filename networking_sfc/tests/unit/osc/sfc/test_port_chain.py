@@ -143,7 +143,7 @@ class TestShowPortChain(fakes.TestNeutronClientOSCV2):
         _pc['id'],
         _pc['name'],
         _pc['port_pair_groups'],
-        _pc['tenant_id']
+        _pc['project_id']
     )
     _port_chain = {'port_chain': _pc}
     _port_chain_id = _pc['id']
@@ -155,7 +155,7 @@ class TestShowPortChain(fakes.TestNeutronClientOSCV2):
         'id',
         'name',
         'port_pair_groups',
-        'tenant_id'
+        'project_id'
     )
 
     def setUp(self):

@@ -42,7 +42,7 @@ class FakePortPair(object):
             A dictionary with all attributes
         :return:
             A Dictionary with id, name, description, ingress, egress,
-            service-function-parameter, tenant_id
+            service-function-parameter, project_id
         """
         attrs = attrs or {}
 
@@ -54,7 +54,7 @@ class FakePortPair(object):
             'ingress': uuid.uuid4().hex,
             'egress': uuid.uuid4().hex,
             'service_function_parameter': '{weight: 1, correlation: None}',
-            'tenant_id': uuid.uuid4().hex,
+            'project_id': uuid.uuid4().hex
         }
 
         # Overwrite default attributes.
@@ -91,7 +91,7 @@ class FakePortPairGroup(object):
             A dictionary with all attributes
         :return:
             A Dictionary with id, name, description, port_pairs, group_id
-            port_pair_group_parameters, tenant_id
+            port_pair_group_parameters, project_id
         """
         attrs = attrs or {}
 
@@ -103,7 +103,7 @@ class FakePortPairGroup(object):
             'description': 'description',
             'port_pairs': uuid.uuid4().hex,
             'port_pair_group_parameters': '{"lb_fields": []}',
-            'tenant_id': uuid.uuid4().hex,
+            'project_id': uuid.uuid4().hex
         }
 
         # port_pair_group_attrs default attributes.
@@ -159,7 +159,7 @@ class FakeFlowClassifier(object):
             'source_ip_prefix': '1.1.1.1/32',
             'source_port_range_max': '20',
             'source_port_range_min': '10',
-            'tenant_id': uuid.uuid4().hex,
+            'project_id': uuid.uuid4().hex,
             'l7_parameters': '{}',
             'no_flow_classiifier': 'True'
         }
@@ -210,7 +210,7 @@ class FakePortChain(object):
             'port_pair_groups': uuid.uuid4().hex,
             'flow_classifiers': uuid.uuid4().hex,
             'chain_parameters': '{"correlation": mpls}',
-            'tenant_id': uuid.uuid4().hex,
+            'project_id': uuid.uuid4().hex,
         }
 
         # port_pair_group_attrs default attributes.
