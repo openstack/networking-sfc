@@ -22,7 +22,8 @@ function _networking_sfc_install_agent {
 function networking_sfc_configure_common {
     if is_service_enabled q-svc; then
         _networking_sfc_install_server
-    elif is_service_enabled q-agt; then
+    fi
+    if is_service_enabled q-agt; then
         _networking_sfc_install_agent
     fi
 }
