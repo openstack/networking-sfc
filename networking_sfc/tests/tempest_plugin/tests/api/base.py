@@ -74,7 +74,7 @@ class BaseFlowClassifierTest(
             pass
         body = self.admin_ports_client.list_ports()
         ports_list = body['ports']
-        self.assertFalse(port_id in [n['id'] for n in ports_list])
+        self.assertNotIn(port_id, [n['id'] for n in ports_list])
 
     def _try_delete_flowclassifier(self, fc_id):
         # delete flowclassifier, if it exists
@@ -85,7 +85,7 @@ class BaseFlowClassifierTest(
             pass
         body = self.flowclassifier_client.list_flowclassifiers()
         fc_list = body['flow_classifiers']
-        self.assertFalse(fc_id in [n['id'] for n in fc_list])
+        self.assertNotIn(fc_id, [n['id'] for n in fc_list])
 
 
 class BaseSfcTest(
@@ -137,7 +137,7 @@ class BaseSfcTest(
             pass
         body = self.portpair_client.list_port_pairs()
         pp_list = body['port_pairs']
-        self.assertFalse(pp_id in [n['id'] for n in pp_list])
+        self.assertNotIn(pp_id, [n['id'] for n in pp_list])
 
     def _try_create_port_pair_group(self, **kwargs):
         pg = self.create_port_pair_group(
@@ -155,7 +155,7 @@ class BaseSfcTest(
             pass
         body = self.portpairgroup_client.list_port_pair_groups()
         pg_list = body['port_pair_groups']
-        self.assertFalse(pg_id in [n['id'] for n in pg_list])
+        self.assertNotIn(pg_id, [n['id'] for n in pg_list])
 
     def _try_create_port_chain(self, **kwargs):
         pc = self.create_port_chain(
@@ -173,4 +173,4 @@ class BaseSfcTest(
             pass
         body = self.portchain_client.list_port_chains()
         pc_list = body['port_chains']
-        self.assertFalse(pc_id in [n['id'] for n in pc_list])
+        self.assertNotIn(pc_id, [n['id'] for n in pc_list])
