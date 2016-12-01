@@ -142,7 +142,7 @@ class TestShowPortPairGroup(fakes.TestNeutronClientOSCV2):
         _ppg['name'],
         _ppg['port_pair_group_parameters'],
         _ppg['port_pairs'],
-        _ppg['tenant_id'])
+        _ppg['project_id'])
     _port_pair_group = {'port_pair_group': _ppg}
     _port_pair_group_id = _ppg['id']
     columns = (
@@ -152,7 +152,7 @@ class TestShowPortPairGroup(fakes.TestNeutronClientOSCV2):
         'name',
         'port_pair_group_parameters',
         'port_pairs',
-        'tenant_id')
+        'project_id')
 
     def setUp(self):
         super(TestShowPortPairGroup, self).setUp()

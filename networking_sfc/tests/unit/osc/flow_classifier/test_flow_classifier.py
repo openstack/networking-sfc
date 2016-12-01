@@ -167,11 +167,11 @@ class TestShowFlowClassifier(fakes.TestNeutronClientOSCV2):
         _fc['logical_source_port'],
         _fc['name'],
         _fc['no_flow_classiifier'],
+        _fc['project_id'],
         _fc['protocol'],
         _fc['source_ip_prefix'],
         _fc['source_port_range_max'],
-        _fc['source_port_range_min'],
-        _fc['tenant_id']
+        _fc['source_port_range_min']
     )
     _flow_classifier = {'flow_classifier': _fc}
     _flow_classifier_id = _fc['id']
@@ -187,11 +187,11 @@ class TestShowFlowClassifier(fakes.TestNeutronClientOSCV2):
         'logical_source_port',
         'name',
         'no_flow_classiifier',
+        'project_id',
         'protocol',
         'source_ip_prefix',
         'source_port_range_max',
-        'source_port_range_min',
-        'tenant_id'
+        'source_port_range_min'
     )
 
     def setUp(self):

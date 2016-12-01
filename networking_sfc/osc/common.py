@@ -100,3 +100,12 @@ def find_sfc_resource(self, client, resource, name_or_id):
 def get_id(client, id_or_name, resource):
     return neutronV20.find_resourceid_by_name_or_id(
         client, resource, str(id_or_name))
+
+
+def get_columns(resource):
+    columns = list(resource.keys())
+    if 'tenant_id' in columns:
+        columns.remove('tenant_id')
+    if 'project_id' not in columns:
+        columns.append('project_id')
+    return tuple(sorted(columns))
