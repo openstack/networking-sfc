@@ -53,9 +53,9 @@ class CreatePortPair(command.ShowOne):
             help=_('ID or name of the egress neutron port.'))
         parser.add_argument(
             '--service-function-parameter',
-            metavar=(
-                'type=TYPE[,correlation=CORRELATION_TYPE,weight=WEIGHT]'),
-            type=nc_utils.str2dict,
+            metavar='[correlation=CORRELATION_TYPE, weight=WEIGHT]',
+            type=nc_utils.str2dict_type(optional_keys=['correlation',
+                                                       'weight']),
             help=_('Dictionary of Service function parameters. '
                    'Currently, only correlation=None and weight '
                    'is supported. Weight is an integer that influences '

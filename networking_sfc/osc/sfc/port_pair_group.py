@@ -53,13 +53,10 @@ class CreatePortPairGroup(command.ShowOne):
                    'This option can be repeated.'))
         parser.add_argument(
             '--port-pair-group-parameters',
-            metavar=(
-                'type=TYPE[,service_type=SERVICE_TYPE'
-                ',lb_fields=LB_FIELDS]'),
-            type=nc_utils.str2dict,
+            metavar='[lb_fields=LB_FIELDS]',
+            type=nc_utils.str2dict_type(optional_keys=['lb_fields']),
             help=_('Dictionary of Port pair group parameters. '
-                   'Currently, only service_type=[l2,l3] and '
-                   '\'&\' separated string of the lb_fields '
+                   'Currently, only \'&\' separated string of the lb_fields '
                    'are supported.'))
         return parser
 
@@ -171,7 +168,7 @@ def _get_ppg_param(attrs, ppg):
                 field for field in value.split('&') if field])
         else:
             attrs['port_pair_group_parameters'][key] = value
-    return attrs['port_pair_group_parameters'][key]
+    return attrs['port_pair_group_parameters']
 
 
 def _get_common_attrs(self, client_manager, parsed_args, is_create=True):

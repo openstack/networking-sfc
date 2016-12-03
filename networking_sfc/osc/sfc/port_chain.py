@@ -60,10 +60,11 @@ class CreatePortChain(command.ShowOne):
                    'This option can be repeated.'))
         parser.add_argument(
             '--chain-parameters',
-            metavar='type=TYPE[,correlation=CORRELATION_TYPE]',
-            type=nc_utils.str2dict,
-            help=_('Dictionary of chain parameters. Currently, only '
-                   'correlation=mpls is supported by default.'))
+            metavar='[correlation=CORRELATION_TYPE, symmetric=BOOLEAN_TYPE]',
+            type=nc_utils.str2dict_type(optional_keys=['correlation',
+                                                       'symmetric']),
+            help=_('Dictionary of chain parameters. Supports '
+                   'correlation=mpls and symmetric=true|false'))
         return parser
 
     def take_action(self, parsed_args):

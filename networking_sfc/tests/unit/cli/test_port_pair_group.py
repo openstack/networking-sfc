@@ -89,12 +89,8 @@ class CLITestV20PortGroupExtensionJSON(test_cli20.CLITestV20Base):
                                      None)
         name = 'myname'
         myid = 'myid'
-        ppg_param = (
-            'service_type=l2,'
-            'lb_fields=ip_src&ip_dst')
-        ppg_exp = {
-            "service_type": "l2",
-            "lb_fields": ["ip_src", "ip_dst"]}
+        ppg_param = 'lb_fields=ip_src&ip_dst'
+        ppg_exp = {"lb_fields": ["ip_src", "ip_dst"]}
         args = [name, '--port-pair', pp1,
                 '--port-pair-group-parameters', ppg_param]
         position_names = ['name', 'port_pairs',
