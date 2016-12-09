@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
-
 from neutron_lib.plugins import directory
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -200,17 +198,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def _delete_agent_fdb_entries(self, flow_rule):
         self._call_on_l2pop_driver(flow_rule, "remove_fdb_entries")
 
-    def _get_subnet(self, tenant_id, cidr):
-        core_plugin = directory.get_plugin()
-        filters = {'tenant_id': [tenant_id]}
-        subnets = core_plugin.get_subnets(self.admin_context, filters=filters)
-        cidr_set = netaddr.IPSet([cidr])
-
-        for subnet in subnets:
-            subnet_cidr_set = netaddr.IPSet([subnet['cidr']])
-            if cidr_set.issubset(subnet_cidr_set):
-                return subnet
-
     def _get_subnet_by_port(self, id):
         core_plugin = directory.get_plugin()
         port = core_plugin.get_port(self.admin_context, id)
@@ -257,14 +244,14 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         return pd
 
     @log_helpers.log_method_call
-    def _add_flowclassifier_port_assoc(self, fc_ids, tenant_id,
+    def _add_flowclassifier_port_assoc(self, fc_ids, project_id,
                                        src_node):
         for fc in self._get_fcs_by_ids(fc_ids):
             need_assoc = True
             # lookup the source port
             src_pd_filter = dict(
                 egress=fc['logical_source_port'],
-                tenant_id=tenant_id
+                project_id=project_id
             )
             src_pd = self.get_port_detail_by_filter(src_pd_filter)
 
@@ -287,7 +274,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 LOG.debug('create assoc src port with node: %s', sna)
                 src_node['portpair_details'].append(src_pd['id'])
 
-    def _remove_flowclassifier_port_assoc(self, fc_ids, tenant_id,
+    def _remove_flowclassifier_port_assoc(self, fc_ids, project_id,
                                           src_node):
         if not fc_ids:
             return
@@ -295,7 +282,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             # delete source port detail
             src_pd_filter = dict(
                 egress=fc['logical_source_port'],
-                tenant_id=tenant_id
+                project_id=project_id
             )
             pds = self.get_port_details_by_filter(src_pd_filter)
             if pds:
@@ -381,7 +368,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             context, port_chain['port_pair_groups'][0])
 
         # Create a head node object for port chain
-        src_args = {'tenant_id': port_chain['tenant_id'],
+        src_args = {'project_id': port_chain['project_id'],
                     'node_type': ovs_const.SRC_NODE,
                     'nsp': path_id,
                     'nsi': 0xff,
@@ -396,7 +383,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         # Create a destination node object for port chain
         dst_args = {
-            'tenant_id': port_chain['tenant_id'],
+            'project_id': port_chain['project_id'],
             'node_type': ovs_const.DST_NODE,
             'nsp': path_id,
             'nsi': 0xff - sf_path_length - 1,
@@ -411,7 +398,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         self._add_flowclassifier_port_assoc(
             port_chain['flow_classifiers'],
-            port_chain['tenant_id'],
+            port_chain['project_id'],
             src_node
         )
 
@@ -429,7 +416,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
             # Create a node object
             node_args = {
-                'tenant_id': port_chain['tenant_id'],
+                'project_id': port_chain['project_id'],
                 'node_type': ovs_const.SF_NODE,
                 'nsp': path_id,
                 'nsi': 0xfe - i,
@@ -501,7 +488,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         # delete the ports on the traffic classifier
         self._remove_flowclassifier_port_assoc(
             port_chain['flow_classifiers'],
-            port_chain['tenant_id'],
+            port_chain['project_id'],
             src_node
         )
 
@@ -536,11 +523,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def _build_portchain_flowrule_body(self, node, port,
                                        add_fc_ids=None, del_fc_ids=None):
         node_info = node.copy()
-        node_info.pop('tenant_id')
+        node_info.pop('project_id')
         node_info.pop('portpair_details')
 
         port_info = port.copy()
-        port_info.pop('tenant_id')
+        port_info.pop('project_id')
         port_info.pop('id')
         port_info.pop('path_nodes')
         # port_info.pop('host_id')
@@ -576,7 +563,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             new_fc = fc.copy()
             new_fc.pop('id')
             new_fc.pop('name')
-            new_fc.pop('tenant_id')
+            new_fc.pop('project_id')
             new_fc.pop('description')
 
             if (
@@ -825,10 +812,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         host_id, local_endpoint, network_type, segment_id, mac_address = (
             self._get_portpair_detail_info(port))
+
         port_detail = {
             'ingress': port_pair.get('ingress', None),
             'egress': port_pair.get('egress', None),
-            'tenant_id': port_pair['tenant_id'],
+            'project_id': port_pair['project_id'],
             'host_id': host_id,
             'segment_id': segment_id,
             'network_type': network_type,
@@ -850,7 +838,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         pd_filter = dict(ingress=port_pair.get('ingress', None),
                          egress=port_pair.get('egress', None),
-                         tenant_id=port_pair['tenant_id']
+                         project_id=port_pair['project_id']
                          )
         pds = self.get_port_details_by_filter(pd_filter)
         if pds:
