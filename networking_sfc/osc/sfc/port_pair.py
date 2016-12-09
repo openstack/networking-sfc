@@ -18,8 +18,8 @@ import logging
 from osc_lib.command import command
 from osc_lib import utils
 
+from neutronclient._i18n import _
 from neutronclient.common import utils as nc_utils
-from neutronclient.i18n import _
 
 from networking_sfc.osc import common
 
