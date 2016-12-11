@@ -15,8 +15,8 @@
 # Borrowed from nova code base, more utilities will be added/borrowed as and
 # when needed.
 
+from neutronclient._i18n import _
 from neutronclient.common import exceptions
-from neutronclient.i18n import _
 from neutronclient.neutron import v2_0 as neutronV20
 
 
