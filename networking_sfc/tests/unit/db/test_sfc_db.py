@@ -28,6 +28,7 @@ from networking_sfc.db import flowclassifier_db as fdb
 from networking_sfc.db import sfc_db
 from networking_sfc import extensions
 from networking_sfc.extensions import flowclassifier as fc_ext
+from networking_sfc.extensions import servicegraph as sg_ext
 from networking_sfc.extensions import sfc
 from networking_sfc.tests import base
 from networking_sfc.tests.unit.db import test_flowclassifier_db
@@ -141,6 +142,39 @@ class SfcDbPluginTestCaseBase(
         if do_delete:
             self._delete('port_pairs', port_pair['port_pair']['id'])
 
+    def _create_service_graph(
+        self, fmt, service_graph=None, expected_res_status=None, **kwargs
+    ):
+        ctx = kwargs.get('context', None)
+        project_id = kwargs.get('project_id', self._tenant_id)
+        data = {'service_graph': service_graph or {}}
+        if ctx is None:
+            data['service_graph'].update({'project_id': project_id})
+
+        req = self.new_create_request(
+            'service_graphs', data, fmt, context=ctx
+        )
+        res = req.get_response(self.ext_api)
+        if expected_res_status:
+            self.assertEqual(expected_res_status, res.status_int)
+        return res
+
+    @contextlib.contextmanager
+    def service_graph(self, fmt=None,
+                      service_graph=None, do_delete=True, **kwargs):
+        if not fmt:
+            fmt = self.fmt
+
+        res = self._create_service_graph(fmt, service_graph, **kwargs)
+        if res.status_int >= 400:
+            logging.error('create Service Graph result: %s', res)
+            raise webob.exc.HTTPClientError(code=res.status_int)
+        service_graph = self.deserialize(fmt or self.fmt, res)
+        yield service_graph
+        if do_delete:
+            self._delete('service_graphs', service_graph[
+                'service_graph']['id'])
+
     def _get_expected_port_pair(self, port_pair):
         return {
             'name': port_pair.get('name') or '',
@@ -249,6 +283,22 @@ class SfcDbPluginTestCaseBase(
                 for k, v in expected_port_chain.items():
                     self.assertEqual(pc['port_chain'][k], v)
 
+    @staticmethod
+    def _get_expected_graph(service_graph):
+        ret = {
+            'name': service_graph.get('name') or '',
+            'description': service_graph.get('description') or '',
+            'port_chains': service_graph.get('port_chains')
+        }
+        return ret
+
+    def _test_create_service_graph(self, service_graph, expected_graph=None):
+        if expected_graph is None:
+            expected_graph = self._get_expected_graph(service_graph)
+        with self.service_graph(service_graph=service_graph) as graph:
+            for k, v in expected_graph.items():
+                self.assertEqual(graph['service_graph'][k], v)
+
 
 class SfcDbPluginTestCase(
     base.NeutronDbPluginV2TestCase,
@@ -261,6 +311,9 @@ class SfcDbPluginTestCase(
     ] + [
         (k, fc_ext.FLOW_CLASSIFIER_PREFIX)
         for k in fc_ext.RESOURCE_ATTRIBUTE_MAP.keys()
+    ] + [
+        (k, sg_ext.SG_PREFIX)
+        for k in sg_ext.RESOURCE_ATTRIBUTE_MAP.keys()
     ])
 
     def setUp(self, core_plugin=None, sfc_plugin=None,
@@ -279,10 +332,10 @@ class SfcDbPluginTestCase(
             fc_ext.FLOW_CLASSIFIER_EXT: flowclassifier_plugin
         }
         sfc_db.SfcDbPlugin.supported_extension_aliases = [
-            "sfc"]
+            sfc.SFC_EXT, sg_ext.SG_EXT]
         sfc_db.SfcDbPlugin.path_prefix = sfc.SFC_PREFIX
         fdb.FlowClassifierDbPlugin.supported_extension_aliases = [
-            "flow_classifier"]
+            fc_ext.FLOW_CLASSIFIER_EXT]
         fdb.FlowClassifierDbPlugin.path_prefix = (
             fc_ext.FLOW_CLASSIFIER_PREFIX
         )
@@ -1209,6 +1262,51 @@ class SfcDbPluginTestCase(
                 res = req.get_response(self.ext_api)
                 self.assertEqual(400, res.status_int)
 
+    def test_update_port_chain_part_of_graph_fail(self):
+        with self.port_pair_group(
+            port_pair_group={}
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}
+        ) as pg2:
+            with self.port_chain(port_chain={
+                'port_pair_groups': [pg1['port_pair_group']['id']]
+            }) as pc1, self.port_chain(port_chain={
+                'port_pair_groups': [pg2['port_pair_group']['id']]
+            }) as pc2:
+                with self.service_graph(service_graph={
+                    'name': 'test1',
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']]}
+                }):
+                    updates = {
+                        'port_pair_groups': [uuidutils.generate_uuid()]
+                    }
+                    req = self.new_update_request(
+                        'port_chains', {'port_chain': updates},
+                        pc1['port_chain']['id']
+                    )
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(409, res.status_int)
+                    updates = {
+                        'flow_classifiers': [uuidutils.generate_uuid()]
+                    }
+                    req = self.new_update_request(
+                        'port_chains', {'port_chain': updates},
+                        pc2['port_chain']['id']
+                    )
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(409, res.status_int)
+                    updates = {
+                        'name': 'new name',
+                        'description': 'new description'
+                    }
+                    req = self.new_update_request(
+                        'port_chains', {'port_chain': updates},
+                        pc1['port_chain']['id']
+                    )
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(200, res.status_int)
+
     def test_delete_port_chain(self):
         with self.port_pair_group(
             port_pair_group={}
@@ -1238,6 +1336,33 @@ class SfcDbPluginTestCase(
         )
         res = req.get_response(self.ext_api)
         self.assertEqual(404, res.status_int)
+
+    def test_delete_port_chain_part_of_graph_fail(self):
+        with self.port_pair_group(
+            port_pair_group={}
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}
+        ) as pg2:
+            with self.port_chain(port_chain={
+                'port_pair_groups': [pg1['port_pair_group']['id']]
+            }) as pc1, self.port_chain(port_chain={
+                'port_pair_groups': [pg2['port_pair_group']['id']]
+            }) as pc2:
+                with self.service_graph(service_graph={
+                    'name': 'test1',
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']]}
+                }):
+                    req = self.new_delete_request(
+                        'port_chains', pc1['port_chain']['id']
+                    )
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(409, res.status_int)
+                    req = self.new_delete_request(
+                        'port_chains', pc2['port_chain']['id']
+                    )
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(409, res.status_int)
 
     def test_delete_flow_classifier_port_chain_exist(self):
         with self.port(
@@ -2201,3 +2326,549 @@ class SfcDbPluginTestCase(
                 )
                 res = req.get_response(self.api)
                 self.assertEqual(500, res.status_int)
+
+    def _test_create_service_graph_branching_ppg(
+            self, src_corr, dst_corr, status):
+        with self.port(
+            name='port1',
+            device_id='default'
+        ) as port1, self.port(
+            name='port2',
+            device_id='default'
+        ) as port2, self.port(
+            name='port3',
+            device_id='default'
+        ) as port3, self.port(
+            name='port4',
+            device_id='default'
+        ) as port4:
+            with self.port_pair(port_pair={
+                'ingress': port1['port']['id'],
+                'egress': port1['port']['id'],
+                'service_function_parameters': {'correlation': 'mpls'}
+            }, do_delete=False) as pp1, self.port_pair(port_pair={
+                'ingress': port2['port']['id'],
+                'egress': port2['port']['id'],
+                'service_function_parameters': {'correlation': src_corr}
+            }, do_delete=False) as pp2, self.port_pair(port_pair={
+                'ingress': port3['port']['id'],
+                'egress': port3['port']['id'],
+                'service_function_parameters': {'correlation': dst_corr}
+            }, do_delete=False) as pp3, self.port_pair(port_pair={
+                'ingress': port4['port']['id'],
+                'egress': port4['port']['id'],
+                'service_function_parameters': {'correlation': 'mpls'}
+            }, do_delete=False) as pp4:
+                with self.port_pair_group(
+                    port_pair_group={'port_pairs': [pp1['port_pair']['id']]},
+                    do_delete=False
+                ) as pg1, self.port_pair_group(
+                    port_pair_group={'port_pairs': [pp2['port_pair']['id']]},
+                    do_delete=False
+                ) as pg2, self.port_pair_group(
+                    port_pair_group={'port_pairs': [pp3['port_pair']['id']]},
+                    do_delete=False
+                ) as pg3, self.port_pair_group(
+                    port_pair_group={'port_pairs': [pp4['port_pair']['id']]},
+                    do_delete=False
+                ) as pg4:
+                    with self.port_chain(
+                        do_delete=False,
+                        port_chain={'port_pair_groups': [
+                            pg1['port_pair_group']['id'],
+                            pg2['port_pair_group']['id']]}
+                    ) as pc1, self.port_chain(
+                        do_delete=False,
+                        port_chain={'port_pair_groups': [
+                            pg3['port_pair_group']['id'],
+                            pg4['port_pair_group']['id']]}
+                    ) as pc2:
+                        self._create_service_graph(self.fmt, {
+                            'port_chains': {
+                                pc1['port_chain']['id']: [
+                                    pc2['port_chain']['id']]
+                            },
+                            'name': 'abc',
+                            'description': 'def'
+                        }, expected_res_status=status)
+
+    def test_create_service_graph_branching_ppg_no_src_corr_fail(self):
+        self._test_create_service_graph_branching_ppg(None, 'mpls', 400)
+
+    def test_create_service_graph_branching_ppg_no_dst_corr_fail(self):
+        self._test_create_service_graph_branching_ppg('mpls', None, 400)
+
+    def test_create_service_graph_branching_ppg_both_corrs_ok(self):
+        self._test_create_service_graph_branching_ppg('mpls', 'mpls', 201)
+
+    def test_create_service_graph_linear_dependency_only(self):
+        # this test will create a graph consisting of 1 port chain being
+        # dependent on 1 other port chain, thus with no branching.
+        with self.port_pair_group(
+            port_pair_group={}, do_delete=False
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}, do_delete=False
+        ) as pg2:
+            with self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2:
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']]
+                    },
+                    'name': 'abc',
+                    'description': 'def'
+                }, expected_res_status=201)
+
+    def test_create_service_graph_branching_no_class(self):
+        # this test will create a graph where 1 port chain will act
+        # as a dependency to 2 other port chains, effectively
+        # creating a branching service function chain.
+        with self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg1, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg2, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg3:
+            with self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg3['port_pair_group']['id']]}
+            ) as pc3:
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc1['port_chain']['id']: [
+                            pc2['port_chain']['id'],
+                            pc3['port_chain']['id']
+                        ]
+                    },
+                    'name': 'abc',
+                    'description': 'def'
+                }, expected_res_status=201)
+
+    def test_create_service_graph_same_chain_fail(self):
+        # this test will attempt to create a graph with a single branching
+        # point having 2 port chains - which are actually the same port chain.
+        with self.port_pair_group(
+            port_pair_group={}
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}
+        ) as pg2:
+            with self.port_chain(
+                port_chain={
+                    'port_pair_groups': [pg1['port_pair_group']['id']]
+                }
+            ) as pc1, self.port_chain(
+                port_chain={
+                    'port_pair_groups': [pg2['port_pair_group']['id']]
+                }
+            ) as pc2:
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc1['port_chain']['id']: [
+                            pc2['port_chain']['id'],
+                            pc2['port_chain']['id']
+                        ]
+                    },
+                    'name': 'abc',
+                    'description': 'def'
+                }, expected_res_status=400)
+
+    def test_create_service_graph_with_already_used_pcs_fail(self):
+        # this test will attempt to create a graph that maps
+        # port-chains which have already been mapped to other graphs.
+        with self.port_pair_group(
+            port_pair_group={}, do_delete=False
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}, do_delete=False
+        ) as pg2, self.port_pair_group(
+            port_pair_group={}, do_delete=False
+        ) as pg3:
+            with self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg3['port_pair_group']['id']]}
+            ) as pc3:
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc1['port_chain']['id']: [
+                            pc2['port_chain']['id']
+                        ]
+                    },
+                    'name': 'abc',
+                    'description': 'def'
+                }, expected_res_status=201)
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc3['port_chain']['id']: [
+                            pc1['port_chain']['id']
+                        ]
+                    },
+                    'name': 'abc',
+                    'description': 'def'
+                }, expected_res_status=409)
+
+    def test_create_service_graph_with_multiple_starts(self):
+        # this test will create a graph with multiple starting chains (tails)
+        with self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg1, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg2, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg3, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg4:
+            with self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg3['port_pair_group']['id']]}
+            ) as pc3, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg4['port_pair_group']['id']]}
+            ) as pc4:
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']],
+                        pc3['port_chain']['id']: [pc4['port_chain']['id']],
+                        pc4['port_chain']['id']: [pc2['port_chain']['id']]
+                    },
+                    'name': 'abc',
+                    'description': 'def'
+                }, expected_res_status=201)
+
+    def _test_create_service_graph_single_branching_two_fcs_each(
+            self, fc1_dict, fc2_dict, fc3_dict, fc4_dict, expected_res_status
+    ):
+        with self.flow_classifier(
+            flow_classifier=fc1_dict, do_delete=False
+        ) as fc1, self.flow_classifier(
+            flow_classifier=fc2_dict, do_delete=False
+        ) as fc2, self.flow_classifier(
+            flow_classifier=fc3_dict, do_delete=False
+        ) as fc3, self.flow_classifier(
+            flow_classifier=fc4_dict, do_delete=False
+        ) as fc4:
+            with self.port_pair_group(
+                port_pair_group={}, do_delete=False
+            ) as pg1, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+            ) as pg2, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+            ) as pg3:
+                with self.port_chain(
+                    port_chain={
+                        'port_pair_groups': [pg1['port_pair_group']['id']]
+                    },
+                    do_delete=False
+                ) as pc1, self.port_chain(
+                    port_chain={
+                        'port_pair_groups': [pg2['port_pair_group']['id']],
+                        'flow_classifiers': [
+                            fc1['flow_classifier']['id'],
+                            fc2['flow_classifier']['id']
+                        ]
+                    },
+                    do_delete=False
+                ) as pc2, self.port_chain(
+                    port_chain={
+                        'port_pair_groups': [pg3['port_pair_group']['id']],
+                        'flow_classifiers': [
+                            fc3['flow_classifier']['id'],
+                            fc4['flow_classifier']['id']
+                        ]
+                    },
+                    do_delete=False
+                ) as pc3:
+                    self._create_service_graph(self.fmt, {
+                        'port_chains': {
+                            pc1['port_chain']['id']: [
+                                pc2['port_chain']['id'],
+                                pc3['port_chain']['id']
+                            ]
+                        },
+                        'name': 'abc',
+                        'description': 'def'
+                    }, expected_res_status=expected_res_status)
+
+    def test_create_service_graph_unambiguous_branch(self):
+        # this test will create a graph where 1 port chain will act
+        # as a dependency to 2 other port chains, using different
+        # classifications for the dependent chains, which must succeed.
+        with self.port(
+            name='test1', do_delete=False
+        ) as port1, self.port(
+            name='test2', do_delete=False
+        ) as port2, self.port(
+            name='test3', do_delete=False
+        ) as port3, self.port(
+            name='test4', do_delete=False
+        ) as port4:
+            fc1_dict = {
+                'name': 'fc1',
+                'ethertype': 'IPv4',
+                'protocol': 'tcp',
+                'logical_source_port': port1['port']['id']
+            }
+            fc2_dict = {
+                'name': 'fc2',
+                'ethertype': 'IPv6',
+                'protocol': 'tcp',
+                'logical_source_port': port2['port']['id']
+            }
+            fc3_dict = {
+                'name': 'fc3',
+                'ethertype': 'IPv4',
+                'protocol': 'udp',
+                'logical_source_port': port3['port']['id']
+            }
+            fc4_dict = {
+                'name': 'fc4',
+                'ethertype': 'IPv6',
+                'protocol': 'udp',
+                'logical_source_port': port4['port']['id']
+            }
+            self._test_create_service_graph_single_branching_two_fcs_each(
+                fc1_dict, fc2_dict, fc3_dict, fc4_dict,
+                expected_res_status=201)
+
+    def test_create_service_graph_with_direct_loop_fail(self):
+        # this test will attempt to create a graph where there is a direct
+        # loop, i.e. a chain linked to itself - specifically pc2->pc2.
+        with self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg1, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg2:
+            with self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2:
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']],
+                        pc2['port_chain']['id']: [pc2['port_chain']['id']]
+                    },
+                    'name': 'abc',
+                    'description': 'def'
+                }, expected_res_status=400)
+
+    def test_create_service_graph_with_indirect_loop_fail(self):
+        # this test will attempt to create a graph where there is an indirect
+        # loop, i.e. a chain is linked to a chain providing a path back to
+        # the first chain again - specifically pc2->pc3->pc4->pc2.
+        with self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg1, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg2, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg3, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg4, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg5:
+            with self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg3['port_pair_group']['id']]}
+            ) as pc3, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg4['port_pair_group']['id']]}
+            ) as pc4, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg5['port_pair_group']['id']]}
+            ) as pc5:
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']],
+                        pc2['port_chain']['id']: [pc3['port_chain']['id']],
+                        pc3['port_chain']['id']: [pc4['port_chain']['id']],
+                        pc4['port_chain']['id']: [
+                            pc2['port_chain']['id'],
+                            pc5['port_chain']['id']
+                        ]
+                    },
+                    'name': 'abc',
+                    'description': 'def'
+                }, expected_res_status=400)
+
+    def test_create_service_graph_with_inexistent_port_chains(self):
+        # this test will attempt to create a graph where one
+        # of the referenced port chains do not exist, and fail.
+        with self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg1, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg2, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg3:
+            with self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg3['port_pair_group']['id']]}
+            ) as pc3:
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']],
+                        pc2['port_chain']['id']: [
+                            pc3['port_chain']['id'],
+                            uuidutils.generate_uuid()
+                        ]
+                    },
+                    'name': 'abc',
+                    'description': 'def'
+                }, expected_res_status=404)
+
+    def test_create_service_graph_with_joining_branches(self):
+        # this test will create a graph that including "joining" branches, i.e.
+        # a set of at least 2 branches that will be linked to the same next
+        # port chain, thus joining traffic at that point.
+        with self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg1, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg2, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg3, self.port_pair_group(
+                port_pair_group={}, do_delete=False
+        ) as pg4:
+            with self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg3['port_pair_group']['id']]}
+            ) as pc3, self.port_chain(
+                do_delete=False,
+                port_chain={'port_pair_groups': [pg4['port_pair_group']['id']]}
+            ) as pc4:
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']],
+                        pc2['port_chain']['id']: [
+                            pc3['port_chain']['id'], pc4['port_chain']['id']
+                        ],
+                        pc3['port_chain']['id']: [pc4['port_chain']['id']]
+                    },
+                    'name': 'abc',
+                    'description': 'def'
+                }, expected_res_status=201)
+
+    def test_update_service_graph(self):
+        with self.port_pair_group(
+            port_pair_group={}
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}
+        ) as pg2:
+            with self.port_chain(
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2:
+                with self.service_graph(service_graph={
+                    'name': 'test1',
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']]
+                    }
+                }) as graph:
+                    updates = {
+                        'name': 'test2',
+                        'description': 'desc2'
+                    }
+                    req = self.new_update_request(
+                        'service_graphs', {'service_graph': updates},
+                        graph['service_graph']['id']
+                    )
+                    res = self.deserialize(
+                        self.fmt,
+                        req.get_response(self.ext_api)
+                    )
+                    expected = graph['service_graph']
+                    expected.update(updates)
+                    for k, v in expected.items():
+                        self.assertEqual(res['service_graph'][k], v)
+                    req = self.new_show_request(
+                        'service_graphs', graph['service_graph']['id']
+                    )
+                    res = self.deserialize(
+                        self.fmt, req.get_response(self.ext_api)
+                    )
+                    for k, v in expected.items():
+                        self.assertEqual(res['service_graph'][k], v)
+
+    def test_delete_service_graph(self):
+        with self.port_pair_group(
+            port_pair_group={}
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}
+        ) as pg2:
+            with self.port_chain(
+                port_chain={
+                    'port_pair_groups': [pg1['port_pair_group']['id']]},
+            ) as pc1, self.port_chain(
+                port_chain={
+                    'port_pair_groups': [pg2['port_pair_group']['id']]},
+            ) as pc2:
+                with self.service_graph(service_graph={
+                    'name': 'test1',
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']]
+                    }
+                }, do_delete=False) as graph:
+                    req = self.new_delete_request(
+                        'service_graphs', graph['service_graph']['id']
+                    )
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(204, res.status_int)
+                    req = self.new_show_request(
+                        'service_graphs', graph['service_graph']['id']
+                    )
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(404, res.status_int)
+                    req = self.new_show_request(
+                        'port_chains', pc1['port_chain']['id']
+                    )
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(200, res.status_int)
+                    req = self.new_show_request(
+                        'port_chains', pc2['port_chain']['id']
+                    )
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(200, res.status_int)

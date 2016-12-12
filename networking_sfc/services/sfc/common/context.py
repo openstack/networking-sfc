@@ -83,3 +83,20 @@ class PortPairGroupContext(SfcPluginContext):
     @property
     def original(self):
         return self._original_portpairgroup
+
+
+class ServiceGraphContext(SfcPluginContext):
+
+    def __init__(self, plugin, plugin_context, service_graph,
+                 original_graph=None):
+        super(ServiceGraphContext, self).__init__(plugin, plugin_context)
+        self._service_graph = service_graph
+        self._original_graph = original_graph
+
+    @property
+    def current(self):
+        return self._service_graph
+
+    @property
+    def original(self):
+        return self._original_graph

@@ -406,6 +406,9 @@ class SfcDbPlugin(
 
     @log_helpers.log_method_call
     def delete_port_chain(self, context, id):
+        # if this port chain is part of a graph, abort delete:
+        if self._any_port_chains_in_a_graph(context, {id}):
+            raise ext_sg.ServiceGraphPortChainInUse(id=id)
         try:
             with db_api.context_manager.writer.using(context):
                 pc = self._get_port_chain(context, id)
@@ -416,6 +419,11 @@ class SfcDbPlugin(
     @log_helpers.log_method_call
     def update_port_chain(self, context, id, port_chain):
         pc = port_chain['port_chain']
+        # if this port chain is part of a graph, abort non-neutral updates:
+        if self._any_port_chains_in_a_graph(context, {id}):
+            if 'flow_classifiers' in pc or 'port_pair_groups' in pc:
+                raise ext_sg.ServiceGraphPortChainInUse(id=id)
+
         with db_api.context_manager.writer.using(context):
             pc_db = self._get_port_chain(context, id)
             for k, v in pc.items():
@@ -699,29 +707,244 @@ class SfcDbPlugin(
         except ext_sfc.PortPairGroupNotFound:
             LOG.info("Deleting a non-existing port pair group.")
 
+    def _graph_assocs_to_pc_dict(self, assocs):
+        assoc_dict = {}
+        for assoc in assocs:
+            if assoc.src_chain in assoc_dict:
+                assoc_dict[assoc.src_chain].append(assoc.dst_chain)
+            else:
+                assoc_dict[assoc.src_chain] = [assoc.dst_chain]
+        return assoc_dict
+
+    def _make_service_graph_dict(self, graph_db, fields=None):
+        res = {
+            'id': graph_db['id'],
+            'name': graph_db['name'],
+            'project_id': graph_db['project_id'],
+            'description': graph_db['description'],
+            'port_chains': self._graph_assocs_to_pc_dict(
+                graph_db['graph_chain_associations'])
+        }
+        return self._fields(res, fields)
+
+    def _make_graph_chain_assoc_dict(self, assoc_db, fields=None):
+        res = {
+            'service_graph_id': assoc_db['service_graph_id'],
+            'src_chain': assoc_db['src_chain'],
+            'dst_chain': assoc_db['dst_chain']
+        }
+        return self._fields(res, fields)
+
+    def _is_there_a_loop(self, parenthood, current_chain, traversed):
+        if current_chain not in parenthood:
+            return False
+        if current_chain not in traversed:
+            loop_status = False
+            traversed.append(current_chain)
+            for port_chain in parenthood[current_chain]:
+                loop_status = loop_status or self._is_there_a_loop(
+                    parenthood, port_chain, list(traversed))
+            return loop_status
+        return True
+
+    def _any_port_chains_in_a_graph(self, context,
+                                    port_chains=set(), graph_id=None):
+        if not port_chains:
+            return False
+        with db_api.context_manager.reader.using(context):
+            query = self._model_query(context, ServiceGraph)
+            for graph_db in query.all():
+                if graph_db['id'] == graph_id:
+                    continue
+                pc_ids = [
+                    assoc['src_chain']
+                    for assoc in graph_db.graph_chain_associations
+                ]
+                pc_ids.extend([
+                    assoc['dst_chain']
+                    for assoc in graph_db.graph_chain_associations
+                ])
+                if pc_ids and port_chains and set(
+                        pc_ids).intersection(port_chains):
+                    return True
+        return False
+
+    def _validate_port_chains_for_graph(self, context,
+                                        port_chains, graph_id=None):
+            # create a list of all port-chains that will be associated
+            all_port_chains = set()
+            for src_chain in port_chains:
+                all_port_chains.add(src_chain)
+                for dst_chain in port_chains[src_chain]:
+                    all_port_chains.add(dst_chain)
+            # check if any of the port-chains are already in a graph
+            if self._any_port_chains_in_a_graph(
+                    context, all_port_chains, graph_id):
+                raise ext_sg.ServiceGraphInvalidPortChains(
+                    port_chains=port_chains)
+
+            # dict whose keys are PCs and values are lists of dependency-PCs
+            # (PCs incoming to the point where the key is a outgoing)
+            parenthood = {}
+            encapsulation = None
+            fc_cls = fc_db.FlowClassifierDbPlugin
+            for src_chain in port_chains:
+                src_pc = self._get_port_chain(context, src_chain)
+                curr_corr = src_pc.chain_parameters['correlation']['value']
+                # guarantee that branching PPG supports correlation
+                assocs = src_pc.chain_group_associations
+                src_ppg = max(assocs, key=(lambda ppg: ppg.position))
+                ppg_id = src_ppg['portpairgroup_id']
+                ppg = self._get_port_pair_group(context, ppg_id)
+                for pp in ppg.port_pairs:
+                    sfparams = pp['service_function_parameters']
+                    if sfparams['correlation']['value'] != curr_corr:
+                        raise ext_sg.ServiceGraphImpossibleBranching()
+
+                # verify encapsulation consistency across all PCs (part 1)
+                if not encapsulation:
+                    encapsulation = curr_corr
+                elif encapsulation != curr_corr:
+                    raise ext_sg.ServiceGraphInconsistentEncapsulation()
+                # list of all port chains at this branching point:
+                branching_point = []
+                # list of every flow classifier at this branching point:
+                fcs_for_src_chain = []
+                for dst_chain in port_chains[src_chain]:
+                    # check if the current destination PC was already added
+                    if dst_chain in branching_point:
+                        raise ext_sg.ServiceGraphPortChainInConflict(
+                            pc_id=dst_chain)
+                    branching_point.append(dst_chain)
+                    dst_pc = self._get_port_chain(context, dst_chain)
+                    curr_corr = dst_pc.chain_parameters['correlation']['value']
+                    # guarantee that destination PPG supports correlation
+                    assocs = dst_pc.chain_group_associations
+                    dst_ppg = min(assocs, key=(lambda ppg: ppg.position))
+                    ppg_id = dst_ppg['portpairgroup_id']
+                    ppg = self._get_port_pair_group(context, ppg_id)
+                    for pp in ppg.port_pairs:
+                        sfparams = pp['service_function_parameters']
+                        if sfparams['correlation']['value'] != curr_corr:
+                            raise ext_sg.ServiceGraphImpossibleBranching()
+                    # verify encapsulation consistency across all PCs (part 2)
+                    if encapsulation != curr_corr:
+                        raise ext_sg.ServiceGraphInconsistentEncapsulation()
+                    dst_pc_dict = self._make_port_chain_dict(dst_pc)
+                    # acquire associated flow classifiers
+                    fcs = dst_pc_dict['flow_classifiers']
+                    for fc_id in fcs:
+                        fc = self._get_flow_classifier(context, fc_id)
+                        fcs_for_src_chain.append(fc)  # update list of every FC
+                    # update the parenthood dict
+                    if dst_chain in parenthood:
+                        parenthood[dst_chain].append(src_chain)
+                    else:
+                        parenthood[dst_chain] = [src_chain]
+                    # detect duplicate FCs, consequently branching ambiguity
+                    for i, fc1 in enumerate(fcs_for_src_chain):
+                        for fc2 in fcs_for_src_chain[i + 1:]:
+                            if(fc_cls.flowclassifier_basic_conflict(fc1, fc2)):
+                                raise ext_sg.\
+                                    ServiceGraphFlowClassifierInConflict(
+                                        fc1_id=fc1['id'], fc2_id=fc2['id'])
+
+            # check for circular paths within the graph via parenthood dict:
+            for port_chain in parenthood:
+                if self._is_there_a_loop(parenthood, port_chain, []):
+                    raise ext_sg.ServiceGraphLoopDetected()
+
+    def _setup_graph_chain_associations(self, context, graph_db, port_chains):
+        with db_api.context_manager.reader.using(context):
+            graph_chain_associations = []
+            for src_chain in port_chains:
+                query = self._model_query(context, GraphChainAssoc)
+                for dst_chain in port_chains[src_chain]:
+                    graph_chain_association = query.filter_by(
+                        service_graph_id=graph_db.id,
+                        src_chain=src_chain, dst_chain=dst_chain).first()
+                    if not graph_chain_association:
+                        graph_chain_association = GraphChainAssoc(
+                            service_graph_id=graph_db.id,
+                            src_chain=src_chain,
+                            dst_chain=dst_chain
+                        )
+                    graph_chain_associations.append(graph_chain_association)
+            graph_db.graph_chain_associations = graph_chain_associations
+
+    def _get_branches(self, context, filters):
+        return self._get_collection(context,
+                                    GraphChainAssoc,
+                                    self._make_graph_chain_assoc_dict,
+                                    filters=filters)
+
     @log_helpers.log_method_call
     def create_service_graph(self, context, service_graph):
         """Create a Service Graph."""
-        pass
+        service_graph = service_graph['service_graph']
+        project_id = service_graph['project_id']
+        with db_api.context_manager.writer.using(context):
+            port_chains = service_graph['port_chains']
+            self._validate_port_chains_for_graph(context, port_chains)
+            graph_db = ServiceGraph(id=uuidutils.generate_uuid(),
+                                    project_id=project_id,
+                                    description=service_graph['description'],
+                                    name=service_graph['name'])
+            self._setup_graph_chain_associations(
+                context, graph_db, port_chains)
+            context.session.add(graph_db)
+            return self._make_service_graph_dict(graph_db)
 
     @log_helpers.log_method_call
     def get_service_graphs(self, context, filters=None,
                            fields=None, sorts=None, limit=None,
                            marker=None, page_reverse=False):
         """Get Service Graphs."""
-        pass
+        marker_obj = self._get_marker_obj(context,
+                                          'service_graph', limit, marker)
+        return self._get_collection(context,
+                                    ServiceGraph,
+                                    self._make_service_graph_dict,
+                                    filters=filters, fields=fields,
+                                    sorts=sorts,
+                                    limit=limit, marker_obj=marker_obj,
+                                    page_reverse=page_reverse)
 
     @log_helpers.log_method_call
     def get_service_graph(self, context, id, fields=None):
         """Get a Service Graph."""
-        pass
+        service_graph = self._get_service_graph(context, id)
+        return self._make_service_graph_dict(service_graph, fields)
+
+    @log_helpers.log_method_call
+    def _get_service_graph(self, context, id):
+        try:
+            return self._get_by_id(context, ServiceGraph, id)
+        except exc.NoResultFound:
+            raise ext_sg.ServiceGraphNotFound(id=id)
 
     @log_helpers.log_method_call
     def update_service_graph(self, context, id, service_graph):
         """Update a Service Graph."""
-        pass
+        service_graph = service_graph['service_graph']
+        with db_api.context_manager.writer.using(context):
+            graph_db = self._get_service_graph(context, id)
+            for k, v in service_graph.items():
+                if k == 'port_chains':
+                    self._validate_port_chains_for_graph(
+                        context, v, graph_id=id)
+                    self._setup_graph_chain_associations(
+                        context, graph_db, v)
+                else:
+                    graph_db[k] = v
+            return self._make_service_graph_dict(graph_db)
 
     @log_helpers.log_method_call
     def delete_service_graph(self, context, id):
         """Delete a Service Graph."""
-        pass
+        try:
+            with db_api.context_manager.writer.using(context):
+                graph = self._get_service_graph(context, id)
+                context.session.delete(graph)
+        except ext_sfc.ServiceGraphNotFound:
+            LOG.info("Deleting a non-existing Service Graph.")

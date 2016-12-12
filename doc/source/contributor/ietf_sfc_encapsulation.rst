@@ -14,15 +14,6 @@
       under the License.
 
 
-      Convention for heading levels in Neutron devref:
-      =======  Heading 0 (reserved for the title in a document)
-      -------  Heading 1
-      ~~~~~~~  Heading 2
-      +++++++  Heading 3
-      '''''''  Heading 4
-      (Avoid deeper levels because they do not render well.)
-
-
 IETF SFC Encapsulation
 ======================
 

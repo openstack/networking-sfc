@@ -244,12 +244,58 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     @log_helpers.log_method_call
     def create_service_graph(self, context, service_graph):
-        pass
+        with db_api.context_manager.writer.using(context):
+            service_graph_db = super(SfcPlugin, self).create_service_graph(
+                context, service_graph)
+            service_graph_db_context = sfc_ctx.ServiceGraphContext(
+                self, context, service_graph_db)
+            self.driver_manager.create_service_graph_precommit(
+                service_graph_db_context)
+        try:
+            self.driver_manager.create_service_graph_postcommit(
+                service_graph_db_context)
+        except sfc_exc.SfcDriverError as e:
+            LOG.exception(e)
+            with excutils.save_and_reraise_exception():
+                LOG.error("Create Service Graph failed, "
+                          "deleting Service Graph '%s'",
+                          service_graph_db['id'])
+                self.delete_service_graph(context, service_graph_db['id'])
+
+        return service_graph_db
 
     @log_helpers.log_method_call
     def update_service_graph(self, context, id, service_graph):
-        pass
+        with db_api.context_manager.writer.using(context):
+            original_graph = self.get_service_graph(context, id)
+            updated_graph = super(SfcPlugin, self).update_service_graph(
+                context, id, service_graph)
+            service_graph_db_context = sfc_ctx.ServiceGraphContext(
+                self, context, updated_graph,
+                original_graph=original_graph)
+            self.driver_manager.update_service_graph_precommit(
+                service_graph_db_context)
+        try:
+            self.driver_manager.update_service_graph_postcommit(
+                service_graph_db_context)
+        except sfc_exc.SfcDriverError:
+            with excutils.save_and_reraise_exception():
+                LOG.error("Update failed, service_graph '%s'",
+                          updated_graph['id'])
+        return updated_graph
 
     @log_helpers.log_method_call
     def delete_service_graph(self, context, id):
-        pass
+        graph = self.get_service_graph(context, id)
+        graph_context = sfc_ctx.ServiceGraphContext(self, context, graph)
+        with db_api.context_manager.writer.using(context):
+            graph = self.get_service_graph(context, id)
+            graph_context = sfc_ctx.ServiceGraphContext(self, context, graph)
+            super(SfcPlugin, self).delete_service_graph(context, id)
+            self.driver_manager.delete_service_graph_precommit(graph_context)
+        try:
+            self.driver_manager.delete_service_graph_postcommit(graph_context)
+        except sfc_exc.SfcDriverError as e:
+            LOG.exception(e)
+            with excutils.save_and_reraise_exception():
+                LOG.error("Delete failed, service_graph '%s'", id)

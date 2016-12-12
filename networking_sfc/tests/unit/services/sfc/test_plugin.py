@@ -721,3 +721,307 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
             )
         )
         self._test_delete_port_pair_driver_manager_exception()
+
+    def test_create_service_graph_driver_manager_called(self):
+        self.fake_driver_manager.create_service_graph_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.create_service_graph_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
+        with self.port_pair_group(
+            port_pair_group={}
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}
+        ) as pg2:
+            with self.port_chain(
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2:
+                with self.service_graph(
+                    service_graph={
+                        'name': 'test1',
+                        'port_chains': {
+                            pc1['port_chain']['id']: [pc2['port_chain']['id']]
+                        }
+                    }
+                ) as graph:
+                    driver_manager = self.fake_driver_manager
+                    (driver_manager.create_service_graph_precommit
+                        .assert_called_once_with(mock.ANY))
+                    (driver_manager.create_service_graph_postcommit
+                        .assert_called_once_with(mock.ANY))
+                    self.assertIsInstance(
+                        self.plugin_context_precommit,
+                        sfc_ctx.ServiceGraphContext
+                    )
+                    self.assertIsInstance(
+                        self.plugin_context_postcommit,
+                        sfc_ctx.ServiceGraphContext
+                    )
+                    self.assertIn('service_graph', graph)
+                    self.assertEqual(
+                        self.plugin_context_precommit.current,
+                        graph['service_graph'])
+                    self.assertEqual(
+                        self.plugin_context_postcommit.current,
+                        graph['service_graph'])
+
+    def test_create_service_graph_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.create_service_graph_precommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='create_service_graph_precommit'
+            )
+        )
+        with self.port_pair_group(
+            port_pair_group={}
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}
+        ) as pg2:
+            with self.port_chain(
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2:
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']]
+                    }
+                }, expected_res_status=500)
+                self._test_list_resources('service_graph', [])
+            (self.fake_driver_manager.create_service_graph_postcommit
+                .assert_not_called())
+            self.fake_driver_manager.delete_service_graph.assert_not_called()
+
+    def test_create_service_graph_postcommit_driver_manager_exception(self):
+        self.fake_driver_manager.create_service_graph_postcommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='create_service_graph_postcommit'
+            )
+        )
+        with self.port_pair_group(
+            port_pair_group={}
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}
+        ) as pg2:
+            with self.port_chain(
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2:
+                self._create_service_graph(self.fmt, {
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']]
+                    }
+                }, expected_res_status=500)
+                self._test_list_resources('service_graph', [])
+            (self.fake_driver_manager.create_service_graph_precommit
+             .assert_called_once_with(mock.ANY))
+            self.fake_driver_manager.delete_service_graph_postcommit.\
+                assert_called_once_with(mock.ANY)
+
+    def test_update_service_graph_driver_manager_called(self):
+        self.fake_driver_manager.update_service_graph_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.update_service_graph_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
+        with self.port_pair_group(
+            port_pair_group={}
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}
+        ) as pg2:
+            with self.port_chain(
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2:
+                with self.service_graph(service_graph={
+                    'name': 'test1',
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']]
+                    }
+                }) as graph:
+                    req = self.new_update_request(
+                        'service_graphs',
+                        {'service_graph': {'name': 'test2'}},
+                        graph['service_graph']['id']
+                    )
+                    res = self.deserialize(
+                        self.fmt,
+                        req.get_response(self.ext_api)
+                    )
+                    driver_manager = self.fake_driver_manager
+                    (driver_manager.update_service_graph_precommit
+                     .assert_called_once_with(mock.ANY))
+                    (driver_manager.update_service_graph_postcommit
+                     .assert_called_once_with(mock.ANY))
+                    self.assertIsInstance(
+                        self.plugin_context_precommit,
+                        sfc_ctx.ServiceGraphContext
+                    )
+                    self.assertIsInstance(
+                        self.plugin_context_postcommit,
+                        sfc_ctx.ServiceGraphContext
+                    )
+                    self.assertIn('service_graph', graph)
+                    self.assertIn('service_graph', res)
+                    self.assertEqual(
+                        self.plugin_context_precommit.current,
+                        res['service_graph'])
+                    self.assertEqual(
+                        self.plugin_context_postcommit.current,
+                        res['service_graph'])
+                    self.assertEqual(
+                        self.plugin_context_precommit.original,
+                        graph['service_graph'])
+                    self.assertEqual(
+                        self.plugin_context_postcommit.original,
+                        graph['service_graph'])
+
+    def _test_update_service_graph_driver_manager_exception(self, updated):
+        with self.port_pair_group(
+            port_pair_group={}
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}
+        ) as pg2:
+            with self.port_chain(
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2:
+                with self.service_graph(service_graph={
+                    'name': 'test1',
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']]
+                    }
+                }) as graph:
+                    self.assertIn('service_graph', graph)
+                    original_service_graph = graph['service_graph']
+                    req = self.new_update_request(
+                        'service_graphs', {'service_graph': {'name': 'test2'}},
+                        graph['service_graph']['id']
+                    )
+                    updated_service_graph = copy.copy(original_service_graph)
+                    if updated:
+                        updated_service_graph['name'] = 'test2'
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(500, res.status_int)
+                    res = self._list('service_graphs')
+                    self.assertIn('service_graphs', res)
+                    self.assertItemsEqual(
+                        res['service_graphs'], [updated_service_graph])
+
+    def test_update_service_graph_precommit_driver_manager_exception(self):
+        self.fake_driver_manager.update_service_graph_precommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='update_service_graph_precommit'
+            )
+        )
+        self._test_update_service_graph_driver_manager_exception(False)
+
+    def test_update_service_graph_postcommit_driver_manager_exception(self):
+        self.fake_driver_manager.update_service_graph_postcommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='update_service_graph_postcommit'
+            )
+        )
+        self._test_update_service_graph_driver_manager_exception(True)
+
+    def test_delete_service_graph_manager_called(self):
+        self.fake_driver_manager.delete_service_graph_precommit = mock.Mock(
+            side_effect=self._record_context_precommit)
+        self.fake_driver_manager.delete_service_graph_postcommit = mock.Mock(
+            side_effect=self._record_context_postcommit)
+        with self.port_pair_group(
+            port_pair_group={}
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}
+        ) as pg2:
+            with self.port_chain(
+                port_chain={'port_pair_groups': [pg1['port_pair_group']['id']]}
+            ) as pc1, self.port_chain(
+                port_chain={'port_pair_groups': [pg2['port_pair_group']['id']]}
+            ) as pc2:
+                with self.service_graph(service_graph={
+                    'name': 'test1',
+                    'port_chains': {
+                        pc1['port_chain']['id']: [pc2['port_chain']['id']]
+                    }
+                }, do_delete=False) as graph:
+                    req = self.new_delete_request(
+                        'service_graphs', graph['service_graph']['id']
+                    )
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(204, res.status_int)
+                    driver_manager = self.fake_driver_manager
+                    (driver_manager.delete_service_graph_precommit
+                     .assert_called_once_with(mock.ANY))
+                    (driver_manager.delete_service_graph_postcommit
+                     .assert_called_once_with(mock.ANY))
+                    self.assertIsInstance(
+                        self.plugin_context_precommit,
+                        sfc_ctx.ServiceGraphContext
+                    )
+                    self.assertIsInstance(
+                        self.plugin_context_postcommit,
+                        sfc_ctx.ServiceGraphContext
+                    )
+                self.assertIn('service_graph', graph)
+                self.assertEqual(self.plugin_context_precommit.current,
+                                 graph['service_graph'])
+                self.assertEqual(self.plugin_context_postcommit.current,
+                                 graph['service_graph'])
+
+    def _test_delete_service_graph_driver_manager_exception(self):
+        with self.port_pair_group(
+            port_pair_group={}, do_delete=False
+        ) as pg1, self.port_pair_group(
+            port_pair_group={}, do_delete=False
+        ) as pg2:
+            with self.port_chain(
+                port_chain={
+                    'port_pair_groups': [
+                        pg1['port_pair_group']['id']
+                    ]
+                },
+                do_delete=False
+            ) as pc1, self.port_chain(
+                port_chain={
+                    'port_pair_groups': [
+                        pg2['port_pair_group']['id']
+                    ]
+                },
+                do_delete=False
+            ) as pc2:
+                with self.service_graph(
+                    service_graph={
+                        'name': 'test1',
+                        'port_chains': {
+                            pc1['port_chain']['id']: [
+                                pc2['port_chain']['id']
+                            ]
+                        }
+                    },
+                    do_delete=False
+                ) as graph:
+                    req = self.new_delete_request(
+                        'service_graphs', graph['service_graph']['id']
+                    )
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(500, res.status_int)
+                    self._test_list_resources('service_graph', [graph])
+
+    def test_delete_service_graph_driver_precommit_manager_exception(self):
+        self.fake_driver_manager.delete_service_graph_precommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='delete_service_graph_precommit'
+            )
+        )
+        self._test_delete_service_graph_driver_manager_exception()
+
+    def test_delete_service_graph_driver_postcommit_manager_exception(self):
+        self.fake_driver_manager.delete_service_graph_precommit = mock.Mock(
+            side_effect=sfc_exc.SfcDriverError(
+                method='delete_service_graph_postcommit'
+            )
+        )
+        self._test_delete_service_graph_driver_manager_exception()
