@@ -31,57 +31,81 @@ down_revision = 'c3e178d4a985'
 
 def upgrade():
     op.create_table('sfc_portpair_details',
-        sa.Column('tenant_id', sa.String(length=255), nullable=True),
-        sa.Column('id', sa.String(length=36), nullable=False),
-        sa.Column('ingress', sa.String(length=36), nullable=True),
-        sa.Column('egress', sa.String(length=36), nullable=True),
-        sa.Column('host_id', sa.String(length=255), nullable=False),
-        sa.Column('mac_address', sa.String(length=32), nullable=False),
-        sa.Column('network_type', sa.String(length=8), nullable=True),
-        sa.Column('segment_id', sa.Integer(), nullable=True),
-        sa.Column('local_endpoint', sa.String(length=64), nullable=False),
-        sa.PrimaryKeyConstraint('id')
-    )
+                    sa.Column('tenant_id', sa.String(length=255),
+                              nullable=True),
+                    sa.Column('id', sa.String(length=36),
+                              nullable=False),
+                    sa.Column('ingress', sa.String(length=36),
+                              nullable=True),
+                    sa.Column('egress', sa.String(length=36),
+                              nullable=True),
+                    sa.Column('host_id', sa.String(length=255),
+                              nullable=False),
+                    sa.Column('mac_address', sa.String(length=32),
+                              nullable=False),
+                    sa.Column('network_type', sa.String(length=8),
+                              nullable=True),
+                    sa.Column('segment_id', sa.Integer(),
+                              nullable=True),
+                    sa.Column('local_endpoint', sa.String(length=64),
+                              nullable=False),
+                    sa.PrimaryKeyConstraint('id')
+                    )
 
     op.create_index(
         op.f('ix_sfc_portpair_details_tenant_id'),
         'sfc_portpair_details', ['tenant_id'], unique=False
     )
     op.create_table('sfc_uuid_intid_associations',
-        sa.Column('id', sa.String(length=36), nullable=False),
-        sa.Column('uuid', sa.String(length=36), nullable=False),
-        sa.Column('intid', sa.Integer(), nullable=False),
-        sa.Column('type_', sa.String(length=32), nullable=False),
-        sa.PrimaryKeyConstraint('id', 'uuid'),
-        sa.UniqueConstraint('intid')
-    )
+                    sa.Column('id', sa.String(length=36), nullable=False),
+                    sa.Column('uuid', sa.String(length=36), nullable=False),
+                    sa.Column('intid', sa.Integer(), nullable=False),
+                    sa.Column('type_', sa.String(length=32), nullable=False),
+                    sa.PrimaryKeyConstraint('id', 'uuid'),
+                    sa.UniqueConstraint('intid')
+                    )
 
     op.create_table('sfc_path_nodes',
-        sa.Column('tenant_id', sa.String(length=255), nullable=True),
-        sa.Column('id', sa.String(length=36), nullable=False),
-        sa.Column('nsp', sa.Integer(), nullable=False),
-        sa.Column('nsi', sa.Integer(), nullable=False),
-        sa.Column('node_type', sa.String(length=32), nullable=True),
-        sa.Column('portchain_id', sa.String(length=255), nullable=True),
-        sa.Column('status', sa.String(length=32), nullable=True),
-        sa.Column('next_group_id', sa.Integer(), nullable=True),
-        sa.Column('next_hop', sa.String(length=512), nullable=True),
-        sa.ForeignKeyConstraint(['portchain_id'], ['sfc_port_chains.id'],
-                                ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id')
-    )
+                    sa.Column('tenant_id', sa.String(length=255),
+                              nullable=True),
+                    sa.Column('id', sa.String(length=36),
+                              nullable=False),
+                    sa.Column('nsp', sa.Integer(),
+                              nullable=False),
+                    sa.Column('nsi', sa.Integer(),
+                              nullable=False),
+                    sa.Column('node_type', sa.String(length=32),
+                              nullable=True),
+                    sa.Column('portchain_id', sa.String(length=255),
+                              nullable=True),
+                    sa.Column('status', sa.String(length=32),
+                              nullable=True),
+                    sa.Column('next_group_id', sa.Integer(),
+                              nullable=True),
+                    sa.Column('next_hop', sa.String(length=512),
+                              nullable=True),
+                    sa.ForeignKeyConstraint(['portchain_id'],
+                                            ['sfc_port_chains.id'],
+                                            ondelete='CASCADE'),
+                    sa.PrimaryKeyConstraint('id')
+                    )
     op.create_index(
         op.f('ix_sfc_path_nodes_tenant_id'),
         'sfc_path_nodes', ['tenant_id'], unique=False
     )
 
     op.create_table('sfc_path_port_associations',
-        sa.Column('pathnode_id', sa.String(length=36), nullable=False),
-        sa.Column('portpair_id', sa.String(length=36), nullable=False),
-        sa.Column('weight', sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(['pathnode_id'], ['sfc_path_nodes.id'],
-                                ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['portpair_id'], ['sfc_portpair_details.id'],
-                                ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('pathnode_id', 'portpair_id')
-    )
+                    sa.Column('pathnode_id', sa.String(length=36),
+                              nullable=False),
+                    sa.Column('portpair_id', sa.String(length=36),
+                              nullable=False),
+                    sa.Column('weight', sa.Integer(),
+                              nullable=False),
+                    sa.ForeignKeyConstraint(['pathnode_id'],
+                                            ['sfc_path_nodes.id'],
+                                            ondelete='CASCADE'),
+                    sa.ForeignKeyConstraint(['portpair_id'],
+                                            ['sfc_portpair_details.id'],
+                                            ondelete='CASCADE'),
+                    sa.PrimaryKeyConstraint('pathnode_id', 'portpair_id')
+                    )

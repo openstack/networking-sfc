@@ -62,6 +62,7 @@ def upgrade():
         sa.Column('keyword', sa.String(length=255), nullable=False),
         sa.Column('value', sa.String(length=255), nullable=True),
         sa.Column('classifier_id', sa.String(length=36), nullable=False),
-        sa.ForeignKeyConstraint(['classifier_id'], ['sfc_flow_classifiers.id'], ),
+        sa.ForeignKeyConstraint(['classifier_id'],
+                                ['sfc_flow_classifiers.id'], ),
         sa.PrimaryKeyConstraint('keyword', 'classifier_id')
     )

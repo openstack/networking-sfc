@@ -286,7 +286,7 @@ def main():
         functools.partial(show_outcome, sys.stdout,
                           print_failures=args.print_failures,
                           failonly=args.failonly
-                      ))
+                          ))
     summary = testtools.StreamSummary()
     result = testtools.CopyStreamResult([starts, outcomes, summary])
     result.startTestRun()

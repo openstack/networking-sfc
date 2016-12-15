@@ -21,24 +21,31 @@ Create Date: 2016-07-03 10:15:29.371910
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
 # revision identifiers, used by Alembic.
 revision = 'fa75d46a7f11'
 down_revision = 'd1002a1f97f6'
 
-from alembic import op
-import sqlalchemy as sa
-
 
 def upgrade():
     op.create_table('sfc_port_pair_group_params',
-    sa.Column('keyword', sa.String(length=255), nullable=False),
-    sa.Column('value', sa.String(length=255), nullable=True),
-    sa.Column('pair_group_id', sa.String(length=36), nullable=False),
-    sa.ForeignKeyConstraint(['pair_group_id'], ['sfc_port_pair_groups.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('keyword', 'pair_group_id'),
-    mysql_engine='InnoDB'
-    )
-    op.add_column('sfc_port_chains', sa.Column('chain_id', sa.Integer(), nullable=False))
+                    sa.Column('keyword', sa.String(length=255),
+                              nullable=False),
+                    sa.Column('value', sa.String(length=255),
+                              nullable=True),
+                    sa.Column('pair_group_id', sa.String(length=36),
+                              nullable=False),
+                    sa.ForeignKeyConstraint(['pair_group_id'],
+                                            ['sfc_port_pair_groups.id'],
+                                            ondelete='CASCADE'),
+                    sa.PrimaryKeyConstraint('keyword', 'pair_group_id'),
+                    mysql_engine='InnoDB'
+                    )
+    op.add_column('sfc_port_chains', sa.Column('chain_id',
+                  sa.Integer(), nullable=False))
     op.create_unique_constraint(None, 'sfc_port_chains', ['chain_id'])
-    op.add_column('sfc_port_pair_groups', sa.Column('group_id', sa.Integer(), nullable=False))
+    op.add_column('sfc_port_pair_groups', sa.Column('group_id',
+                  sa.Integer(), nullable=False))
     op.create_unique_constraint(None, 'sfc_port_pair_groups', ['group_id'])

@@ -56,7 +56,8 @@ def upgrade():
                                 ondelete='RESTRICT'),
         sa.ForeignKeyConstraint(['ingress'], ['ports.id'],
                                 ondelete='RESTRICT'),
-        sa.ForeignKeyConstraint(['portpairgroup_id'], ['sfc_port_pair_groups.id'],
+        sa.ForeignKeyConstraint(['portpairgroup_id'],
+                                ['sfc_port_pair_groups.id'],
                                 ondelete='RESTRICT'),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('ingress', 'egress',
@@ -81,7 +82,8 @@ def upgrade():
         sa.Column('portchain_id', sa.String(length=36), nullable=False),
         sa.Column('position', sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(['portchain_id'], ['sfc_port_chains.id'], ),
-        sa.ForeignKeyConstraint(['portpairgroup_id'], ['sfc_port_pair_groups.id'],
+        sa.ForeignKeyConstraint(['portpairgroup_id'],
+                                ['sfc_port_pair_groups.id'],
                                 ondelete='RESTRICT'),
         sa.PrimaryKeyConstraint('portpairgroup_id', 'portchain_id')
     )
