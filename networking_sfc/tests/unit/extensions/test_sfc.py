@@ -41,7 +41,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
     fmt = 'json'
 
     def setUp(self):
-        self._mock_unncessary_looging()
+        self._mock_unnecessary_logging()
         super(SfcExtensionTestCase, self).setUp()
         self._setUpExtension(
             'networking_sfc.extensions.sfc.SfcPluginBase',
@@ -52,7 +52,7 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             plural_mappings={}
         )
 
-    def _mock_unncessary_looging(self):
+    def _mock_unnecessary_logging(self):
         mock_log_cfg_p = mock.patch.object(cfg, 'LOG')
         self.mock_log_cfg = mock_log_cfg_p.start()
 

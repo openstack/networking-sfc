@@ -43,7 +43,7 @@ class FlowClassifierExtensionTestCase(
     fmt = 'json'
 
     def setUp(self):
-        self._mock_unncessary_logging()
+        self._mock_unnecessary_logging()
         super(FlowClassifierExtensionTestCase, self).setUp()
         self._setUpExtension(
             'networking_sfc.extensions.flowclassifier.'
@@ -55,7 +55,7 @@ class FlowClassifierExtensionTestCase(
             plural_mappings={}
         )
 
-    def _mock_unncessary_logging(self):
+    def _mock_unnecessary_logging(self):
         mock_log_cfg_p = mock.patch.object(config, 'LOG')
         self.mock_log_cfg = mock_log_cfg_p.start()
 

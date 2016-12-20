@@ -47,7 +47,7 @@ class BaseTestCase(n_base.BaseTestCase):
 
 class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
     def setUp(self, plugin=None, service_plugins=None, ext_mgr=None):
-        self._mock_unncessary_logging()
+        self._mock_unnecessary_logging()
 
         if not plugin:
             plugin = 'neutron.plugins.ml2.plugin.Ml2Plugin'
@@ -75,7 +75,7 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
             device_owner=nl_const.DEVICE_OWNER_ROUTER_INTF
         )
 
-    def _mock_unncessary_logging(self):
+    def _mock_unnecessary_logging(self):
         mock_log_sg_rpc_p = mock.patch.object(sg_rpc, 'LOG')
         self.mock_log_sg_rpc = mock_log_sg_rpc_p.start()
 
