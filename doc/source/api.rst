@@ -621,7 +621,7 @@ Json Port Chain create request example::
 
 Json Port Chain create response example::
 
- {"port_chain": {"name": "PC2",
+ {"port_chain": {"name": "PC1",
         "tenant_id": "d382007aa9904763a801f68ecf065cf5",
         "description": "Steering TCP and UDP traffic first to Firewall and then to Loadbalancer",
         "flow_classifiers": [
