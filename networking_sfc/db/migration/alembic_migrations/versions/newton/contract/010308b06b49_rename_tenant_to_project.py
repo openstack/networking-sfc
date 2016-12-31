@@ -50,8 +50,7 @@ def get_inspector():
 
 
 def get_tables():
-    """
-    Returns hardcoded list of tables which have ``tenant_id`` column.
+    """Returns hardcoded list of tables which have ``tenant_id`` column.
 
     The list is hard-coded to match the state of the schema when this upgrade
     script is run.
@@ -140,6 +139,7 @@ def upgrade():
 
 def contract_creation_exceptions():
     """Special migration for the blueprint to support Keystone V3.
+
     We drop all tenant_id columns and create project_id columns instead.
     """
     return {
