@@ -289,7 +289,6 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                 if key == 'portpair_details':
                     pds = []
                     for pd_id in value:
-                        self._get_port_detail(pd_id)
                         query = self._model_query(
                             self.admin_context, PathPortAssoc)
                         pd_association = query.filter_by(
