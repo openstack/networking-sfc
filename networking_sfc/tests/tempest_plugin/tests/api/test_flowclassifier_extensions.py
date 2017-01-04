@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from tempest.lib.common.utils import data_utils
 from tempest import test
 
@@ -68,5 +66,5 @@ class FlowClassifierExtensionTestJSON(base.BaseFlowClassifierTest):
         created = self._try_create_flowclassifier()
         fc = self.flowclassifier_client.show_flowclassifier(
             created['id'])
-        for key, value in six.iteritems(fc['flow_classifier']):
+        for key, value in fc['flow_classifier'].items():
             self.assertEqual(created[key], value)

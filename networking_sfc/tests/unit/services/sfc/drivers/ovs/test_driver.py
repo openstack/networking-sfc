@@ -14,7 +14,6 @@
 
 from eventlet import greenthread
 import mock
-import six
 
 from neutron_lib.api.definitions import portbindings
 
@@ -177,7 +176,7 @@ class OVSSfcDriverTestCase(
             key = self.build_ingress_egress(ingress, egress)
             if key in flow_rule_dict:
                 flow_rule_by_key = flow_rule_dict[key]
-                for flow_key, flow_value in six.iteritems(flow_rule):
+                for flow_key, flow_value in flow_rule.items():
                     if flow_key not in flow_rule_by_key:
                         flow_rule_by_key[flow_key] = flow_value
                     elif isinstance(flow_value, list):

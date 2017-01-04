@@ -13,7 +13,6 @@
 #    under the License.
 
 import netaddr
-import six
 
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -212,7 +211,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
         project_id = fc['project_id']
         l7_parameters = {
             key: L7Parameter(key, val)
-            for key, val in six.iteritems(fc['l7_parameters'])}
+            for key, val in fc['l7_parameters'].items()}
         ethertype = fc['ethertype']
         protocol = fc['protocol']
         source_port_range_min = fc['source_port_range_min']
@@ -287,7 +286,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
                 'logical_destination_port'],
             'l7_parameters': {
                 param['keyword']: param['value']
-                for k, param in six.iteritems(flow_classifier.l7_parameters)
+                for k, param in flow_classifier.l7_parameters.items()
             }
         }
         return self._fields(res, fields)

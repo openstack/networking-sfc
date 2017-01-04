@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from neutronclient.common import extension
 from neutronclient.common import utils
 from neutronclient.neutron import v2_0 as neutronv20
@@ -83,9 +81,7 @@ class PortPairGroupCreate(extension.ClientExtensionCreate, PortPairGroup):
         body = {}
         if parsed_args.port_pair_group_parameters:
             body['port_pair_group_parameters'] = {}
-            for key, value in six.iteritems(
-                parsed_args.port_pair_group_parameters
-            ):
+            for key, value in parsed_args.port_pair_group_parameters.items():
                 if key == 'lb_fields':
                     body['port_pair_group_parameters'][key] = ([
                         field for field in value.split('&') if field])
