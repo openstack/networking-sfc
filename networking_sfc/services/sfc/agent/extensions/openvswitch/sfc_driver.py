@@ -219,6 +219,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             LOG.error("Current portchain agent doesn't support IPv6")
         else:
             LOG.error("invalid protocol input")
+
         return (dl_type, nw_proto,
                 source_port_masks,
                 destination_port_masks)
@@ -263,19 +264,14 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     else:
                         tp_dst = '%s' % source_port
                         tp_src = '%s' % destination_port
-                    if nw_proto is None:
-                        flow_infos.append({'dl_type': dl_type,
-                                           'nw_src': nw_src,
-                                           'nw_dst': nw_dst,
-                                           'tp_src': tp_src,
-                                           'tp_dst': tp_dst})
-                    else:
-                        flow_infos.append({'dl_type': dl_type,
-                                           'nw_proto': nw_proto,
-                                           'nw_src': nw_src,
-                                           'nw_dst': nw_dst,
-                                           'tp_src': tp_src,
-                                           'tp_dst': tp_dst})
+                    flow_info = {'dl_type': dl_type,
+                                 'nw_src': nw_src,
+                                 'nw_dst': nw_dst,
+                                 'tp_src': tp_src,
+                                 'tp_dst': tp_dst}
+                    if nw_proto:
+                        flow_info['nw_proto'] = nw_proto
+                    flow_infos.append(flow_info)
 
         return flow_infos
 
@@ -292,15 +288,27 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
 
         return flow_infos
 
+    def _match_by_header(self, match_info, nsp, nsi):
+        match_info['reg0'] = (nsp << 8) | nsi
+        # on header-matching there's no in_port
+        match_info.pop('in_port', None)
+
     def _setup_local_switch_flows_on_int_br(self, flowrule,
                                             flow_classifier_list, actions,
                                             add_flow=True, match_inport=True):
         inport_match = {}
         priority = PC_DEF_PRI
-
         # no pp_corr means that classification will not be based on encap
-        pp_corr = flowrule.get('pp_corr', None)
+        pp_corr = flowrule.get('pp_corr')
         node_type = flowrule['node_type']
+        branch_info = flowrule.get('branch_info')
+        on_add = None
+        flow_count = 1
+        if branch_info and node_type == constants.SRC_NODE:
+            # for branching, we need as many flows (per flow info) as branches
+            # because we can't AND-match the same field in a single flow
+            flow_count = len(branch_info.get('matches'))
+            on_add = branch_info.get('on_add')
 
         if match_inport is True:
             egress_port = self.br_int.get_vif_port_by_id(flowrule['egress'])
@@ -319,16 +327,25 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                         match_info = self._build_classification_match_sfc_mpls(
                             flowrule, match_info)
 
-            if add_flow:
-                self.br_int.add_flow(table=ovs_consts.LOCAL_SWITCHING,
-                                     priority=priority,
-                                     actions=actions,
-                                     **match_info)
-            else:
-                self.br_int.delete_flows(table=ovs_consts.LOCAL_SWITCHING,
+            for i in range(flow_count):
+                if branch_info:
+                    # for Service Graphs (branching):
+                    nsp = branch_info['matches'][i][0]
+                    nsi = branch_info['matches'][i][1]
+                if add_flow:
+                    if on_add:
+                        self._match_by_header(match_info, nsp, nsi)
+                    self.br_int.add_flow(table=ovs_consts.LOCAL_SWITCHING,
                                          priority=priority,
-                                         strict=True,
+                                         actions=actions,
                                          **match_info)
+                else:
+                    if on_add is False:
+                        self._match_by_header(match_info, nsp, nsi)
+                    self.br_int.delete_flows(table=ovs_consts.LOCAL_SWITCHING,
+                                             priority=priority,
+                                             strict=True,
+                                             **match_info)
 
     def _setup_egress_flow_rules(self, flowrule, match_inport=True):
         group_id = flowrule.get('next_group_id', None)
@@ -454,24 +471,36 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             # at the end of the chain, the header must be removed (if used)
             if (node_type != constants.SRC_NODE) and pp_corr:
                 if pc_corr == 'mpls':
-                    end_of_chain_actions = ("pop_mpls:0x%04x,%s" % (
-                                            constants.ETH_TYPE_IP,
-                                            end_of_chain_actions))
+                    branch_point = flowrule.get('branch_point')
+                    if branch_point:
+                        nsp = flowrule['nsp']
+                        nsi = flowrule['nsi']
+                        sfpi = (nsp << 8) | nsi
+                        end_of_chain_actions = (
+                            'load:%s->NXM_NX_REG0[],'
+                            'pop_mpls:0x%04x,resubmit(,0)' % (
+                                hex(sfpi), constants.ETH_TYPE_IP))
+                    else:
+                        end_of_chain_actions = ("pop_mpls:0x%04x,%s" % (
+                                                constants.ETH_TYPE_IP,
+                                                end_of_chain_actions))
             # to uninstall the removed flow classifiers
-            self._setup_local_switch_flows_on_int_br(
-                flowrule,
-                flowrule['del_fcs'],
-                None,
-                add_flow=False,
-                match_inport=True)
+            if 'del_fcs' in flowrule:
+                self._setup_local_switch_flows_on_int_br(
+                    flowrule,
+                    flowrule['del_fcs'],
+                    None,
+                    add_flow=False,
+                    match_inport=True)
 
-            # to install the added flow classifiers
-            self._setup_local_switch_flows_on_int_br(
-                flowrule,
-                flowrule['add_fcs'],
-                actions=end_of_chain_actions,
-                add_flow=True,
-                match_inport=True)
+            if 'add_fcs' in flowrule:
+                # to install the added flow classifiers
+                self._setup_local_switch_flows_on_int_br(
+                    flowrule,
+                    flowrule['add_fcs'],
+                    actions=end_of_chain_actions,
+                    add_flow=True,
+                    match_inport=True)
 
     def _get_vlan_by_port(self, port_id):
         try:

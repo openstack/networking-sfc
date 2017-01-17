@@ -697,7 +697,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         flow_rule = dict(node_info, **port_info)
         flow_rule['pc_corr'] = pc_corr
         if node_info['node_type'] != ovs_const.SRC_NODE:
-            flow_rule['pp_corr'] = port_info.get('correlation', None)
+            flow_rule['pp_corr'] = port_info.get('correlation')
         else:
             # there's no correlation for src nodes
             flow_rule['pp_corr'] = None
@@ -1142,9 +1142,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             host_id, local_endpoint, network_type, segment_id, mac_address = (
                 self._get_port_detail_info(e_port))
 
-        pp_corr = port_pair.get('service_function_parameters')
-        if pp_corr:
-            pp_corr = pp_corr.get('correlation', None)
+        sfparams = port_pair.get('service_function_parameters')
+        pp_corr = None
+        if sfparams:
+            pp_corr = sfparams.get('correlation')
 
         portpair_detail = {
             'ingress': port_pair.get('ingress', None),
@@ -1209,21 +1210,29 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 if egress_port['host_id'] != host:
                     egress_port.update(dict(host_id=host))
 
-            # this is a SF if there are both egress and engress.
-            for i, ports in enumerate(port_detail_list):
-                nodes_assocs = ports['path_nodes']
+            # this is a SF if there are both egress and ingress.
+            for i, port in enumerate(port_detail_list):
+                nodes_assocs = port['path_nodes']
                 for assoc in nodes_assocs:
                     # update current path flow rule
                     node = self.get_path_node(assoc['pathnode_id'])
                     port_chain = sfc_plugin.get_port_chain(
                         context,
                         node['portchain_id'])
-                    flow_rule = self._build_portchain_flowrule_body(
-                        node,
-                        ports,
-                        port_chain['chain_parameters']['correlation'],
-                        add_fc_ids=port_chain['flow_classifiers']
-                    )
+
+                    # if this path_node is a linking node of a graph,
+                    # then we obtain the respective flow_rule
+                    flow_rule = self._get_flow_rule_for_service_graph_node(
+                        context, node, port, port_chain)
+
+                    # otherwise it's a normal port chain flow_rule
+                    if not flow_rule:
+                        flow_rule = self._build_portchain_flowrule_body(
+                            node,
+                            port,
+                            port_chain['chain_parameters']['correlation'],
+                            add_fc_ids=port_chain['flow_classifiers']
+                        )
                     port_chain_flowrules.append(flow_rule)
 
             return port_chain_flowrules
@@ -1231,6 +1240,104 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         except Exception as e:
             LOG.exception(e)
             LOG.error("get_flowrules_by_host_portid failed")
+
+    def _get_flow_rule_for_service_graph_node(
+            self, context, node, port, port_chain):
+        correlation = port_chain['chain_parameters']['correlation']
+        sfc_plugin = directory.get_plugin(sfc.SFC_EXT)
+        if node['node_type'] == ovs_const.SRC_NODE:
+            # check if port_chain is a dst_chain in a graph
+            branches = sfc_plugin._get_branches(
+                context, filters={'dst_chain': [port_chain['id']]})
+            if branches:
+                matches = set()
+                for branch in branches:
+                    src_chain = branch['src_chain']
+                    # bnodes - "branching" nodes
+                    bnodes = self.get_path_nodes_by_filter(
+                        filters={
+                            'portchain_id': src_chain,
+                            'node_type': ovs_const.SF_NODE,
+                            'next_hops': None,
+                            'next_group_ids': None})
+                    # after filtering on the database, we still have to
+                    # filter on the singular next_group_id and next_hop by code
+                    bnodes = [x for x in bnodes if x[
+                        'next_group_id'] is None and x['next_hop'] is None]
+                    if not bnodes:
+                        LOG.error(
+                            '1 branching path node was expected, '
+                            'but none were found.')
+                    elif len(bnodes) != 1:
+                        LOG.error(
+                            '1 branching path node was expected, '
+                            'but %d were found.', len(bnodes))
+                    nsp = bnodes[0]['nsp']
+                    nsi = bnodes[0]['nsi']
+                    matches.add((nsp, nsi,))
+                flow_rule = self._build_bare_flow_rule(
+                    node, port, correlation, correlation)
+                add_fcs, del_fcs = self._build_fcs_from_fc_ids(
+                    flow_rule, port_chain['flow_classifiers'])
+                return self._extend_sg_dst_chain_flow_rule(
+                    flow_rule, True, matches, add_fcs, [])
+        elif (node['node_type'] == ovs_const.SF_NODE and
+              node['next_hop'] is None and
+              node['next_group_id'] is None):
+            # check if port_chain is a src_chain in a graph
+            branches = sfc_plugin._get_branches(
+                context, filters={'src_chain': [port_chain['id']]})
+            if branches:
+                flow_rule = self._build_bare_flow_rule(
+                    node, port, correlation, correlation)
+                add_fcs, del_fcs = self._build_fcs_from_fc_ids(
+                    flow_rule, port_chain['flow_classifiers'])
+                return self._extend_sg_src_chain_flow_rule(
+                    flow_rule, True, add_fcs, [])
+        return None
+
+    def _build_bare_flow_rule(self, node, port, pc_corr, pp_corr):
+        node_info = node.copy()
+        node_info.pop('project_id')
+        node_info.pop('portpair_details')
+        port_info = port.copy()
+        port_info.pop('project_id')
+        port_info.pop('id')
+        port_info.pop('path_nodes')
+        flow_rule = dict(node_info, **port_info)
+        flow_rule['pc_corr'] = pc_corr
+        flow_rule['pp_corr'] = pc_corr
+        # correlation becomes simply pp_corr
+        flow_rule.pop('correlation')
+        return flow_rule
+
+    def _build_fcs_from_fc_ids(self, flow_rule, fc_ids):
+        fcs = self._filter_flow_classifiers(flow_rule, fc_ids)
+        add_fcs = []
+        del_fcs = []
+        for fc in fcs:
+            add_fcs.append(fc)
+            del_fcs.append(fc)
+        return add_fcs, del_fcs
+
+    def _extend_sg_src_chain_flow_rule(
+            self, flow_rule, branch_point, add_fcs, del_fcs):
+        # trigger chain-linking
+        flow_rule['branch_point'] = branch_point
+        flow_rule['add_fcs'] = add_fcs
+        flow_rule['del_fcs'] = del_fcs
+        return flow_rule
+
+    def _extend_sg_dst_chain_flow_rule(
+            self, flow_rule, on_add, matches, add_fcs=None, del_fcs=None):
+        if add_fcs is not None:
+            flow_rule['add_fcs'] = add_fcs
+        if del_fcs is not None:
+            flow_rule['del_fcs'] = del_fcs
+        flow_rule['branch_info'] = {}
+        flow_rule['branch_info']['on_add'] = on_add
+        flow_rule['branch_info']['matches'] = matches
+        return flow_rule
 
     def update_flowrule_status(self, context, id, status):
         """FIXME
@@ -1281,13 +1388,127 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         return group_refcnt
 
+    def _service_graph_linking_logic(self, context, create):
+        service_graph = context.current
+        # keep track of matches per dst chain (key)
+        dc_branch_info = {}
+        for src_chain_id in service_graph['port_chains']:
+            sc_nodes = self.get_path_nodes_by_filter(
+                dict(portchain_id=src_chain_id))
+            sc_nodes = sorted(sc_nodes, key=lambda n: n['nsi'])
+            # dst_node is ignored when linking a chain to another chain
+            if sc_nodes[0]['node_type'] == 'dst_node':
+                del sc_nodes[0]
+            # one of branch_info (it's for the current src chain),
+            # sc_nodes[0] is simply the last sf_node the src chain
+            branch_match = (sc_nodes[0]['nsp'], sc_nodes[0]['nsi'],)
+            branches = 0
+            # for clarification: sc = source chain; dc = destination chain
+            for dst_chain_id in service_graph['port_chains'][src_chain_id]:
+                dc_nodes = self.get_path_nodes_by_filter(
+                    dict(portchain_id=dst_chain_id))
+                if dst_chain_id not in dc_branch_info:
+                    dc_branch_info[dst_chain_id] = {}
+                    dc_branch_info[dst_chain_id]['matches'] = []
+                    dc_branch_info[dst_chain_id]['flow_rules'] = {}
+                # trigger chain-linking using match of current src chain
+                dc_branch_info[dst_chain_id]['matches'].append(branch_match)
+                for node in dc_nodes:
+                    if node['node_type'] == ovs_const.SRC_NODE:
+                        dst_chain = context._plugin.get_port_chain(
+                            context._plugin_context, dst_chain_id)
+                        pc_corr = dst_chain[
+                            'chain_parameters']['correlation']
+                        new_fcs = dst_chain['flow_classifiers']
+                        for each in node['portpair_details']:
+                            port = self.get_port_detail_by_filter(
+                                dict(id=each))
+                            node_info = node.copy()
+                            node_info.pop('project_id')
+                            node_info.pop('portpair_details')
+                            port_info = port.copy()
+                            port_info.pop('project_id')
+                            port_info.pop('id')
+                            port_info.pop('path_nodes')
+
+                            flow_rule = dict(node_info, **port_info)
+                            flow_rule['pc_corr'] = pc_corr
+                            # there's no correlation for src nodes
+                            flow_rule['pp_corr'] = None
+                            # correlation becomes simply pp_corr
+                            flow_rule.pop('correlation')
+
+                            old_fcs = self._filter_flow_classifiers(flow_rule,
+                                                                    new_fcs)
+                            for old_fc in old_fcs:
+                                new_fc = old_fc.copy()
+                                if create:
+                                    # dependent PCs should ignore LSPs
+                                    new_fc['logical_source_port'] = None
+                                else:
+                                    old_fc['logical_source_port'] = None
+                                if 'del_fcs' not in flow_rule:
+                                    flow_rule['del_fcs'] = []
+                                if 'add_fcs' not in flow_rule:
+                                    flow_rule['add_fcs'] = []
+                                flow_rule['del_fcs'].append(old_fc)
+                                flow_rule['add_fcs'].append(new_fc)
+
+                            # update next hop info
+                            self._update_path_node_next_hops(flow_rule)
+                            # usually we would ask_agent_to_update_flow_rules
+                            # here but "joining" branches require postponing
+                            dc_branch_info[
+                                dst_chain_id]['flow_rules'][each] = flow_rule
+                            branches = branches + 1
+
+            if branches > 0:  # this is supposed to always be true
+                node = sc_nodes[0]
+                if node['node_type'] == ovs_const.SF_NODE:
+                    src_chain = context._plugin.get_port_chain(
+                        context._plugin_context, src_chain_id)
+                    fc_ids = src_chain['flow_classifiers']
+                    pc_corr = src_chain['chain_parameters']['correlation']
+                    for each in node['portpair_details']:
+                        port = self.get_port_detail_by_filter(dict(id=each))
+                        node_info = node.copy()
+                        port_info = port.copy()
+                        flow_rule = self._build_bare_flow_rule(
+                            node_info, port_info, pc_corr, pc_corr)
+                        add_fcs, del_fcs = self._build_fcs_from_fc_ids(
+                            flow_rule, fc_ids)
+                        flow_rule = self._extend_sg_src_chain_flow_rule(
+                            flow_rule, create, add_fcs, del_fcs)
+                        # update next hop info
+                        self._update_path_node_next_hops(flow_rule)
+                        # call agent
+                        self.ovs_driver_rpc.ask_agent_to_update_flow_rules(
+                            self.admin_context,
+                            flow_rule)
+                        self._update_agent_fdb_entries(flow_rule)
+            else:
+                LOG.warning('Expected branch point did not get any branches.')
+        # at this point we know about all chain links/matches
+        # (including "joining" branches), so let's call the agent
+        for dst_chain_id in dc_branch_info:
+            branch_matches = dc_branch_info[dst_chain_id]['matches']
+            flow_rules = dc_branch_info[dst_chain_id]['flow_rules']
+            for _, flow_rule in flow_rules.items():
+                flow_rule = self._extend_sg_dst_chain_flow_rule(
+                    flow_rule, create, branch_matches)
+                # call agent
+                self.ovs_driver_rpc.ask_agent_to_update_flow_rules(
+                    self.admin_context,
+                    flow_rule)
+                self._update_agent_fdb_entries(flow_rule)
+
     @log_helpers.log_method_call
     def create_service_graph_precommit(self, context):
         pass
 
     @log_helpers.log_method_call
     def create_service_graph_postcommit(self, context):
-        pass
+        self._service_graph_linking_logic(context, True)
 
     @log_helpers.log_method_call
     def update_service_graph_precommit(self, context):
@@ -1303,4 +1524,4 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
     @log_helpers.log_method_call
     def delete_service_graph_postcommit(self, context):
-        pass
+        self._service_graph_linking_logic(context, False)
