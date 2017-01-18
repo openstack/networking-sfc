@@ -5,6 +5,7 @@ set -ex
 VENV=${1:-"dsvm-functional"}
 
 GATE_DEST=$BASE/new
+NEUTRON_PATH=$GATE_DEST/neutron
 NETWORKING_SFC_PATH=$GATE_DEST/networking-sfc
 GATE_HOOKS=$NETWORKING_SFC_PATH/networking_sfc/tests/contrib/hooks
 DEVSTACK_PATH=$GATE_DEST/devstack
@@ -38,12 +39,11 @@ case $VENV in
     IS_GATE=True
 
     source $DEVSTACK_PATH/functions
-    source $NETWORKING_SFC_PATH/devstack/lib/ovs
 
     source $NETWORKING_SFC_PATH/tools/configure_for_func_testing.sh
-
     configure_host_for_func_testing
 
+    source $NEUTRON_PATH/devstack/lib/ovs
     upgrade_ovs_if_necessary
 
     load_conf_hook iptables_verify
