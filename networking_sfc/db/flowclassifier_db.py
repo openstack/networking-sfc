@@ -209,7 +209,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
     @log_helpers.log_method_call
     def create_flow_classifier(self, context, flow_classifier):
         fc = flow_classifier['flow_classifier']
-        tenant_id = fc['tenant_id']
+        project_id = fc['project_id']
         l7_parameters = {
             key: L7Parameter(key, val)
             for key, val in six.iteritems(fc['l7_parameters'])}
@@ -247,7 +247,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
                     )
             flow_classifier_db = FlowClassifier(
                 id=uuidutils.generate_uuid(),
-                tenant_id=tenant_id,
+                project_id=project_id,
                 name=fc['name'],
                 description=fc['description'],
                 ethertype=ethertype,
@@ -270,7 +270,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
             'id': flow_classifier['id'],
             'name': flow_classifier['name'],
             'description': flow_classifier['description'],
-            'tenant_id': flow_classifier['tenant_id'],
+            'project_id': flow_classifier['project_id'],
             'ethertype': flow_classifier['ethertype'],
             'protocol': flow_classifier['protocol'],
             'source_port_range_min': flow_classifier['source_port_range_min'],

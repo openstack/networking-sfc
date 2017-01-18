@@ -193,7 +193,7 @@ class SfcDbPlugin(
         res = {
             'id': port_chain['id'],
             'name': port_chain['name'],
-            'tenant_id': port_chain['tenant_id'],
+            'project_id': port_chain['project_id'],
             'description': port_chain['description'],
             'port_pair_groups': [
                 assoc['portpairgroup_id']
@@ -301,7 +301,7 @@ class SfcDbPlugin(
     def create_port_chain(self, context, port_chain):
         """Create a port chain."""
         pc = port_chain['port_chain']
-        tenant_id = pc['tenant_id']
+        project_id = pc['project_id']
         chain_id = pc['chain_id']
         with context.session.begin(subtransactions=True):
             chain_parameters = {
@@ -332,7 +332,7 @@ class SfcDbPlugin(
                     raise ext_sfc.PortChainChainIdInConflict(
                         chain_id=chain_id, pc_id=assigned_chain_ids[chain_id])
             port_chain_db = PortChain(id=uuidutils.generate_uuid(),
-                                      tenant_id=tenant_id,
+                                      project_id=project_id,
                                       description=pc['description'],
                                       name=pc['name'],
                                       chain_parameters=chain_parameters,
@@ -409,7 +409,7 @@ class SfcDbPlugin(
             'id': port_pair['id'],
             'name': port_pair['name'],
             'description': port_pair['description'],
-            'tenant_id': port_pair['tenant_id'],
+            'project_id': port_pair['project_id'],
             'ingress': port_pair['ingress'],
             'egress': port_pair['egress'],
             'service_function_parameters': {
@@ -439,7 +439,7 @@ class SfcDbPlugin(
     def create_port_pair(self, context, port_pair):
         """Create a port pair."""
         pp = port_pair['port_pair']
-        tenant_id = pp['tenant_id']
+        project_id = pp['project_id']
         with context.session.begin(subtransactions=True):
             query = self._model_query(context, PortPair)
             pp_in_use = query.filter_by(
@@ -466,7 +466,7 @@ class SfcDbPlugin(
                 id=uuidutils.generate_uuid(),
                 name=pp['name'],
                 description=pp['description'],
-                tenant_id=tenant_id,
+                project_id=project_id,
                 ingress=pp['ingress'],
                 egress=pp['egress'],
                 service_function_parameters=service_function_parameters
@@ -533,7 +533,7 @@ class SfcDbPlugin(
             'id': port_pair_group['id'],
             'name': port_pair_group['name'],
             'description': port_pair_group['description'],
-            'tenant_id': port_pair_group['tenant_id'],
+            'project_id': port_pair_group['project_id'],
             'port_pairs': [pp['id'] for pp in port_pair_group['port_pairs']],
             'port_pair_group_parameters': {
                 param['keyword']: jsonutils.loads(param['value'])
@@ -550,7 +550,7 @@ class SfcDbPlugin(
     def create_port_pair_group(self, context, port_pair_group):
         """Create a port pair group."""
         pg = port_pair_group['port_pair_group']
-        tenant_id = pg['tenant_id']
+        project_id = pg['project_id']
 
         with context.session.begin(subtransactions=True):
             portpairs_list = [self._get_port_pair(context, pp_id)
@@ -582,7 +582,7 @@ class SfcDbPlugin(
                 id=uuidutils.generate_uuid(),
                 name=pg['name'],
                 description=pg['description'],
-                tenant_id=tenant_id,
+                project_id=project_id,
                 port_pairs=portpairs_list,
                 port_pair_group_parameters=port_pair_group_parameters,
                 group_id=group_id)

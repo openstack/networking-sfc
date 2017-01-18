@@ -171,7 +171,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
 
     def _make_pathnode_dict(self, node, fields=None):
         res = {'id': node['id'],
-               'tenant_id': node['tenant_id'],
+               'project_id': node['project_id'],
                'node_type': node['node_type'],
                'nsp': node['nsp'],
                'nsi': node['nsi'],
@@ -188,7 +188,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
 
     def _make_port_detail_dict(self, port, fields=None):
         res = {'id': port['id'],
-               'tenant_id': port['tenant_id'],
+               'project_id': port['project_id'],
                'host_id': port['host_id'],
                'ingress': port.get('ingress', None),
                'egress': port.get('egress', None),
