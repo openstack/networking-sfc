@@ -20,9 +20,9 @@ class TestOVSAgentSfcExtension(base.OVSAgentTestFramework):
     def setUp(self):
         super(TestOVSAgentSfcExtension, self).setUp()
         self.config.set_override('extensions', ['sfc'], 'agent')
+        self.agent = self.create_agent()
 
     def test_run(self):
-        agent = self.create_agent()
-        self.start_agent(agent)
-        agent_state = agent.state_rpc.report_state.call_args[0][1]
+        self.agent._report_state()
+        agent_state = self.agent.state_rpc.report_state.call_args[0][1]
         self.assertEqual(['sfc'], agent_state['configurations']['extensions'])
