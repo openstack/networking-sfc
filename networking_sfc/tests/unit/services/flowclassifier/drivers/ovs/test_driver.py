@@ -12,12 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron_lib.api.definitions import portbindings
+
 from oslo_utils import importutils
 
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron import context
-from neutron.extensions import portbindings
 
 from networking_sfc.db import flowclassifier_db as fdb
 from networking_sfc.extensions import flowclassifier

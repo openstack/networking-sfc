@@ -16,13 +16,14 @@ from eventlet import greenthread
 import mock
 import six
 
+from neutron_lib.api.definitions import portbindings
+
 from oslo_utils import importutils
 
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron.common import rpc as n_rpc
 from neutron import context
-from neutron.extensions import portbindings
 from neutron.plugins.ml2.drivers import type_vxlan
 
 from networking_sfc.db import flowclassifier_db as fdb
