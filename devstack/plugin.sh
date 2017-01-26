@@ -15,7 +15,6 @@ function _networking_sfc_install_server {
 
 function _networking_sfc_install_agent {
     iniset /$Q_PLUGIN_CONF_FILE agent extensions "sfc"
-    _neutron_deploy_rootwrap_filters $NETWORKING_SFC_DIR
 }
 
 function networking_sfc_configure_common {

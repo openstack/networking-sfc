@@ -40,13 +40,12 @@ case $VENV in
 
     source $DEVSTACK_PATH/functions
 
-    source $NETWORKING_SFC_PATH/tools/configure_for_func_testing.sh
-    configure_host_for_func_testing
-
     source $NEUTRON_PATH/devstack/lib/ovs
+    source $NEUTRON_PATH/tools/configure_for_func_testing.sh
+
+    configure_host_for_func_testing
     upgrade_ovs_if_necessary
 
-    load_conf_hook iptables_verify
     load_conf_hook ovs
     # Make the workspace owned by the stack user
     sudo chown -R $STACK_USER:$STACK_USER $BASE
