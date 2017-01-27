@@ -13,7 +13,6 @@
 #    under the License.
 
 import netaddr
-import six
 
 from tempest.lib.common.utils import data_utils
 from tempest import test
@@ -123,7 +122,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
         created = self._try_create_port_pair()
         pp = self.portpair_client.show_port_pair(
             created['id'])
-        for key, value in six.iteritems(pp['port_pair']):
+        for key, value in pp['port_pair'].items():
             self.assertEqual(created[key], value)
 
     @test.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')
@@ -196,7 +195,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
         created = self._try_create_port_pair_group(port_pairs=[pp['id']])
         pg = self.portpairgroup_client.show_port_pair_group(
             created['id'])
-        for key, value in six.iteritems(pg['port_pair_group']):
+        for key, value in pg['port_pair_group'].items():
             self.assertEqual(created[key], value)
 
     @test.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')
@@ -312,7 +311,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             flow_classifiers=[fc['id']])
         pc = self.portchain_client.show_port_chain(
             created['id'])
-        for key, value in six.iteritems(pc['port_chain']):
+        for key, value in pc['port_chain'].items():
             self.assertEqual(created[key], value)
 
     @test.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')

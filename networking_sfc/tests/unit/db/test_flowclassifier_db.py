@@ -15,7 +15,6 @@
 import contextlib
 import logging
 import mock
-import six
 import webob.exc
 
 from neutron_lib import constants as lib_const
@@ -109,7 +108,7 @@ class FlowClassifierDbPluginTestCaseBase(base.BaseTestCase):
             expected_flow_classifier = self._get_expected_flow_classifier(
                 flow_classifier)
         with self.flow_classifier(flow_classifier=flow_classifier) as fc:
-            for k, v in six.iteritems(expected_flow_classifier):
+            for k, v in expected_flow_classifier.items():
                 self.assertIn(k, fc['flow_classifier'])
                 self.assertEqual(fc['flow_classifier'][k], v)
 
@@ -1457,7 +1456,7 @@ class FlowClassifierDbPluginTestCase(
                 res = self.deserialize(
                     self.fmt, req.get_response(self.ext_api)
                 )
-                for k, v in six.iteritems(fc['flow_classifier']):
+                for k, v in fc['flow_classifier'].items():
                     self.assertEqual(res['flow_classifier'][k], v)
 
     def test_show_flow_classifier_noexist(self):
@@ -1493,7 +1492,7 @@ class FlowClassifierDbPluginTestCase(
                 )
                 expected = fc['flow_classifier']
                 expected.update(updates)
-                for k, v in six.iteritems(expected):
+                for k, v in expected.items():
                     self.assertEqual(res['flow_classifier'][k], v)
                 req = self.new_show_request(
                     'flow_classifiers', fc['flow_classifier']['id']
@@ -1501,7 +1500,7 @@ class FlowClassifierDbPluginTestCase(
                 res = self.deserialize(
                     self.fmt, req.get_response(self.ext_api)
                 )
-                for k, v in six.iteritems(expected):
+                for k, v in expected.items():
                     self.assertEqual(res['flow_classifier'][k], v)
 
     def _test_update_with_field(

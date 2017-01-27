@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from neutron.agent.common import ovs_lib
 from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
     as ovs_consts
@@ -108,7 +106,7 @@ class SfcOVSBridgeExt(OVSCookieBridge):
     def delete_flows(self, **kwargs):
         # Run precision deletion with option --strict and priority
         flow_expr_arr = []
-        for key, value in six.iteritems(kwargs):
+        for key, value in kwargs.items():
             if key == "proto":
                 flow_expr_arr.append(value)
             else:
@@ -141,7 +139,7 @@ def _build_group_expr_str(group_dict, cmd):
     if groupId:
         group_expr_arr.append(groupId)
 
-    for key, value in six.iteritems(group_dict):
+    for key, value in group_dict.items():
         group_expr_arr.append("%s=%s" % (key, value))
 
     if buckets:

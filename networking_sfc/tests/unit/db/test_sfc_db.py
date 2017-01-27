@@ -15,7 +15,6 @@
 import contextlib
 import logging
 import mock
-import six
 import webob.exc
 
 from oslo_config import cfg
@@ -46,7 +45,7 @@ class SfcDbPluginTestCaseBase(
 ):
     def _assert_port_chain_equal(self, res_port_chain, expected):
         # Flow classifiers are stored in a list, only check items for them
-        for k, v in six.iteritems(expected):
+        for k, v in expected.items():
             if type(v) is list:
                 self.assertItemsEqual(res_port_chain[k], v)
             else:
@@ -159,7 +158,7 @@ class SfcDbPluginTestCaseBase(
         if expected_port_pair is None:
             expected_port_pair = self._get_expected_port_pair(port_pair)
         with self.port_pair(port_pair=port_pair) as pp:
-            for k, v in six.iteritems(expected_port_pair):
+            for k, v in expected_port_pair.items():
                 self.assertEqual(pp['port_pair'][k], v)
 
     def _test_create_port_pairs(
@@ -172,7 +171,7 @@ class SfcDbPluginTestCaseBase(
             else:
                 expected_port_pair = self._get_expected_port_pair(port_pair)
             with self.port_pair(port_pair=port_pair) as pp:
-                for k, v in six.iteritems(expected_port_pair):
+                for k, v in expected_port_pair.items():
                     self.assertEqual(pp['port_pair'][k], v)
 
     def _get_expected_port_pair_group(self, port_pair_group):
@@ -195,7 +194,7 @@ class SfcDbPluginTestCaseBase(
             expected_port_pair_group = self._get_expected_port_pair_group(
                 port_pair_group)
         with self.port_pair_group(port_pair_group=port_pair_group) as pg:
-            for k, v in six.iteritems(expected_port_pair_group):
+            for k, v in expected_port_pair_group.items():
                 self.assertEqual(pg['port_pair_group'][k], v)
 
     def _test_create_port_pair_groups(
@@ -209,7 +208,7 @@ class SfcDbPluginTestCaseBase(
                 expected_port_pair_group = self._get_expected_port_pair_group(
                     port_pair_group)
             with self.port_pair_group(port_pair_group=port_pair_group) as pg:
-                for k, v in six.iteritems(expected_port_pair_group):
+                for k, v in expected_port_pair_group.items():
                     self.assertEqual(pg['port_pair_group'][k], v)
 
     @staticmethod
@@ -232,7 +231,7 @@ class SfcDbPluginTestCaseBase(
         if expected_port_chain is None:
             expected_port_chain = self._get_expected_port_chain(port_chain)
         with self.port_chain(port_chain=port_chain) as pc:
-            for k, v in six.iteritems(expected_port_chain):
+            for k, v in expected_port_chain.items():
                 self.assertEqual(pc['port_chain'][k], v)
 
     def _test_create_port_chains(
@@ -246,7 +245,7 @@ class SfcDbPluginTestCaseBase(
                 expected_port_chain = self._get_expected_port_chain(
                     port_chain)
             with self.port_chain(port_chain=port_chain) as pc:
-                for k, v in six.iteritems(expected_port_chain):
+                for k, v in expected_port_chain.items():
                     self.assertEqual(pc['port_chain'][k], v)
 
 
@@ -1396,7 +1395,7 @@ class SfcDbPluginTestCase(
             res = self.deserialize(
                 self.fmt, req.get_response(self.ext_api)
             )
-            for k, v in six.iteritems(pc['port_pair_group']):
+            for k, v in pc['port_pair_group'].items():
                 self.assertEqual(res['port_pair_group'][k], v)
 
     def test_show_port_pair_group_noexist(self):
@@ -1441,7 +1440,7 @@ class SfcDbPluginTestCase(
                     )
                     expected = pg['port_pair_group']
                     expected.update(updates)
-                    for k, v in six.iteritems(expected):
+                    for k, v in expected.items():
                         self.assertEqual(res['port_pair_group'][k], v)
                     req = self.new_show_request(
                         'port_pair_groups', pg['port_pair_group']['id']
@@ -1449,7 +1448,7 @@ class SfcDbPluginTestCase(
                     res = self.deserialize(
                         self.fmt, req.get_response(self.ext_api)
                     )
-                    for k, v in six.iteritems(expected):
+                    for k, v in expected.items():
                         self.assertEqual(res['port_pair_group'][k], v)
 
     def test_delete_port_pair_group(self):
@@ -1841,7 +1840,7 @@ class SfcDbPluginTestCase(
                 res = self.deserialize(
                     self.fmt, req.get_response(self.ext_api)
                 )
-                for k, v in six.iteritems(pc['port_pair']):
+                for k, v in pc['port_pair'].items():
                     self.assertEqual(res['port_pair'][k], v)
 
     def test_show_port_pair_noexist(self):
@@ -1879,7 +1878,7 @@ class SfcDbPluginTestCase(
                 )
                 expected = pc['port_pair']
                 expected.update(updates)
-                for k, v in six.iteritems(expected):
+                for k, v in expected.items():
                     self.assertEqual(res['port_pair'][k], v)
                 req = self.new_show_request(
                     'port_pairs', pc['port_pair']['id']
@@ -1887,7 +1886,7 @@ class SfcDbPluginTestCase(
                 res = self.deserialize(
                     self.fmt, req.get_response(self.ext_api)
                 )
-                for k, v in six.iteritems(expected):
+                for k, v in expected.items():
                     self.assertEqual(res['port_pair'][k], v)
 
     def test_update_port_pair_service_function_parameters(self):

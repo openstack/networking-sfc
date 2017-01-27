@@ -257,7 +257,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
     def update_port_detail(self, id, port):
         with self.admin_context.session.begin(subtransactions=True):
             port_obj = self._get_port_detail(id)
-            for key, value in six.iteritems(port):
+            for key, value in port.items():
                 if key == 'path_nodes':
                     pns = []
                     for pn in value:
@@ -285,7 +285,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
     def update_path_node(self, id, node):
         with self.admin_context.session.begin(subtransactions=True):
             node_obj = self._get_path_node(id)
-            for key, value in six.iteritems(node):
+            for key, value in node.items():
                 if key == 'portpair_details':
                     pds = []
                     for pd_id in value:
@@ -367,7 +367,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                                   page_reverse=False):
         qry = self.admin_context.session.query(PathNode)
         if filters:
-            for key, value in six.iteritems(filters):
+            for key, value in filters.items():
                 column = getattr(PathNode, key, None)
                 if column:
                     if not value:
@@ -410,7 +410,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                                     page_reverse=False):
         qry = self.admin_context.session.query(PortPairDetail)
         if filters:
-            for key, value in six.iteritems(filters):
+            for key, value in filters.items():
                 column = getattr(PortPairDetail, key, None)
                 if column:
                     if not value:

@@ -15,7 +15,6 @@
 import contextlib
 import mock
 import pkg_resources
-import six
 import stevedore
 
 from oslo_config import cfg
@@ -36,7 +35,7 @@ class DriverManagerTestCase(base.BaseTestCase):
         cfg.CONF.register_opts(sfc_config.SFC_DRIVER_OPTS, 'sfc')
         backup_driver_names = cfg.CONF.sfc.drivers
         driver_names = [
-            driver_name for driver_name in six.iterkeys(drivers)
+            driver_name for driver_name in drivers
         ]
         cfg.CONF.set_override('drivers', driver_names, 'sfc')
         iter_entry_points = pkg_resources.iter_entry_points

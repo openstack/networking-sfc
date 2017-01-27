@@ -14,7 +14,6 @@
 #    under the License.
 
 import logging
-import six
 
 from osc_lib.command import command
 from osc_lib import utils
@@ -162,7 +161,7 @@ class ShowPortPairGroup(command.ShowOne):
 
 def _get_ppg_param(attrs, ppg):
     attrs['port_pair_group_parameters'] = {}
-    for key, value in six.iteritems(ppg):
+    for key, value in ppg.items():
         if key == 'lb_fields':
             attrs['port_pair_group_parameters'][key] = ([
                 field for field in value.split('&') if field])

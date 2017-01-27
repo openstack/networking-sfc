@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import mock
-import six
 
 from oslo_config import cfg
 from oslo_utils import uuidutils
@@ -226,7 +225,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         if group_id in self.group_mapping:
             group_list = []
             group = self.group_mapping[group_id]
-            for group_key, group_value in six.iteritems(group):
+            for group_key, group_value in group.items():
                 group_list.append('%s=%s' % (group_key, group_value))
             return ' '.join(group_list)
         else:
@@ -242,7 +241,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         return ['br-int', 'br-tun']
 
     def mock_get_port_ofport(self, port_name):
-        for port_id, port_values in six.iteritems(self.port_mapping):
+        for port_id, port_values in self.port_mapping.items():
             if port_values['port_name'] == port_name:
                 return port_values['ofport']
         if port_name in self.default_port_mapping:
@@ -280,7 +279,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
 
     def mock_get_vif_ports(self, ofport_filter):
         vif_ports = []
-        for port_id, port_values in six.iteritems(self.port_mapping):
+        for port_id, port_values in self.port_mapping.items():
             vif_ports.append(
                 ovs_lib.VifPort(
                     port_values['port_name'],
@@ -298,7 +297,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         if_exists=False
     ):
         port_infos = []
-        for port_id, port_values in six.iteritems(self.port_mapping):
+        for port_id, port_values in self.port_mapping.items():
             port_info = {}
             if columns:
                 if 'name' in columns:
@@ -334,7 +333,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
 
     def mock_delete_port(self, port_name):
         found_port_id = None
-        for port_id, port_values in six.iteritems(self.port_mapping):
+        for port_id, port_values in self.port_mapping.items():
             if port_values['port_name'] == port_name:
                 found_port_id = port_id
         if found_port_id:

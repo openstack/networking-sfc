@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
@@ -205,7 +203,7 @@ class SfcDbPlugin(
             ],
             'chain_parameters': {
                 param['keyword']: jsonutils.loads(param['value'])
-                for k, param in six.iteritems(port_chain['chain_parameters'])
+                for k, param in port_chain['chain_parameters'].items()
             },
             'chain_id': port_chain['chain_id'],
         }
@@ -306,7 +304,7 @@ class SfcDbPlugin(
         with context.session.begin(subtransactions=True):
             chain_parameters = {
                 key: ChainParameter(keyword=key, value=jsonutils.dumps(val))
-                for key, val in six.iteritems(pc['chain_parameters'])}
+                for key, val in pc['chain_parameters'].items()}
 
             pg_ids = pc['port_pair_groups']
             fc_ids = pc['flow_classifiers']
@@ -389,7 +387,7 @@ class SfcDbPlugin(
         pc = port_chain['port_chain']
         with context.session.begin(subtransactions=True):
             pc_db = self._get_port_chain(context, id)
-            for k, v in six.iteritems(pc):
+            for k, v in pc.items():
                 if k == 'flow_classifiers':
                     self._validate_flow_classifiers(
                         context, v, pc_id=id)
@@ -414,8 +412,8 @@ class SfcDbPlugin(
             'egress': port_pair['egress'],
             'service_function_parameters': {
                 param['keyword']: jsonutils.loads(param['value'])
-                for k, param in six.iteritems(
-                    port_pair['service_function_parameters'])
+                for k, param in \
+                    port_pair['service_function_parameters'].items()
             }
         }
 
@@ -455,9 +453,8 @@ class SfcDbPlugin(
             service_function_parameters = {
                 key: ServiceFunctionParam(
                     keyword=key, value=jsonutils.dumps(val))
-                for key, val in six.iteritems(
-                    pp['service_function_parameters']
-                )
+                for key, val in \
+                    pp['service_function_parameters'].items()
             }
             ingress = self._get_port(context, pp['ingress'])
             egress = self._get_port(context, pp['egress'])
@@ -537,9 +534,8 @@ class SfcDbPlugin(
             'port_pairs': [pp['id'] for pp in port_pair_group['port_pairs']],
             'port_pair_group_parameters': {
                 param['keyword']: jsonutils.loads(param['value'])
-                for k, param in six.iteritems(
-                    port_pair_group['port_pair_group_parameters']
-                )
+                for k, param in \
+                    port_pair_group['port_pair_group_parameters'].items()
             },
             'group_id': port_pair_group.get('group_id') or 0
         }
@@ -561,9 +557,8 @@ class SfcDbPlugin(
             port_pair_group_parameters = {
                 key: PortPairGroupParam(
                     keyword=key, value=jsonutils.dumps(val))
-                for key, val in six.iteritems(
-                    pg['port_pair_group_parameters']
-                )
+                for key, val in \
+                    pg['port_pair_group_parameters'].items()
             }
             assigned_group_ids = {}
             query = context.session.query(PortPairGroup)
@@ -639,7 +634,7 @@ class SfcDbPlugin(
                     raise ext_sfc.PortPairInUse(id=portpair.id)
 
             old_pg = self._get_port_pair_group(context, id)
-            for k, v in six.iteritems(new_pg):
+            for k, v in new_pg.items():
                 if k == 'port_pairs':
                     port_pairs = [
                         self._get_port_pair(context, pp_id)

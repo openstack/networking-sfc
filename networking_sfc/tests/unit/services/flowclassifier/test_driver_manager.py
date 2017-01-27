@@ -15,7 +15,6 @@
 import contextlib
 import mock
 import pkg_resources
-import six
 import stevedore
 
 from oslo_config import cfg
@@ -37,7 +36,7 @@ class DriverManagerTestCase(base.BaseTestCase):
                                'flowclassifier')
         backup_driver_names = cfg.CONF.flowclassifier.drivers
         driver_names = [
-            driver_name for driver_name in six.iterkeys(drivers)
+            driver_name for driver_name in drivers
         ]
         cfg.CONF.set_override('drivers', driver_names, 'flowclassifier')
         iter_entry_points = pkg_resources.iter_entry_points
