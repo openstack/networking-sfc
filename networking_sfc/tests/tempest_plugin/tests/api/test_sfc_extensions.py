@@ -16,7 +16,7 @@ import netaddr
 import six
 
 from tempest.lib.common.utils import data_utils
-from tempest import test
+from tempest.lib import decorators
 
 from networking_sfc.tests.tempest_plugin.tests.api import base
 
@@ -40,7 +40,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
         Delete port pair
         Show port pair
     """
-    @test.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076469')
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076469')
     def test_create_port_pair_different_ingress_egress(self):
         ingress_network = self.create_network()
         self.addCleanup(self.networks_client.delete_network,
@@ -100,7 +100,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             m['egress'],
         ) for m in pps['port_pairs']])
 
-    @test.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076468')
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076468')
     def test_list_port_pair(self):
         # List port pairs
         pp = self._try_create_port_pair()
@@ -117,7 +117,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             m['egress'],
         ) for m in pps['port_pairs']])
 
-    @test.idempotent_id('3ff8c08e-26ff-4034-ae48-810ed213a998')
+    @decorators.idempotent_id('3ff8c08e-26ff-4034-ae48-810ed213a998')
     def test_show_port_pair(self):
         # show a created port pair
         created = self._try_create_port_pair()
@@ -126,7 +126,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
         for key, value in six.iteritems(pp['port_pair']):
             self.assertEqual(created[key], value)
 
-    @test.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')
+    @decorators.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')
     def test_update_port_pair(self):
         # Create port pair
         name1 = data_utils.rand_name('test')
@@ -141,7 +141,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             pp_id, name=name2)
         self.assertEqual(body['port_pair']['name'], name2)
 
-    @test.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076479')
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076479')
     def test_create_port_pair_group_empty_port_pairs(self):
         pg = self._try_create_port_pair_group(
             port_pairs=[])
@@ -156,7 +156,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             set(m['port_pairs'])
         ) for m in pgs['port_pair_groups']])
 
-    @test.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076469')
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076469')
     def test_create_port_pair_group_multi_port_pairs(self):
         pp1 = self._try_create_port_pair()
         pp2 = self._try_create_port_pair()
@@ -173,7 +173,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             set(m['port_pairs'])
         ) for m in pgs['port_pair_groups']])
 
-    @test.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076468')
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076468')
     def test_list_port_pair_group(self):
         # List port pair groups
         pp = self._try_create_port_pair()
@@ -189,7 +189,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             m['port_pairs']
         ) for m in pgs['port_pair_groups']])
 
-    @test.idempotent_id('3ff8c08e-26ff-4034-ae48-810ed213a998')
+    @decorators.idempotent_id('3ff8c08e-26ff-4034-ae48-810ed213a998')
     def test_show_port_pair_group(self):
         # show a created port pair group
         pp = self._try_create_port_pair()
@@ -199,7 +199,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
         for key, value in six.iteritems(pg['port_pair_group']):
             self.assertEqual(created[key], value)
 
-    @test.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')
+    @decorators.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')
     def test_update_port_pair_group(self):
         # Create port pair group
         pp = self._try_create_port_pair()
@@ -215,7 +215,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             pg_id, name=name2)
         self.assertEqual(body['port_pair_group']['name'], name2)
 
-    @test.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076568')
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076568')
     def test_create_port_chain_empty_flow_classifiers(self):
         # Create port chains
         pp = self._try_create_port_pair()
@@ -236,7 +236,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             m['flow_classifiers']
         ) for m in pcs['port_chains']])
 
-    @test.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076668')
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076668')
     def test_create_port_chain_multi_flowclassifiers(self):
         # Create port chains
         pp = self._try_create_port_pair()
@@ -257,7 +257,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             set(m['flow_classifiers'])
         ) for m in pcs['port_chains']])
 
-    @test.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076478')
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076478')
     def test_create_port_chain_multi_port_pair_groups(self):
         # Create port chain
         pp1 = self._try_create_port_pair()
@@ -279,7 +279,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             m['port_pair_groups']
         ) for m in pcs['port_chains']])
 
-    @test.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076468')
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076468')
     def test_list_port_chain(self):
         # List port chains
         pp = self._try_create_port_pair()
@@ -301,7 +301,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             set(m['flow_classifiers'])
         ) for m in pcs['port_chains']])
 
-    @test.idempotent_id('3ff8c08e-26ff-4034-ae48-810ed213a998')
+    @decorators.idempotent_id('3ff8c08e-26ff-4034-ae48-810ed213a998')
     def test_show_port_chain(self):
         # show a created port chain
         pp = self._try_create_port_pair()
@@ -315,7 +315,7 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
         for key, value in six.iteritems(pc['port_chain']):
             self.assertEqual(created[key], value)
 
-    @test.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')
+    @decorators.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')
     def test_update_port_chain(self):
         # Create port chain
         pp = self._try_create_port_pair()

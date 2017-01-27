@@ -18,6 +18,7 @@ import time
 from tempest.common import waiters
 from tempest import config
 from tempest.lib.common.utils import test_utils
+from tempest.lib import decorators
 from tempest import test
 
 from networking_sfc.tests.tempest_plugin.tests.scenario import base
@@ -91,7 +92,7 @@ class TestSfc(base.SfcScenarioTest):
     def _wait_for_port_chain_status(self, port_chain, status):
         time.sleep(10)
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a8')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a8')
     @test.services('compute', 'network')
     def test_create_port_chain(self):
         (
@@ -134,7 +135,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a9')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a9')
     @test.services('compute', 'network')
     def test_create_port_chain_multi_flow_classifiers(self):
         (
@@ -198,7 +199,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21aa')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21aa')
     @test.services('compute', 'network')
     def test_create_port_chain_multi_port_pairs(self):
         (
@@ -245,7 +246,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ab')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ab')
     @test.services('compute', 'network')
     def test_create_port_chain_multi_port_pair_groups(self):
         (
@@ -295,7 +296,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e22ab')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e22ab')
     @test.services('compute', 'network')
     def test_create_multi_port_chain(self):
         (
@@ -366,7 +367,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ac')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ac')
     @test.services('compute', 'network')
     def test_update_port_chain_add_flow_classifiers(self):
         (
@@ -430,7 +431,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ad')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ad')
     @test.services('compute', 'network')
     def test_update_port_chain_remove_flow_classifiers(self):
         (
@@ -494,7 +495,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ae')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ae')
     @test.services('compute', 'network')
     def test_update_port_chain_replace_flow_classifiers(self):
         (
@@ -558,7 +559,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21af')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21af')
     @test.services('compute', 'network')
     def test_update_port_chain_add_port_pair_groups(self):
         (
@@ -618,7 +619,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21bf')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21bf')
     @test.services('compute', 'network')
     def test_update_port_chain_remove_port_pair_groups(self):
         (
@@ -680,7 +681,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21be')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21be')
     @test.services('compute', 'network')
     def test_update_port_chain_replace_port_pair_groups(self):
         (
@@ -742,7 +743,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21bc')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21bc')
     @test.services('compute', 'network')
     def test_update_port_chain_replace_port_pair_groups_flow_classifers(self):
         (
@@ -820,7 +821,7 @@ class TestSfc(base.SfcScenarioTest):
     def _wait_for_port_pair_group_status(self, port_pair_group, status):
         time.sleep(10)
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21bb')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21bb')
     @test.services('compute', 'network')
     def test_update_port_pair_group_add_port_pairs(self):
         (
@@ -874,7 +875,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ba')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ba')
     @test.services('compute', 'network')
     def test_update_port_pair_group_remove_port_pairs(self):
         (
@@ -925,7 +926,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21b9')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21b9')
     @test.services('compute', 'network')
     def test_update_port_pair_group_replace_port_pairs(self):
         (
@@ -976,7 +977,7 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21b9')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21b9')
     @test.services('compute', 'network')
     def test_multi_port_chains_update_port_pair_group_replace_port_pairs(
         self
