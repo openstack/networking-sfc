@@ -13,7 +13,7 @@
 #    under the License.
 
 from tempest.lib.common.utils import data_utils
-from tempest import test
+from tempest.lib import decorators
 
 from networking_sfc.tests.tempest_plugin.tests.api import base
 
@@ -28,7 +28,7 @@ class FlowClassifierExtensionTestJSON(base.BaseFlowClassifierTest):
         Show flowclassifier
     """
 
-    @test.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076468')
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076468')
     def test_list_flowclassifier(self):
         # List flow classifiers
         fc = self._try_create_flowclassifier()
@@ -45,7 +45,7 @@ class FlowClassifierExtensionTestJSON(base.BaseFlowClassifierTest):
             m['logical_source_port'],
         ) for m in fcs['flow_classifiers']])
 
-    @test.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')
+    @decorators.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')
     def test_update_flowclassifier(self):
         # Create flow classifier
         name1 = data_utils.rand_name('test')
@@ -60,7 +60,7 @@ class FlowClassifierExtensionTestJSON(base.BaseFlowClassifierTest):
             fc_id, name=name2)
         self.assertEqual(body['flow_classifier']['name'], name2)
 
-    @test.idempotent_id('3ff8c08e-26ff-4034-ae48-810ed213a998')
+    @decorators.idempotent_id('3ff8c08e-26ff-4034-ae48-810ed213a998')
     def test_show_flowclassifier(self):
         # show a created flow classifier
         created = self._try_create_flowclassifier()
