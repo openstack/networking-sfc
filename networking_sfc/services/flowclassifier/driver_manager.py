@@ -14,7 +14,7 @@
 
 from oslo_config import cfg
 from oslo_log import log
-import stevedore
+from stevedore.named import NamedExtensionManager
 
 from networking_sfc._i18n import _LE, _LI
 from networking_sfc.services.flowclassifier.common import exceptions as fc_exc
@@ -26,25 +26,48 @@ cfg.CONF.import_opt('drivers',
                     group='flowclassifier')
 
 
-class FlowClassifierDriverManager(stevedore.named.NamedExtensionManager):
+class FlowClassifierDriverManager(NamedExtensionManager):
     """Implementation of Flow Classifier drivers."""
 
-    def __init__(self):
+    def __init__(self, namespace='networking_sfc.flowclassifier.drivers',
+                 names=cfg.CONF.flowclassifier.drivers):
         # Registered flow classifier drivers, keyed by name.
         self.drivers = {}
         # Ordered list of flow classifier drivers, defining
         # the order in which the drivers are called.
         self.ordered_drivers = []
-        LOG.info(_LI("Configured Flow Classifier drivers: %s"),
-                 cfg.CONF.flowclassifier.drivers)
+        LOG.info(_LI("Configured Flow Classifier drivers: %s"), names)
         super(FlowClassifierDriverManager, self).__init__(
-            'networking_sfc.flowclassifier.drivers',
-            cfg.CONF.flowclassifier.drivers,
+            namespace,
+            names,
             invoke_on_load=True,
             name_order=True)
         LOG.info(_LI("Loaded Flow Classifier drivers: %s"),
                  self.names())
         self._register_drivers()
+
+    @classmethod
+    def make_test_instance(cls, extensions, namespace='TESTING'):
+        """Construct a test FlowClassifierDriverManager
+
+        Test instances are passed a list of extensions to use rather than
+        loading them from entry points.
+
+        :param extensions: Pre-configured Extension instances
+        :type extensions: list of :class:`~stevedore.extension.Extension`
+        :param namespace: The namespace for the manager; used only for
+            identification since the extensions are passed in.
+        :type namespace: str
+        :return: The manager instance, initialized for testing
+
+        """
+
+        o = super(FlowClassifierDriverManager, cls).make_test_instance(
+                extensions, namespace=namespace)
+        o.drivers = {}
+        o.ordered_drivers = []
+        o._register_drivers()
+        return o
 
     def _register_drivers(self):
         """Register all Flow Classifier drivers.

@@ -12,92 +12,54 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
-import mock
-import pkg_resources
-import stevedore
-
-from oslo_config import cfg
+from mock import Mock
+from stevedore.extension import Extension
 
 from neutron.tests import base
 
-from networking_sfc.services.sfc.common import config as sfc_config
 from networking_sfc.services.sfc.common import exceptions as sfc_exc
-from networking_sfc.services.sfc import driver_manager as sfc_driver
+from networking_sfc.services.sfc.driver_manager \
+    import SfcDriverManager
 
 
 class DriverManagerTestCase(base.BaseTestCase):
     def setUp(self):
         super(DriverManagerTestCase, self).setUp()
 
-    @contextlib.contextmanager
-    def driver_manager_context(self, drivers):
-        cfg.CONF.register_opts(sfc_config.SFC_DRIVER_OPTS, 'sfc')
-        backup_driver_names = cfg.CONF.sfc.drivers
-        driver_names = [
-            driver_name for driver_name in drivers
-        ]
-        cfg.CONF.set_override('drivers', driver_names, 'sfc')
-        iter_entry_points = pkg_resources.iter_entry_points
-        find_entry_points = stevedore.ExtensionManager._find_entry_points
-        pkg_resources.iter_entry_points = mock.Mock()
-        stevedore.ExtensionManager._find_entry_points = mock.Mock()
-        driver_entry_points = []
-        for driver_name in driver_names:
-            driver_class = mock.Mock()
-            ep = mock.Mock()
-            ep.name = driver_name
-            ep.resolve.return_value = driver_class
-            driver_class.return_value = drivers[driver_name]
-            drivers[driver_name].native_bulk_support = True
-            driver_entry_points.append(ep)
-        pkg_resources.iter_entry_points.return_value = driver_entry_points
-        stevedore.ExtensionManager._find_entry_points.return_value = (
-            driver_entry_points
-        )
-        yield sfc_driver.SfcDriverManager()
-        cfg.CONF.set_override('drivers', backup_driver_names, 'sfc')
-        pkg_resources.iter_entry_points = iter_entry_points
-        stevedore.ExtensionManager._find_entry_points = find_entry_points
-
     def test_initialize_called(self):
-        mock_driver1 = mock.Mock()
-        mock_driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': mock_driver1,
-            'dummy2': mock_driver2
-        }) as manager:
-            manager.initialize()
-            mock_driver1.initialize.assert_called_once_with()
-            mock_driver2.initialize.assert_called_once_with()
+        driver1 = Extension('mock_driver1', Mock(), None,
+                            Mock(native_bulk_support=True))
+        driver2 = Extension('mock_driver2', Mock(), None,
+                            Mock(native_bulk_support=True))
+        manager = SfcDriverManager.make_test_instance([driver1, driver2])
+        manager.initialize()
+        driver1.obj.initialize.assert_called_once_with()
+        driver2.obj.initialize.assert_called_once_with()
 
     def _test_method_called(self, method_name):
-        driver1 = mock.Mock()
-        driver2 = mock.Mock()
-        with self.driver_manager_context({
-            'dummy1': driver1,
-            'dummy2': driver2
-        }) as manager:
-            mocked_context = mock.Mock()
-            getattr(manager, method_name)(mocked_context)
-            getattr(driver1, method_name).assert_called_once_with(
+        driver1 = Extension('mock_driver1', Mock(), None,
+                            Mock(native_bulk_support=True))
+        driver2 = Extension('mock_driver2', Mock(), None,
+                            Mock(native_bulk_support=True))
+        manager = SfcDriverManager.make_test_instance([driver1, driver2])
+        mocked_context = Mock()
+        getattr(manager, method_name)(mocked_context)
+        getattr(driver1.obj, method_name).assert_called_once_with(
                 mocked_context)
-            getattr(driver2, method_name).assert_called_once_with(
+        getattr(driver2.obj, method_name).assert_called_once_with(
                 mocked_context)
 
-    def _test_method_exception(self, method_name):
-        mock_driver = mock.Mock()
-        mock_method = mock.Mock(
-            side_effect=sfc_exc.SfcException
-        )
-        setattr(mock_driver, method_name, mock_method)
-        with self.driver_manager_context({
-            'dummy': mock_driver,
-        }) as manager:
-            mocked_context = mock.Mock()
-            self.assertRaises(
-                sfc_exc.SfcDriverError,
-                getattr(manager, method_name), mocked_context)
+    def _test_method_exception(self, method_name,
+                               expected_exc=sfc_exc.SfcDriverError):
+        driver = Extension('mock_driver', Mock(), None,
+                           Mock(native_bulk_support=True))
+        mock_method = Mock(side_effect=sfc_exc.SfcException)
+        setattr(driver.obj, method_name, mock_method)
+        manager = SfcDriverManager.make_test_instance([driver])
+        mocked_context = Mock()
+        self.assertRaises(expected_exc,
+                          getattr(manager, method_name),
+                          mocked_context)
 
     def test_create_port_chain_precommit_called(self):
         self._test_method_called("create_port_chain_precommit")

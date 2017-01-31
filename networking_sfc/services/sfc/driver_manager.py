@@ -14,7 +14,7 @@
 
 from oslo_config import cfg
 from oslo_log import log
-import stevedore
+from stevedore.named import NamedExtensionManager
 
 from networking_sfc._i18n import _LE, _LI
 from networking_sfc.services.sfc.common import exceptions as sfc_exc
@@ -26,23 +26,46 @@ cfg.CONF.import_opt('drivers',
                     group='sfc')
 
 
-class SfcDriverManager(stevedore.named.NamedExtensionManager):
+class SfcDriverManager(NamedExtensionManager):
     """Implementation of SFC drivers."""
 
-    def __init__(self):
+    def __init__(self, namespace='networking_sfc.sfc.drivers',
+                 names=cfg.CONF.sfc.drivers):
         # Registered sfc drivers, keyed by name.
         self.drivers = {}
         # Ordered list of sfc drivers, defining
         # the order in which the drivers are called.
         self.ordered_drivers = []
-        LOG.info(_LI("Configured SFC drivers: %s"),
-                 cfg.CONF.sfc.drivers)
-        super(SfcDriverManager, self).__init__('networking_sfc.sfc.drivers',
-                                               cfg.CONF.sfc.drivers,
+        LOG.info(_LI("Configured SFC drivers: %s"), names)
+        super(SfcDriverManager, self).__init__(namespace,
+                                               names,
                                                invoke_on_load=True,
                                                name_order=True)
         LOG.info(_LI("Loaded SFC drivers: %s"), self.names())
         self._register_drivers()
+
+    @classmethod
+    def make_test_instance(cls, extensions, namespace='TESTING'):
+        """Construct a test SfcDriverManager
+
+        Test instances are passed a list of extensions to use rather than
+        loading them from entry points.
+
+        :param extensions: Pre-configured Extension instances
+        :type extensions: list of :class:`~stevedore.extension.Extension`
+        :param namespace: The namespace for the manager; used only for
+            identification since the extensions are passed in.
+        :type namespace: str
+        :return: The manager instance, initialized for testing
+
+        """
+
+        o = super(SfcDriverManager, cls).make_test_instance(
+                extensions, namespace=namespace)
+        o.drivers = {}
+        o.ordered_drivers = []
+        o._register_drivers()
+        return o
 
     def _register_drivers(self):
         """Register all SFC drivers.
