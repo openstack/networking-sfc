@@ -80,7 +80,7 @@ release = '1.0.0'
 version = '1.0.0.'
 
 # Config logABug feature
-giturl = (u'http://git.openstack.org/'
+giturl = (u'https://git.openstack.org/'
           u'cgit/openstack/networking-sfc/tree/api-ref/source')
 # source tree
 # html_context allows us to pass arbitrary values into the html template
