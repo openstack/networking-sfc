@@ -39,5 +39,5 @@ r="$r|(?:tempest\.api\.compute\.volumes*)"
 r="$r)"
 
 # only run tempest.api/scenario/thirdparty tests (part of the default for 'full')
-r="$r((?:tempest\.(api|scenario|thirdparty))|(?:networking_sfc\.tests\.tempest_plugin)).*$"
+r="$r(?:tempest\.(api|scenario|thirdparty)).*$"
 export DEVSTACK_GATE_TEMPEST_REGEX="$r"

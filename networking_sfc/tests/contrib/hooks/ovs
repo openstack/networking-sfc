@@ -1,0 +1,7 @@
+[[post-config|/etc/neutron/neutron.conf]]
+
+[sfc]
+drivers = ovs
+
+[flowclassifier]
+drivers = ovs

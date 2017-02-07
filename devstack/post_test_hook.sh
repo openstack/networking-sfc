@@ -25,19 +25,6 @@ cd $TEMPEST_CODE_DIR
 sudo chown -R $owner:stack $TEMPEST_CODE_DIR
 sudo mkdir -p "$TEMPEST_DATA_DIR"
 sudo chown -R $owner:stack $TEMPEST_DATA_DIR
-source $DEVSTACK_PATH/openrc admin admin
-
-echo "Some pre-process info"
-neutron net-list
-neutron port-list
-neutron subnet-list
-neutron router-list
 
 echo "Running networking-sfc test suite"
 sudo -H -u $owner $sudo_env tox -eall-plugin -- $DEVSTACK_GATE_TEMPEST_REGEX
-
-echo "Some post-process info"
-neutron net-list
-neutron port-list
-neutron subnet-list
-neutron router-list
