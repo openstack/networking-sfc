@@ -13,19 +13,20 @@
 #    under the License.
 #
 
-import six
+from neutron import context as n_context
+from neutron.db import common_db_mixin
+from neutron_lib.db import model_base
+from neutron_lib import exceptions as n_exc
+
 import sqlalchemy as sa
 from sqlalchemy import orm
 from sqlalchemy.orm import exc
 from sqlalchemy import sql
 
-from neutron_lib.db import model_base
-from neutron_lib import exceptions as n_exc
+import six
+
 from oslo_log import helpers as log_helpers
 from oslo_utils import uuidutils
-
-from neutron import context as n_context
-from neutron.db import common_db_mixin
 
 from networking_sfc._i18n import _
 
@@ -58,6 +59,7 @@ def singleton(class_):
         if class_ not in instances:
             instances[class_] = class_(*args, **kwargs)
         return instances[class_]
+
     return getinstance
 
 
@@ -86,8 +88,7 @@ class IDAllocation(object):
                         uuid, init_id, type_)
                     self.session.add(uuid_intid)
                 return init_id
-        else:
-            return None
+        return None
 
     @log_helpers.log_method_call
     def get_intid_by_uuid(self, type_, uuid):
@@ -335,36 +336,23 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
             node_obj = self._get_path_node(id)
         return self._make_pathnode_dict(node_obj)
 
-    def get_path_nodes_by_filter(self, filters=None, fields=None,
-                                 sorts=None, limit=None, marker=None,
-                                 page_reverse=False):
+    def get_path_nodes_by_filter(self, filters=None):
         with self.admin_context.session.begin(subtransactions=True):
-            qry = self._get_path_nodes_by_filter(
-                filters, fields, sorts, limit,
-                marker, page_reverse
-            )
+            qry = self._get_path_nodes_by_filter(filters)
             all_items = qry.all()
             if all_items:
                 return [self._make_pathnode_dict(item) for item in all_items]
-
         return None
 
-    def get_path_node_by_filter(self, filters=None, fields=None,
-                                sorts=None, limit=None, marker=None,
-                                page_reverse=False):
+    def get_path_node_by_filter(self, filters=None):
         with self.admin_context.session.begin(subtransactions=True):
-            qry = self._get_path_nodes_by_filter(
-                filters, fields, sorts, limit,
-                marker, page_reverse)
+            qry = self._get_path_nodes_by_filter(filters)
             first = qry.first()
             if first:
                 return self._make_pathnode_dict(first)
-
         return None
 
-    def _get_path_nodes_by_filter(self, filters=None, fields=None,
-                                  sorts=None, limit=None, marker=None,
-                                  page_reverse=False):
+    def _get_path_nodes_by_filter(self, filters=None):
         qry = self.admin_context.session.query(PathNode)
         if filters:
             for key, value in filters.items():
@@ -376,38 +364,24 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                         qry = qry.filter(column == value)
         return qry
 
-    def get_port_details_by_filter(self, filters=None, fields=None,
-                                   sorts=None, limit=None, marker=None,
-                                   page_reverse=False):
+    def get_port_details_by_filter(self, filters=None):
         with self.admin_context.session.begin(subtransactions=True):
-            qry = self._get_port_details_by_filter(
-                filters, fields, sorts, limit,
-                marker, page_reverse)
+            qry = self._get_port_details_by_filter(filters)
             all_items = qry.all()
             if all_items:
-                return [
-                    self._make_port_detail_dict(item)
-                    for item in all_items
-                ]
-
+                return [self._make_port_detail_dict(item)
+                        for item in all_items]
         return None
 
-    def get_port_detail_by_filter(self, filters=None, fields=None,
-                                  sorts=None, limit=None, marker=None,
-                                  page_reverse=False):
+    def get_port_detail_by_filter(self, filters=None):
         with self.admin_context.session.begin(subtransactions=True):
-            qry = self._get_port_details_by_filter(
-                filters, fields, sorts, limit,
-                marker, page_reverse)
+            qry = self._get_port_details_by_filter(filters)
             first = qry.first()
             if first:
                 return self._make_port_detail_dict(first)
-
         return None
 
-    def _get_port_details_by_filter(self, filters=None, fields=None,
-                                    sorts=None, limit=None, marker=None,
-                                    page_reverse=False):
+    def _get_port_details_by_filter(self, filters=None):
         qry = self.admin_context.session.query(PortPairDetail)
         if filters:
             for key, value in filters.items():
@@ -417,5 +391,4 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                         qry = qry.filter(sql.false())
                     else:
                         qry = qry.filter(column == value)
-
         return qry
