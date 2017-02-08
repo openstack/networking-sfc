@@ -12,7 +12,7 @@ Service Function Chaining Extension for OpenStack Networking
 ============================================================
 
 Service Function Chaining API
-------------------------------------
+-----------------------------
 
 This project provides APIs and implementations to support
 Service Function Chaining in Neutron.

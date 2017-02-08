@@ -44,7 +44,7 @@ Checking migration:
       OK
 
 Checking branch information:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 

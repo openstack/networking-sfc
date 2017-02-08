@@ -1,8 +1,8 @@
 :tocdepth: 2
 
-====================
- Networking SFC API
-====================
+==================
+Networking SFC API
+==================
 
 .. rest_expand_all::
 
