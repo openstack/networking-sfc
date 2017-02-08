@@ -70,7 +70,7 @@ class CreatePortChain(command.ShowOne):
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
         attrs = _get_common_attrs(self, self.app.client_manager, parsed_args)
-        obj = common.create_sfc_resource(self, client, resource, attrs)
+        obj = common.create_sfc_resource(client, resource, attrs)
         columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
         return columns, data
@@ -115,13 +115,14 @@ class UpdatePortChain(command.Command):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.port_chain)
         attrs = _get_common_attrs(self, self.app.client_manager, parsed_args,
                                   is_create=False)
         if parsed_args.no_flow_classifier:
             attrs['flow_classifiers'] = []
-        common.update_sfc_resource(self, client, resource, attrs, id)
+        common.update_sfc_resource(client, resource, attrs, id)
 
 
 class DeletePortChain(command.Command):
@@ -138,9 +139,10 @@ class DeletePortChain(command.Command):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.port_chain)
-        common.delete_sfc_resource(self, client, resource, id)
+        common.delete_sfc_resource(client, resource, id)
 
 
 class ListPortChain(command.Lister):
@@ -174,9 +176,10 @@ class ShowPortChain(command.ShowOne):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.port_chain)
-        obj = common.show_sfc_resource(self, client, resource, id)
+        obj = common.show_sfc_resource(client, resource, id)
         columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
         return columns, data
@@ -190,13 +193,13 @@ def _get_common_attrs(self, client_manager, parsed_args, is_create=True):
         attrs['description'] = str(parsed_args.description)
     if ('port_pair_groups' in parsed_args and
             parsed_args.port_pair_groups is not None):
-        attrs['port_pair_groups'] = [(common.find_sfc_resource(self,
+        attrs['port_pair_groups'] = [(common.find_sfc_resource(
                                       client_manager.neutronclient,
                                       'port_pair_group', ppg))
                                      for ppg in parsed_args.port_pair_groups]
     if ('flow_classifiers' in parsed_args and
             parsed_args.flow_classifiers is not None):
-        attrs['flow_classifiers'] = [(common.find_sfc_resource(self,
+        attrs['flow_classifiers'] = [(common.find_sfc_resource(
                                       client_manager.neutronclient,
                                       'flow_classifier', fc))
                                      for fc in parsed_args.flow_classifiers]

@@ -67,7 +67,7 @@ class CreatePortPair(command.ShowOne):
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
         attrs = _get_common_attrs(self.app.client_manager, parsed_args)
-        obj = common.create_sfc_resource(self, client, resource, attrs)
+        obj = common.create_sfc_resource(client, resource, attrs)
         columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
         return columns, data
@@ -94,11 +94,12 @@ class UpdatePortPair(command.Command):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.port_pair)
         attrs = _get_common_attrs(self.app.client_manager, parsed_args,
                                   is_create=False)
-        common.update_sfc_resource(self, client, resource, attrs, id)
+        common.update_sfc_resource(client, resource, attrs, id)
 
 
 class DeletePortPair(command.Command):
@@ -115,9 +116,10 @@ class DeletePortPair(command.Command):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.port_pair)
-        common.delete_sfc_resource(self, client, resource, id)
+        common.delete_sfc_resource(client, resource, id)
 
 
 class ListPortPair(command.Lister):
@@ -149,9 +151,10 @@ class ShowPortPair(command.ShowOne):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.port_pair)
-        obj = common.show_sfc_resource(self, client, resource, id)
+        obj = common.show_sfc_resource(client, resource, id)
         columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
         return columns, data

@@ -20,57 +20,47 @@ from neutronclient.common import exceptions
 from neutronclient.neutron import v2_0 as neutronV20
 
 
-def _resolve_resource_path(self, resource):
+def _resolve_resource_path(resource):
     """Returns sfc resource path."""
-
     if resource == 'port_pair':
-        RESOURCE_PATH = "/sfc/port_pairs"
-
+        return "/sfc/port_pairs"
     elif resource == 'port_pair_group':
-        RESOURCE_PATH = "/sfc/port_pair_groups"
-
+        return "/sfc/port_pair_groups"
     elif resource == 'port_chain':
-        RESOURCE_PATH = "/sfc/port_chains"
-
+        return "/sfc/port_chains"
     elif resource == 'flow_classifier':
-        RESOURCE_PATH = "/sfc/flow_classifiers"
-
-    return RESOURCE_PATH
+        return "/sfc/flow_classifiers"
 
 
-def create_sfc_resource(self, client, resource, props):
+def create_sfc_resource(client, resource, props):
     """Returns created sfc resource record."""
-    path = _resolve_resource_path(self, resource)
+    path = _resolve_resource_path(resource)
     record = client.create_ext(path, {resource: props})
     return record
 
 
-def update_sfc_resource(self, client, resource, prop_diff, resource_id):
+def update_sfc_resource(client, resource, prop_diff, resource_id):
     """Returns updated sfc resource record."""
-
-    path = _resolve_resource_path(self, resource)
+    path = _resolve_resource_path(resource)
     return client.update_ext(path + '/%s', resource_id,
                                     {resource: prop_diff})
 
 
-def delete_sfc_resource(self, client, resource, resource_id):
+def delete_sfc_resource(client, resource, resource_id):
     """Deletes sfc resource record and returns status."""
-
-    path = _resolve_resource_path(self, resource)
+    path = _resolve_resource_path(resource)
     return client.delete_ext(path + '/%s', resource_id)
 
 
-def show_sfc_resource(self, client, resource, resource_id):
+def show_sfc_resource(client, resource, resource_id):
     """Returns specific sfc resource record."""
-
-    path = _resolve_resource_path(self, resource)
+    path = _resolve_resource_path(resource)
     return client.show_ext(path + '/%s', resource_id)
 
 
-def find_sfc_resource(self, client, resource, name_or_id):
+def find_sfc_resource(client, resource, name_or_id):
     """Returns the id and validate sfc resource."""
-
-    path = _resolve_resource_path(self, resource)
+    path = _resolve_resource_path(resource)
 
     try:
         record = client.show_ext(path + '/%s', name_or_id)
@@ -81,9 +71,9 @@ def find_sfc_resource(self, client, resource, name_or_id):
                                  path=path, retrieve_all=True)
         record1 = record.get(res_plural)
         rec_chk = []
-        for i in range(len(record1)):
-            if (record1[i].get('name') == name_or_id):
-                rec_chk.append(record1[i].get('id'))
+        for rec in record1:
+            if rec.get('name') == name_or_id:
+                rec_chk.append(rec.get('id'))
         if len(rec_chk) > 1:
             raise exceptions.NeutronClientNoUniqueMatch(resource=resource,
                                                         name=name_or_id)

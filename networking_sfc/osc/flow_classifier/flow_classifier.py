@@ -80,7 +80,7 @@ class CreateFlowClassifier(command.ShowOne):
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
         attrs = _get_common_attrs(self.app.client_manager, parsed_args)
-        obj = common.create_sfc_resource(self, client, resource, attrs)
+        obj = common.create_sfc_resource(client, resource, attrs)
         columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
         return columns, data
@@ -107,11 +107,12 @@ class UpdateFlowClassifier(command.Command):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.flow_classifier)
         attrs = _get_common_attrs(self.app.client_manager, parsed_args,
                                   is_create=False)
-        common.update_sfc_resource(self, client, resource, attrs, id)
+        common.update_sfc_resource(client, resource, attrs, id)
 
 
 class DeleteFlowClassifier(command.Command):
@@ -128,9 +129,10 @@ class DeleteFlowClassifier(command.Command):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.flow_classifier)
-        common.delete_sfc_resource(self, client, resource, id)
+        common.delete_sfc_resource(client, resource, id)
 
 
 class ListFlowClassifier(command.Lister):
@@ -165,9 +167,10 @@ class ShowFlowClassifier(command.ShowOne):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.flow_classifier)
-        obj = common.show_sfc_resource(self, client, resource, id)
+        obj = common.show_sfc_resource(client, resource, id)
         columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
         return columns, data

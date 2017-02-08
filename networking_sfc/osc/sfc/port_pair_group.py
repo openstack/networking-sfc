@@ -62,7 +62,7 @@ class CreatePortPairGroup(command.ShowOne):
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
         attrs = _get_common_attrs(self, self.app.client_manager, parsed_args)
-        obj = common.create_sfc_resource(self, client, resource, attrs)
+        obj = common.create_sfc_resource(client, resource, attrs)
         columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
         return columns, data
@@ -96,11 +96,12 @@ class UpdatePortPairGroup(command.Command):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.port_pair_group)
         attrs = _get_common_attrs(self, self.app.client_manager, parsed_args,
                                   is_create=False)
-        common.update_sfc_resource(self, client, resource, attrs, id)
+        common.update_sfc_resource(client, resource, attrs, id)
 
 
 class DeletePortPairGroup(command.Command):
@@ -117,9 +118,10 @@ class DeletePortPairGroup(command.Command):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.port_pair_group)
-        common.delete_sfc_resource(self, client, resource, id)
+        common.delete_sfc_resource(client, resource, id)
 
 
 class ListPortPairGroup(command.Lister):
@@ -151,9 +153,10 @@ class ShowPortPairGroup(command.ShowOne):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        id = common.find_sfc_resource(self, client, resource,
+        id = common.find_sfc_resource(client,
+                                      resource,
                                       parsed_args.port_pair_group)
-        obj = common.show_sfc_resource(self, client, resource, id)
+        obj = common.show_sfc_resource(client, resource, id)
         columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
         return columns, data
@@ -177,7 +180,7 @@ def _get_common_attrs(self, client_manager, parsed_args, is_create=True):
     if parsed_args.description is not None:
         attrs['description'] = str(parsed_args.description)
     if parsed_args.port_pairs:
-        attrs['port_pairs'] = [(common.find_sfc_resource(self,
+        attrs['port_pairs'] = [(common.find_sfc_resource(
                                 client_manager.neutronclient, 'port_pair', pp))
                                for pp in parsed_args.port_pairs]
     if is_create is True:
