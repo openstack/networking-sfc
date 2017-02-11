@@ -45,9 +45,9 @@ class DriverManagerTestCase(base.BaseTestCase):
         mocked_context = Mock()
         getattr(manager, method_name)(mocked_context)
         getattr(driver1.obj, method_name).assert_called_once_with(
-                mocked_context)
+            mocked_context)
         getattr(driver2.obj, method_name).assert_called_once_with(
-                mocked_context)
+            mocked_context)
 
     def _test_method_exception(self, method_name,
                                expected_exc=sfc_exc.SfcDriverError):

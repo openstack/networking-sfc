@@ -61,7 +61,7 @@ class SfcDriverManager(NamedExtensionManager):
         """
 
         o = super(SfcDriverManager, cls).make_test_instance(
-                extensions, namespace=namespace)
+            extensions, namespace=namespace)
         o.drivers = {}
         o.ordered_drivers = []
         o._register_drivers()
