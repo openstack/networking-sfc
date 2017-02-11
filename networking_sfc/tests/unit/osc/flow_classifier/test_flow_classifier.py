@@ -146,7 +146,7 @@ class TestDeleteFlowClassifier(fakes.TestNeutronClientOSCV2):
         ]
         parsed_args = self.check_parser(self.cmd, arglist, verifylist)
         result = self.cmd.take_action(parsed_args)
-        mock_flow_classifier_delete.assert_called_once_with(self.cmd, client,
+        mock_flow_classifier_delete.assert_called_once_with(client,
                                                             'flow_classifier',
                                                             fc_id)
         self.assertIsNone(result)
@@ -217,7 +217,7 @@ class TestShowFlowClassifier(fakes.TestNeutronClientOSCV2):
         parsed_args = self.check_parser(self.cmd, arglist, verifylist)
 
         data = self.cmd.take_action(parsed_args)
-        mock_flow_classifier_show.assert_called_once_with(self.cmd, client,
+        mock_flow_classifier_show.assert_called_once_with(client,
                                                           'flow_classifier',
                                                           fc_id)
         self.assertEqual(self.columns, data[0])
@@ -258,7 +258,7 @@ class TestUpdateFlowClassifier(fakes.TestNeutronClientOSCV2):
         attrs = {
             'name': 'name_updated',
             'description': 'desc_updated'}
-        mock_flow_classifier_update.assert_called_once_with(self.cmd, client,
+        mock_flow_classifier_update.assert_called_once_with(client,
                                                             'flow_classifier',
                                                             attrs,
                                                             fc_id)

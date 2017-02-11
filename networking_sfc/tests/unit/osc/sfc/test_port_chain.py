@@ -126,7 +126,7 @@ class TestDeletePortChain(fakes.TestNeutronClientOSCV2):
         ]
         parsed_args = self.check_parser(self.cmd, arglist, verifylist)
         result = self.cmd.take_action(parsed_args)
-        mock_port_chain_delete.assert_called_once_with(self.cmd, client,
+        mock_port_chain_delete.assert_called_once_with(client,
                                                        'port_chain',
                                                        self._port_chain['id'])
         self.assertIsNone(result)
@@ -179,7 +179,7 @@ class TestShowPortChain(fakes.TestNeutronClientOSCV2):
         parsed_args = self.check_parser(self.cmd, arglist, verifylist)
 
         data = self.cmd.take_action(parsed_args)
-        mock_port_chain_show.assert_called_once_with(self.cmd, client,
+        mock_port_chain_show.assert_called_once_with(client,
                                                      'port_chain',
                                                      self._port_chain_id)
         self.assertEqual(self.columns, data[0])
@@ -224,7 +224,7 @@ class TestUpdatePortChain(fakes.TestNeutronClientOSCV2):
             'description': 'desc_updated',
             'flow_classifiers': [],
             'port_pair_groups': [self.port_pair_group_id]}
-        mock_port_chain_update.assert_called_once_with(self.cmd, client,
+        mock_port_chain_update.assert_called_once_with(client,
                                                        'port_chain', attrs,
                                                        self._port_chain_id)
         self.assertIsNone(result)

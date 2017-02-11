@@ -126,7 +126,7 @@ class TestDeletePortPairGroup(fakes.TestNeutronClientOSCV2):
         ]
         parsed_args = self.check_parser(self.cmd, arglist, verifylist)
         result = self.cmd.take_action(parsed_args)
-        mock_port_pair_group_delete.assert_called_once_with(self.cmd, client,
+        mock_port_pair_group_delete.assert_called_once_with(client,
                                                             'port_pair_group',
                                                             ppg_id)
         self.assertIsNone(result)
@@ -177,7 +177,7 @@ class TestShowPortPairGroup(fakes.TestNeutronClientOSCV2):
 
         data = self.cmd.take_action(parsed_args)
         ppg_id = self._port_pair_group_id
-        mock_port_pair_group_show.assert_called_once_with(self.cmd, client,
+        mock_port_pair_group_show.assert_called_once_with(client,
                                                           'port_pair_group',
                                                           ppg_id)
         self.assertEqual(self.columns, data[0])
@@ -223,7 +223,7 @@ class TestUpdatePortPairGroup(fakes.TestNeutronClientOSCV2):
             'description': 'desc_updated',
             'port_pairs': [self.port_id]}
         ppg_id = self._port_pair_group_id
-        mock_port_pair_group_update.assert_called_once_with(self.cmd, client,
+        mock_port_pair_group_update.assert_called_once_with(client,
                                                             'port_pair_group',
                                                             attrs, ppg_id)
         self.assertIsNone(result)
