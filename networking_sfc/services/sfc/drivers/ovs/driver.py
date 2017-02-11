@@ -201,6 +201,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def _get_subnet_by_port(self, id):
         core_plugin = directory.get_plugin()
         port = core_plugin.get_port(self.admin_context, id)
+        subnet = None
         for ip in port['fixed_ips']:
             subnet = core_plugin.get_subnet(self.admin_context,
                                             ip["subnet_id"])
@@ -331,7 +332,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     if cidr1 != cidr2:
                         LOG.error(_LE('Cross-subnet chain not supported'))
                         raise exc.SfcDriverError()
-                        return None
 
         # Compare subnets for PPG egress ports
         # and next PPG ingress ports
@@ -344,6 +344,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 pp1 = context._plugin.get_port_pair(context._plugin_context,
                                                     pp_id1)
                 filter1 = {}
+                cidr3 = None
                 if pp1.get('egress', None):
                     filter1 = dict(dict(egress=pp1['egress']), **filter1)
                     pd1 = self.get_port_detail_by_filter(filter1)
@@ -362,7 +363,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                         if cidr3 != cidr4:
                             LOG.error(_LE('Cross-subnet chain not supported'))
                             raise exc.SfcDriverError()
-                            return None
 
         next_group_intid, next_group_members = self._get_portgroup_members(
             context, port_chain['port_pair_groups'][0])
@@ -448,16 +448,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         # if this port is not binding, don't to generate flow rule
         if not port['host_id']:
             return
-        flow_rule = self._build_portchain_flowrule_body(
-            node,
-            port,
-            None,
-            fc_ids)
-
-        self.ovs_driver_rpc.ask_agent_to_delete_flow_rules(
-            self.admin_context,
-            flow_rule)
-
+        flow_rule = self._build_portchain_flowrule_body(node,
+                                                        port,
+                                                        del_fc_ids=fc_ids)
+        self.ovs_driver_rpc.ask_agent_to_delete_flow_rules(self.admin_context,
+                                                           flow_rule)
         self._delete_agent_fdb_entries(flow_rule)
 
     def _delete_path_node_flowrule(self, node, fc_ids):
@@ -581,17 +576,12 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         # if this port is not binding, don't to generate flow rule
         if not port['host_id']:
             return
-
-        flow_rule = self._build_portchain_flowrule_body(
-            node,
-            port,
-            add_fc_ids,
-            del_fc_ids)
-
-        self.ovs_driver_rpc.ask_agent_to_update_flow_rules(
-            self.admin_context,
-            flow_rule)
-
+        flow_rule = self._build_portchain_flowrule_body(node,
+                                                        port,
+                                                        add_fc_ids=add_fc_ids,
+                                                        del_fc_ids=del_fc_ids)
+        self.ovs_driver_rpc.ask_agent_to_update_flow_rules(self.admin_context,
+                                                           flow_rule)
         self._update_agent_fdb_entries(flow_rule)
 
     def _update_path_node_flowrules(self, node,
