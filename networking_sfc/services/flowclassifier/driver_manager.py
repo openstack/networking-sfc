@@ -63,7 +63,7 @@ class FlowClassifierDriverManager(NamedExtensionManager):
         """
 
         o = super(FlowClassifierDriverManager, cls).make_test_instance(
-                extensions, namespace=namespace)
+            extensions, namespace=namespace)
         o.drivers = {}
         o.ordered_drivers = []
         o._register_drivers()

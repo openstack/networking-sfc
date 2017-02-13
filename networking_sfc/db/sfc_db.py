@@ -412,8 +412,8 @@ class SfcDbPlugin(
             'egress': port_pair['egress'],
             'service_function_parameters': {
                 param['keyword']: jsonutils.loads(param['value'])
-                for k, param in \
-                    port_pair['service_function_parameters'].items()
+                for k, param in
+                port_pair['service_function_parameters'].items()
             }
         }
 
@@ -453,8 +453,8 @@ class SfcDbPlugin(
             service_function_parameters = {
                 key: ServiceFunctionParam(
                     keyword=key, value=jsonutils.dumps(val))
-                for key, val in \
-                    pp['service_function_parameters'].items()
+                for key, val in
+                pp['service_function_parameters'].items()
             }
             ingress = self._get_port(context, pp['ingress'])
             egress = self._get_port(context, pp['egress'])
@@ -534,8 +534,8 @@ class SfcDbPlugin(
             'port_pairs': [pp['id'] for pp in port_pair_group['port_pairs']],
             'port_pair_group_parameters': {
                 param['keyword']: jsonutils.loads(param['value'])
-                for k, param in \
-                    port_pair_group['port_pair_group_parameters'].items()
+                for k, param in
+                port_pair_group['port_pair_group_parameters'].items()
             },
             'group_id': port_pair_group.get('group_id') or 0
         }
@@ -557,8 +557,8 @@ class SfcDbPlugin(
             port_pair_group_parameters = {
                 key: PortPairGroupParam(
                     keyword=key, value=jsonutils.dumps(val))
-                for key, val in \
-                    pg['port_pair_group_parameters'].items()
+                for key, val in
+                pg['port_pair_group_parameters'].items()
             }
             assigned_group_ids = {}
             query = context.session.query(PortPairGroup)
