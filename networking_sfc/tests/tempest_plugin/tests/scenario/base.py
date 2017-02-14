@@ -61,6 +61,6 @@ class SfcScenarioTest(
         except lib_exc.SSHExecCommandFailed as e:
             LOG.exception(e)
             raise
-        except lib_exc.SSHTimeout:
+        except lib_exc.SSHTimeout as e:
             LOG.exception(e)
             raise
