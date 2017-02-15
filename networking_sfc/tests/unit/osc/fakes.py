@@ -15,8 +15,8 @@
 
 import argparse
 import copy
-import mock
 
+import mock
 from osc_lib.tests import utils
 from oslo_utils import uuidutils
 
@@ -73,10 +73,8 @@ class FakePortPair(object):
             A list of dictionaries faking the port_pairs
         """
         port_pairs = []
-        for i in range(0, count):
-            port_pair = port_pairs.append(FakePortPair.create_port_pair(attrs))
-        port_pairs.append(port_pair)
-
+        for _ in range(count):
+            port_pairs.append(FakePortPair.create_port_pair(attrs))
         return {'port_pairs': port_pairs}
 
 
@@ -122,11 +120,9 @@ class FakePortPairGroup(object):
             A list of dictionaries faking the port pair groups
         """
         port_pair_groups = []
-        for i in range(0, count):
-            port_pair_group = port_pair_groups.append(
+        for _ in range(count):
+            port_pair_groups.append(
                 FakePortPairGroup.create_port_pair_group(attrs))
-        port_pair_groups.append(port_pair_group)
-
         return {'port_pair_groups': port_pair_groups}
 
 
@@ -179,11 +175,9 @@ class FakeFlowClassifier(object):
             A list of dictionaries faking the flow classifiers
         """
         flow_classifiers = []
-        for i in range(0, count):
-            flow_classifier = flow_classifiers.append(
+        for _ in range(count):
+            flow_classifiers.append(
                 FakeFlowClassifier.create_flow_classifier(attrs))
-        flow_classifiers.append(flow_classifier)
-
         return {'flow_classifiers': flow_classifiers}
 
 
@@ -229,9 +223,6 @@ class FakePortChain(object):
             A list of dictionaries faking the port chains.
         """
         port_chains = []
-        for i in range(0, count):
-            port_chain = port_chains.append(
-                FakePortChain.create_port_chain(attrs))
-        port_chains.append(port_chain)
-
+        for _ in range(count):
+            port_chains.append(FakePortChain.create_port_chain(attrs))
         return {'port_chains': port_chains}
