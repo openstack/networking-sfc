@@ -14,16 +14,13 @@
 
 from eventlet import greenthread
 import mock
-
-from neutron_lib.api.definitions import portbindings
-
-from oslo_utils import importutils
-
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron.common import rpc as n_rpc
 from neutron import context
 from neutron.plugins.ml2.drivers import type_vxlan
+from neutron_lib.api.definitions import portbindings
+from oslo_utils import importutils
 
 from networking_sfc.db import flowclassifier_db as fdb
 from networking_sfc.db import sfc_db
@@ -284,7 +281,7 @@ class OVSSfcDriverTestCase(
                             pp['port_pair']['egress'])
                         self.assertEqual(
                             set(update_flow_rules.keys()),
-                            set([flow1]))
+                            {flow1})
                         self.assertEqual(
                             update_flow_rules[flow1]['add_fcs'],
                             [])
@@ -352,7 +349,7 @@ class OVSSfcDriverTestCase(
                             fc['flow_classifier']['logical_source_port'])
                         self.assertEqual(
                             set(update_flow_rules.keys()),
-                            set([flow1]))
+                            {flow1})
                         self.assertEqual(
                             len(update_flow_rules[flow1]['add_fcs']), 1)
                         self.assertDictContainsSubset({
@@ -458,7 +455,7 @@ class OVSSfcDriverTestCase(
                             )
                             self.assertEqual(
                                 set(update_flow_rules.keys()),
-                                set([flow1, flow2]))
+                                {flow1, flow2})
                             add_fcs = update_flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
                             self.assertDictContainsSubset({
@@ -649,7 +646,7 @@ class OVSSfcDriverTestCase(
                                 egress3['port']['id'])
                             self.assertEqual(
                                 set(update_flow_rules.keys()),
-                                set([flow1, flow2, flow3, flow4]))
+                                {flow1, flow2, flow3, flow4})
                             add_fcs = update_flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
                             self.assertDictContainsSubset({
@@ -879,7 +876,7 @@ class OVSSfcDriverTestCase(
                                 egress3['port']['id'])
                             self.assertEqual(
                                 set(update_flow_rules.keys()),
-                                set([flow1, flow2, flow3, flow4]))
+                                {flow1, flow2, flow3, flow4})
                             add_fcs = update_flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
                             self.assertDictContainsSubset({
@@ -1146,7 +1143,7 @@ class OVSSfcDriverTestCase(
                                 egress4['port']['id'])
                             self.assertEqual(
                                 set(update_flow_rules.keys()),
-                                set([flow1, flow2, flow3, flow4, flow5]))
+                                {flow1, flow2, flow3, flow4, flow5})
                             add_fcs = update_flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
                             self.assertDictContainsSubset({
@@ -1356,7 +1353,7 @@ class OVSSfcDriverTestCase(
                                 egress['port']['id'])
                             self.assertEqual(
                                 set(update_flow_rules.keys()),
-                                set([flow1, flow2, flow3]))
+                                {flow1, flow2, flow3})
                             add_fcs = update_flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
                             self.assertDictContainsSubset({
@@ -1518,7 +1515,7 @@ class OVSSfcDriverTestCase(
                             pp['port_pair']['egress'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
-                            set([flow1]))
+                            {flow1})
                         self.assertEqual(
                             delete_flow_rules[flow1]['add_fcs'],
                             [])
@@ -1582,7 +1579,7 @@ class OVSSfcDriverTestCase(
                             src_port['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
-                            set([flow1]))
+                            {flow1})
                         self.assertEqual(
                             delete_flow_rules[flow1]['add_fcs'],
                             [])
@@ -1687,7 +1684,7 @@ class OVSSfcDriverTestCase(
                             )
                             self.assertEqual(
                                 set(delete_flow_rules.keys()),
-                                set([flow1, flow2]))
+                                {flow1, flow2})
                             del_fcs = delete_flow_rules[flow1]['del_fcs']
                             self.assertEqual(len(del_fcs), 1)
                             self.assertDictContainsSubset({
@@ -1848,7 +1845,7 @@ class OVSSfcDriverTestCase(
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(update_flow_rules.keys()),
-                            set([flow1, flow2]))
+                            {flow1, flow2})
                         add_fcs = update_flow_rules[flow1]['add_fcs']
                         self.assertEqual(len(add_fcs), 1)
                         self.assertDictContainsSubset({
@@ -2015,7 +2012,7 @@ class OVSSfcDriverTestCase(
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
-                            set([flow1, flow2]))
+                            {flow1, flow2})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
                         self.assertDictContainsSubset({
@@ -2064,7 +2061,7 @@ class OVSSfcDriverTestCase(
                             'sf_node')
                         self.assertEqual(
                             set(update_flow_rules.keys()),
-                            set([flow1]))
+                            {flow1})
                         add_fcs = update_flow_rules[flow1]['add_fcs']
                         self.assertEqual(len(add_fcs), 1)
                         self.assertDictContainsSubset({
@@ -2208,7 +2205,7 @@ class OVSSfcDriverTestCase(
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
-                            set([flow1, flow2]))
+                            {flow1, flow2})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
                         self.assertDictContainsSubset({
@@ -2256,7 +2253,7 @@ class OVSSfcDriverTestCase(
                             'sf_node')
                         self.assertEqual(
                             set(update_flow_rules.keys()),
-                            set([flow1, flow3]))
+                            {flow1, flow3})
                         add_fcs = update_flow_rules[flow1]['add_fcs']
                         self.assertEqual(len(add_fcs), 1)
                         self.assertDictContainsSubset({
@@ -2407,7 +2404,7 @@ class OVSSfcDriverTestCase(
                             ingress['port']['id'], egress['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
-                            set([flow1, flow3]))
+                            {flow1, flow3})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
                         self.assertDictContainsSubset({
@@ -2455,7 +2452,7 @@ class OVSSfcDriverTestCase(
                             'sf_node')
                         self.assertEqual(
                             set(update_flow_rules.keys()),
-                            set([flow2, flow3]))
+                            {flow2, flow3})
                         add_fcs = update_flow_rules[flow2]['add_fcs']
                         self.assertEqual(len(add_fcs), 1)
                         self.assertDictContainsSubset({
@@ -2630,7 +2627,7 @@ class OVSSfcDriverTestCase(
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
-                            set([flow1, flow2]))
+                            {flow1, flow2})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
                         self.assertDictContainsSubset({
@@ -2678,7 +2675,7 @@ class OVSSfcDriverTestCase(
                             'sf_node')
                         self.assertEqual(
                             set(update_flow_rules.keys()),
-                            set([flow1, flow2, flow3]))
+                            {flow1, flow2, flow3})
                         add_fcs = update_flow_rules[flow1]['add_fcs']
                         self.assertEqual(len(add_fcs), 1)
                         self.assertDictContainsSubset({
@@ -2879,7 +2876,7 @@ class OVSSfcDriverTestCase(
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
-                            set([flow1, flow2, flow3]))
+                            {flow1, flow2, flow3})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
                         self.assertDictContainsSubset({
@@ -2950,7 +2947,7 @@ class OVSSfcDriverTestCase(
                             'sf_node')
                         self.assertEqual(
                             set(update_flow_rules.keys()),
-                            set([flow1, flow2]))
+                            {flow1, flow2})
                         add_fcs = update_flow_rules[flow1]['add_fcs']
                         self.assertEqual(len(add_fcs), 1)
                         self.assertDictContainsSubset({
@@ -3125,7 +3122,7 @@ class OVSSfcDriverTestCase(
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
-                            set([flow1, flow2]))
+                            {flow1, flow2})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
                         self.assertDictContainsSubset({
@@ -3173,7 +3170,7 @@ class OVSSfcDriverTestCase(
                             'sf_node')
                         self.assertEqual(
                             set(update_flow_rules.keys()),
-                            set([flow1, flow3]))
+                            {flow1, flow3})
                         add_fcs = update_flow_rules[flow1]['add_fcs']
                         self.assertEqual(len(add_fcs), 1)
                         self.assertDictContainsSubset({
@@ -3290,7 +3287,7 @@ class OVSSfcDriverTestCase(
                             pp['port_pair']['egress'])
                         self.assertEqual(
                             set(flow_rules.keys()),
-                            set([flow1]))
+                            {flow1})
                         self.assertEqual(
                             flow_rules[flow1]['add_fcs'],
                             [])
@@ -3354,7 +3351,7 @@ class OVSSfcDriverTestCase(
                             None, src_port['port']['id'])
                         self.assertEqual(
                             set(flow_rules.keys()),
-                            set([flow1]))
+                            {flow1})
                         add_fcs = flow_rules[flow1]['add_fcs']
                         self.assertEqual(len(add_fcs), 1)
                         self.assertDictContainsSubset({
@@ -3471,7 +3468,7 @@ class OVSSfcDriverTestCase(
                             )
                             self.assertEqual(
                                 set(flow_rules.keys()),
-                                set([flow1, flow2]))
+                                {flow1, flow2})
                             add_fcs = flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
                             self.assertDictContainsSubset({
@@ -3687,7 +3684,7 @@ class OVSSfcDriverTestCase(
                                 egress3['port']['id'])
                             self.assertEqual(
                                 set(flow_rules.keys()),
-                                set([flow1, flow2, flow3, flow4]))
+                                {flow1, flow2, flow3, flow4})
                             add_fcs = flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
                             self.assertDictContainsSubset({
@@ -3934,7 +3931,7 @@ class OVSSfcDriverTestCase(
                                 egress3['port']['id'])
                             self.assertEqual(
                                 set(flow_rules.keys()),
-                                set([flow1, flow2, flow3, flow4]))
+                                {flow1, flow2, flow3, flow4})
                             add_fcs = flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
                             self.assertDictContainsSubset({
@@ -4130,7 +4127,7 @@ class OVSSfcDriverTestCase(
                                 egress['port']['id'])
                             self.assertEqual(
                                 set(flow_rules.keys()),
-                                set([flow1, flow2, flow3]))
+                                {flow1, flow2, flow3})
                             add_fcs = flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
                             self.assertDictContainsSubset({
