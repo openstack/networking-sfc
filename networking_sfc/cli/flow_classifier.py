@@ -172,11 +172,9 @@ class FlowClassifierList(extension.ClientExtensionList,
                            str(d['logical_destination_port']))
 
             if 'l7_parameters' in d:
-                l7_param = 'l7_parameters: ' + '{'
-                for r in d['l7_parameters']:
-                    l7_param = l7_param + str(r).lower()
-                l7_param = l7_param + '}'
+                l7_param = 'l7_parameters: {%s}' % ','.join(d['l7_parameters'])
                 val.append(l7_param)
+
             d['summary'] = ',\n'.join(val)
 
     def _get_protocol_port_details(self, data, type):

@@ -121,14 +121,14 @@ class SfcOVSBridgeExt(OVSCookieBridge):
 def _build_group_expr_str(group_dict, cmd):
     group_expr_arr = []
     buckets = None
-    groupId = None
+    group_id = None
 
     if cmd != 'del':
         if "group_id" not in group_dict:
             msg = _("Must specify one group Id on group addition"
                     " or modification")
             raise exceptions.InvalidInput(error_message=msg)
-        groupId = "group_id=%s" % group_dict.pop('group_id')
+        group_id = "group_id=%s" % group_dict.pop('group_id')
 
         if "buckets" not in group_dict:
             msg = _("Must specify one or more buckets on group addition"
@@ -136,8 +136,8 @@ def _build_group_expr_str(group_dict, cmd):
             raise exceptions.InvalidInput(error_message=msg)
         buckets = "%s" % group_dict.pop('buckets')
 
-    if groupId:
-        group_expr_arr.append(groupId)
+    if group_id:
+        group_expr_arr.append(group_id)
 
     for key, value in group_dict.items():
         group_expr_arr.append("%s=%s" % (key, value))

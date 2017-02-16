@@ -44,8 +44,9 @@ class SfcRpcCallback(object):
         flowrules_status = kwargs.get('flowrules_status')
         LOG.info(_LI('update_flowrules_status: %s'), flowrules_status)
         for flowrule_dict in flowrules_status:
-            self.driver.update_flowrule_status(
-                context, flowrule_dict['id'], flowrule_dict['status'])
+            self.driver.update_flowrule_status(context,
+                                               flowrule_dict['id'],
+                                               flowrule_dict['status'])
 
 
 class SfcAgentRpcClient(object):

@@ -61,7 +61,7 @@ class CreatePortPairGroup(command.ShowOne):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        attrs = _get_common_attrs(self, self.app.client_manager, parsed_args)
+        attrs = _get_common_attrs(self.app.client_manager, parsed_args)
         obj = common.create_sfc_resource(client, resource, attrs)
         columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
@@ -99,7 +99,7 @@ class UpdatePortPairGroup(command.Command):
         id = common.find_sfc_resource(client,
                                       resource,
                                       parsed_args.port_pair_group)
-        attrs = _get_common_attrs(self, self.app.client_manager, parsed_args,
+        attrs = _get_common_attrs(self.app.client_manager, parsed_args,
                                   is_create=False)
         common.update_sfc_resource(client, resource, attrs, id)
 
@@ -166,30 +166,29 @@ def _get_ppg_param(attrs, ppg):
     attrs['port_pair_group_parameters'] = {}
     for key, value in ppg.items():
         if key == 'lb_fields':
-            attrs['port_pair_group_parameters'][key] = ([
-                field for field in value.split('&') if field])
+            attrs['port_pair_group_parameters'][key] = (
+                [field for field in value.split('&') if field])
         else:
             attrs['port_pair_group_parameters'][key] = value
     return attrs['port_pair_group_parameters']
 
 
-def _get_common_attrs(self, client_manager, parsed_args, is_create=True):
+def _get_common_attrs(client_manager, parsed_args, is_create=True):
     attrs = {}
     if parsed_args.name is not None:
         attrs['name'] = str(parsed_args.name)
     if parsed_args.description is not None:
         attrs['description'] = str(parsed_args.description)
     if parsed_args.port_pairs:
-        attrs['port_pairs'] = [(common.find_sfc_resource(
-                                client_manager.neutronclient, 'port_pair', pp))
-                               for pp in parsed_args.port_pairs]
+        attrs['port_pairs'] = [common.find_sfc_resource(
+            client_manager.neutronclient, 'port_pair', pp)
+            for pp in parsed_args.port_pairs]
     if is_create is True:
-        _get_attrs(client_manager, attrs, parsed_args)
+        _get_attrs(attrs, parsed_args)
     return attrs
 
 
-def _get_attrs(client_manager, attrs, parsed_args):
-
+def _get_attrs(attrs, parsed_args):
     if ('port_pair_group_parameters' in parsed_args and
             parsed_args.port_pair_group_parameters is not None):
         attrs['port_pair_group_parameters'] = (
