@@ -1,4 +1,4 @@
-# Copyright e015 nuturewei. All rights reserved.
+# Copyright 2017 Futurewei. All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,34 +12,27 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import neutron.common.constants as nc_const
+import neutron.common.rpc as n_rpc
+import neutron.context as n_context
+import neutron.db.api as db_api
+import neutron.plugins.common.constants as np_const
+import neutron.plugins.ml2.drivers.l2pop.db as l2pop_db
+import neutron.plugins.ml2.drivers.l2pop.rpc as l2pop_rpc
 from neutron_lib.plugins import directory
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
-
-from neutron.common import constants as nc_const
-from neutron.common import rpc as n_rpc
-from neutron import context as n_context
-from neutron.db import api as db_api
-
-from neutron.plugins.common import constants as np_const
-from neutron.plugins.ml2.drivers.l2pop import db as l2pop_db
-from neutron.plugins.ml2.drivers.l2pop import rpc as l2pop_rpc
 
 from networking_sfc._i18n import _LE, _LW
 from networking_sfc.extensions import flowclassifier
 from networking_sfc.extensions import sfc
 from networking_sfc.services.sfc.common import exceptions as exc
 from networking_sfc.services.sfc.drivers import base as driver_base
-from networking_sfc.services.sfc.drivers.ovs import(
-    rpc_topics as sfc_topics)
-from networking_sfc.services.sfc.drivers.ovs import(
-    db as ovs_sfc_db)
-from networking_sfc.services.sfc.drivers.ovs import(
-    rpc as ovs_sfc_rpc)
-from networking_sfc.services.sfc.drivers.ovs import (
-    constants as ovs_const)
-
+from networking_sfc.services.sfc.drivers.ovs import constants as ovs_const
+from networking_sfc.services.sfc.drivers.ovs import db as ovs_sfc_db
+from networking_sfc.services.sfc.drivers.ovs import rpc as ovs_sfc_rpc
+from networking_sfc.services.sfc.drivers.ovs import rpc_topics as sfc_topics
 
 LOG = logging.getLogger(__name__)
 
