@@ -93,11 +93,12 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
 
     def update_flow_rules(self, flowrule, flowrule_status):
         try:
+            LOG.debug('update_flow_rule, flowrule = %s', flowrule)
+
             if flowrule.get('egress', None):
                 self._setup_egress_flow_rules(flowrule)
             if flowrule.get('ingress', None):
                 self._setup_ingress_flow_rules_with_mpls(flowrule)
-
             flowrule_status_temp = {'id': flowrule['id'],
                                     'status': constants.STATUS_ACTIVE}
             flowrule_status.append(flowrule_status_temp)
@@ -110,26 +111,22 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
 
     def delete_flow_rule(self, flowrule, flowrule_status):
         try:
-            LOG.debug("delete_flow_rule, flowrule = %s",
-                      flowrule)
+            LOG.debug("delete_flow_rule, flowrule = %s", flowrule)
 
             # delete tunnel table flow rule on br-int(egress match)
             if flowrule['egress'] is not None:
-                self._setup_local_switch_flows_on_int_br(
-                    flowrule,
-                    flowrule['del_fcs'],
-                    None,
-                    add_flow=False,
-                    match_inport=True
-                )
+                self._setup_local_switch_flows_on_int_br(flowrule,
+                                                         flowrule['del_fcs'],
+                                                         None,
+                                                         add_flow=False,
+                                                         match_inport=True)
                 # delete group table, need to check again
                 group_id = flowrule.get('next_group_id', None)
                 if group_id and flowrule.get('group_refcnt', None) <= 1:
                     self.br_int.delete_group(group_id=group_id)
                     for item in flowrule['next_hops']:
-                        self.br_int.delete_flows(
-                            table=ACROSS_SUBNET_TABLE,
-                            dl_dst=item['mac_address'])
+                        self.br_int.delete_flows(table=ACROSS_SUBNET_TABLE,
+                                                 dl_dst=item['mac_address'])
 
             if flowrule['ingress'] is not None:
                 # delete table INGRESS_TABLE ingress match flow rule
@@ -164,10 +161,8 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         dl_type, nw_proto, source_port_masks, destination_port_masks = (
             (None, ) * 4)
 
-        if (
-            not flow_classifier['source_port_range_min'] and
-            not flow_classifier['source_port_range_max']
-        ):
+        if (not flow_classifier['source_port_range_min'] and
+                not flow_classifier['source_port_range_max']):
             # wildcard
             source_port_masks = ['0/0x0']
         elif not flow_classifier['source_port_range_min']:
@@ -183,10 +178,8 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 flow_classifier['source_port_range_min'],
                 flow_classifier['source_port_range_max'])
 
-        if (
-            not flow_classifier['destination_port_range_min'] and
-            not flow_classifier['destination_port_range_max']
-        ):
+        if (not flow_classifier['destination_port_range_min'] and
+                not flow_classifier['destination_port_range_max']):
             # wildcard
             destination_port_masks = ['0/0x0']
         elif not flow_classifier['destination_port_range_min']:
@@ -213,19 +206,19 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             else:
                 nw_proto = None
         elif "IPv6" == flow_classifier['ethertype']:
-            LOG.error(_LE("Current portchain agent don't support Ipv6"))
+            LOG.error(_LE("Current portchain agent doesn't support IPv6"))
         else:
             LOG.error(_LE("invalid protocol input"))
         return (dl_type, nw_proto,
-                source_port_masks, destination_port_masks
-                )
+                source_port_masks,
+                destination_port_masks)
 
     def _get_flow_infos_from_flow_classifier(self, flow_classifier):
         flow_infos = []
         nw_src, nw_dst = ((None, ) * 2)
 
         if "IPv4" != flow_classifier['ethertype']:
-            LOG.error(_LE("Current portchain agent don't support Ipv6"))
+            LOG.error(_LE("Current portchain agent only supports IPv4"))
             return flow_infos
 
         # parse and transfer flow info to match field info
@@ -245,105 +238,88 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             for destination_port in destination_port_masks:
                 for source_port in source_port_masks:
                     if nw_proto is None:
-                        flow_infos.append(dict(
-                            dl_type=dl_type,
-                            nw_src=nw_src,
-                            nw_dst=nw_dst,
-                            tp_src='%s' % source_port,
-                            tp_dst='%s' % destination_port
-                        ))
+                        flow_infos.append({'dl_type': dl_type,
+                                           'nw_src': nw_src,
+                                           'nw_dst': nw_dst,
+                                           'tp_src': '%s' % source_port,
+                                           'tp_dst': '%s' % destination_port})
                     else:
-                        flow_infos.append(dict(
-                            dl_type=dl_type,
-                            nw_proto=nw_proto,
-                            nw_src=nw_src,
-                            nw_dst=nw_dst,
-                            tp_src='%s' % source_port,
-                            tp_dst='%s' % destination_port
-                        ))
+                        flow_infos.append({'dl_type': dl_type,
+                                           'nw_proto': nw_proto,
+                                           'nw_src': nw_src,
+                                           'nw_dst': nw_dst,
+                                           'tp_src': '%s' % source_port,
+                                           'tp_dst': '%s' % destination_port})
 
         return flow_infos
 
     def _get_flow_infos_from_flow_classifier_list(self, flow_classifier_list):
         flow_infos = []
+
         if not flow_classifier_list:
             return flow_infos
         for flow_classifier in flow_classifier_list:
             flow_infos.extend(
-                self._get_flow_infos_from_flow_classifier(flow_classifier)
-            )
+                self._get_flow_infos_from_flow_classifier(flow_classifier))
 
         return flow_infos
 
-    def _setup_local_switch_flows_on_int_br(
-        self, flowrule, flow_classifier_list,
-        actions, add_flow=True, match_inport=True
-    ):
+    def _setup_local_switch_flows_on_int_br(self, flowrule,
+                                            flow_classifier_list, actions,
+                                            add_flow=True, match_inport=True):
         inport_match = {}
         priority = PC_DEF_PRI
 
         if match_inport is True:
             egress_port = self.br_int.get_vif_port_by_id(flowrule['egress'])
             if egress_port:
-                inport_match = dict(in_port=egress_port.ofport)
+                inport_match = {'in_port': egress_port.ofport}
                 priority = PC_INGRESS_PRI
 
         for flow_info in self._get_flow_infos_from_flow_classifier_list(
-            flow_classifier_list
-        ):
-            match_info = dict(inport_match, **flow_info)
+                flow_classifier_list):
+            match_info = dict(inport_match)
+            match_info.update(flow_info)
             if add_flow:
-                self.br_int.add_flow(
-                    table=ovs_consts.LOCAL_SWITCHING,
-                    priority=priority,
-                    actions=actions,
-                    **match_info
-                )
+                self.br_int.add_flow(table=ovs_consts.LOCAL_SWITCHING,
+                                     priority=priority,
+                                     actions=actions,
+                                     **match_info)
             else:
-                self.br_int.delete_flows(
-                    table=ovs_consts.LOCAL_SWITCHING,
-                    priority=priority,
-                    **match_info
-                )
+                self.br_int.delete_flows(table=ovs_consts.LOCAL_SWITCHING,
+                                         priority=priority,
+                                         **match_info)
 
     def _setup_egress_flow_rules(self, flowrule, match_inport=True):
         group_id = flowrule.get('next_group_id', None)
         next_hops = flowrule.get('next_hops', None)
 
         # if the group is not none, install the egress rule for this SF
-        if (
-            group_id and next_hops
-        ):
+        if group_id and next_hops:
             # 1st, install br-int flow rule on table ACROSS_SUBNET_TABLE
             # and group table
             buckets = []
             vlan = self._get_vlan_by_port(flowrule['egress'])
             for item in next_hops:
-                bucket = (
-                    'bucket=weight=%d, mod_dl_dst:%s,'
-                    'resubmit(,%d)' % (
-                        item['weight'],
-                        item['mac_address'],
-                        ACROSS_SUBNET_TABLE
-                    )
-                )
+                bucket = ('bucket=weight=%d, mod_dl_dst:%s, resubmit(,%d)' % (
+                    item['weight'],
+                    item['mac_address'],
+                    ACROSS_SUBNET_TABLE))
                 buckets.append(bucket)
                 subnet_actions_list = []
-                push_mpls = (
-                    "push_mpls:0x8847,"
-                    "set_mpls_label:%d,"
-                    "set_mpls_ttl:%d,"
-                    "mod_vlan_vid:%d," %
-                    ((flowrule['nsp'] << 8) | flowrule['nsi'],
-                     flowrule['nsi'], vlan))
+                push_mpls = ('push_mpls:0x8847, '
+                             'set_mpls_label:%d, '
+                             'set_mpls_ttl:%d, '
+                             'mod_vlan_vid:%d,' % (
+                                 (flowrule['nsp'] << 8) | flowrule['nsi'],
+                                 flowrule['nsi'], vlan))
                 subnet_actions_list.append(push_mpls)
 
                 if item['local_endpoint'] == self.local_ip:
-                    subnet_actions = (
-                        "resubmit(,%d)" % INGRESS_TABLE)
+                    subnet_actions = 'resubmit(,%d)' % INGRESS_TABLE
                 else:
                     # same subnet with next hop
-                    subnet_actions = "output:%s" % self.patch_tun_ofport
+                    subnet_actions = 'output:%s' % self.patch_tun_ofport
                 subnet_actions_list.append(subnet_actions)
 
                 self.br_int.add_flow(
@@ -357,14 +333,16 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             group_content = self.br_int.dump_group_for_id(group_id)
             if group_content.find('group_id=%d' % group_id) == -1:
                 self.br_int.add_group(group_id=group_id,
-                                      type='select', buckets=buckets)
+                                      type='select',
+                                      buckets=buckets)
             else:
                 self.br_int.mod_group(group_id=group_id,
-                                      type='select', buckets=buckets)
+                                      type='select',
+                                      buckets=buckets)
 
             # 2nd, install br-int flow rule on table 0  for egress traffic
             # for egress traffic
-            enc_actions = ("group:%d" % group_id)
+            enc_actions = ('group:%d' % group_id)
             # to uninstall the removed flow classifiers
             self._setup_local_switch_flows_on_int_br(
                 flowrule,
@@ -386,8 +364,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 flowrule['del_fcs'],
                 None,
                 add_flow=False,
-                match_inport=True
-            )
+                match_inport=True)
 
             # to install the added flow classifiers
             self._setup_local_switch_flows_on_int_br(
@@ -411,8 +388,8 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             # install br-int flow rule on table 0 for ingress traffic
             match_field = {}
 
-            actions = ("strip_vlan, pop_mpls:0x0800,"
-                       "output:%s" % vif_port.ofport)
+            actions = ('strip_vlan, pop_mpls:0x0800, output:%s' %
+                       vif_port.ofport)
             match_field = dict(
                 table=INGRESS_TABLE,
                 priority=1,
