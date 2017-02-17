@@ -69,7 +69,7 @@ class CreatePortChain(command.ShowOne):
 
     def take_action(self, parsed_args):
         client = self.app.client_manager.neutronclient
-        attrs = _get_common_attrs(self, self.app.client_manager, parsed_args)
+        attrs = _get_common_attrs(self.app.client_manager, parsed_args)
         obj = common.create_sfc_resource(client, resource, attrs)
         columns = common.get_columns(obj[resource])
         data = utils.get_dict_properties(obj[resource], columns)
@@ -118,7 +118,7 @@ class UpdatePortChain(command.Command):
         id = common.find_sfc_resource(client,
                                       resource,
                                       parsed_args.port_chain)
-        attrs = _get_common_attrs(self, self.app.client_manager, parsed_args,
+        attrs = _get_common_attrs(self.app.client_manager, parsed_args,
                                   is_create=False)
         if parsed_args.no_flow_classifier:
             attrs['flow_classifiers'] = []
@@ -185,7 +185,7 @@ class ShowPortChain(command.ShowOne):
         return columns, data
 
 
-def _get_common_attrs(self, client_manager, parsed_args, is_create=True):
+def _get_common_attrs(client_manager, parsed_args, is_create=True):
     attrs = {}
     if parsed_args.name is not None:
         attrs['name'] = str(parsed_args.name)
@@ -204,10 +204,10 @@ def _get_common_attrs(self, client_manager, parsed_args, is_create=True):
                                       'flow_classifier', fc))
                                      for fc in parsed_args.flow_classifiers]
     if is_create is True:
-        _get_attrs(client_manager, attrs, parsed_args)
+        _get_attrs(attrs, parsed_args)
     return attrs
 
 
-def _get_attrs(client_manager, attrs, parsed_args):
+def _get_attrs(attrs, parsed_args):
     if 'chain_parameters' in parsed_args:
         attrs['chain_parameters'] = parsed_args.chain_parameters

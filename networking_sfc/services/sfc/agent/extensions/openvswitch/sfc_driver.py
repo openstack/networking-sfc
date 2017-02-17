@@ -98,14 +98,12 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             if flowrule.get('ingress', None):
                 self._setup_ingress_flow_rules_with_mpls(flowrule)
 
-            flowrule_status_temp = {}
-            flowrule_status_temp['id'] = flowrule['id']
-            flowrule_status_temp['status'] = constants.STATUS_ACTIVE
+            flowrule_status_temp = {'id': flowrule['id'],
+                                    'status': constants.STATUS_ACTIVE}
             flowrule_status.append(flowrule_status_temp)
         except Exception as e:
-            flowrule_status_temp = {}
-            flowrule_status_temp['id'] = flowrule['id']
-            flowrule_status_temp['status'] = constants.STATUS_ERROR
+            flowrule_status_temp = {'id': flowrule['id'],
+                                    'status': constants.STATUS_ERROR}
             flowrule_status.append(flowrule_status_temp)
             LOG.exception(e)
             LOG.error(_LE("update_flow_rules failed"))
@@ -147,9 +145,8 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                         mpls_label=flowrule['nsp'] << 8 | (flowrule['nsi'] + 1)
                     )
         except Exception as e:
-            flowrule_status_temp = {}
-            flowrule_status_temp['id'] = flowrule['id']
-            flowrule_status_temp['status'] = constants.STATUS_ERROR
+            flowrule_status_temp = {'id': flowrule['id'],
+                                    'status': constants.STATUS_ERROR}
             flowrule_status.append(flowrule_status_temp)
             LOG.exception(e)
             LOG.error(_LE("delete_flow_rule failed"))

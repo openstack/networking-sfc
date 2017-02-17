@@ -292,7 +292,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
     @log_helpers.log_method_call
     def _create_portchain_path(self, context, port_chain):
-        src_node, src_pd, dst_node, dst_pd = (({}, ) * 4)
         path_nodes = []
         # Create an assoc object for chain_id and path_id
         # context = context._plugin_context
@@ -458,7 +457,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     node, port, fc_ids)
 
     @log_helpers.log_method_call
-    def _delete_portchain_path(self, context, port_chain):
+    def _delete_portchain_path(self, port_chain):
         pds = self.get_path_nodes_by_filter(
             dict(portchain_id=port_chain['id']))
         src_node = None
@@ -627,7 +626,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def delete_port_chain(self, context):
         port_chain = context.current
         LOG.debug("to delete portchain path")
-        self._delete_portchain_path(context, port_chain)
+        self._delete_portchain_path(port_chain)
 
     def _get_diff_set(self, orig, cur):
         orig_set = set(item for item in orig)
@@ -642,7 +641,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def update_port_chain(self, context):
         port_chain = context.current
         orig = context.original
-        self._delete_portchain_path(context, orig)
+        self._delete_portchain_path(orig)
         path_nodes = self._create_portchain_path(context, port_chain)
         self._update_path_nodes(
             path_nodes,
@@ -872,20 +871,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                         add_fc_ids=port_chain['flow_classifiers']
                     )
                     port_chain_flowrules.append(flow_rule)
-
-                    # update the pre-path node flow rule
-                    # if node['node_type'] != ovs_const.SRC_NODE:
-                    #    node_filter = dict(nsp=node['nsp'],
-                    #                       nsi=node['nsi'] + 1
-                    #                       )
-                    #    pre_node_list = self.get_path_nodes_by_filter(
-                    #        node_filter)
-                    #    if not pre_node_list:
-                    #        continue
-                    #    for pre_node in pre_node_list:
-                    #        self._update_path_node_flowrules(
-                    #            pre_node,
-                    #            add_fc_ids=port_chain['flow_classifiers'])
 
             return port_chain_flowrules
 
