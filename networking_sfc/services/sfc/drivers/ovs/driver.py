@@ -879,12 +879,23 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             LOG.error(_LE("get_flowrules_by_host_portid failed"))
 
     def update_flowrule_status(self, context, id, status):
-        try:
-            flowrule_status = dict(status=status)
-            self.update_path_node(id, flowrule_status)
-        except Exception as e:
-            LOG.exception(e)
-            LOG.error(_LE("update_flowrule_status failed"))
+        """FIXME
+
+        drivers/ovs/db.py will be removed in the future with 4 ovs tables
+
+        This function raise:
+            RuntimeError: reentrant call
+            DBError: reentrant call
+            DBConnectionError: (pymysql.err.OperationalError)
+                (2014, 'Command Out of Sync'))
+        """
+        pass
+        # try:
+        #     flowrule_status = dict(status=status)
+        #     self.update_path_node(id, flowrule_status)
+        # except Exception as e:
+        #     LOG.exception(e)
+        #     LOG.error(_LE("update_flowrule_status failed"))
 
     def _update_portchain_group_reference_count(self, flow_rule, host):
         group_refcnt = 0
