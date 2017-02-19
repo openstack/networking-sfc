@@ -37,7 +37,10 @@ neutron_ext.append_api_extensions_path(sfc_extensions.__path__)
 SFC_EXT = "sfc"
 SFC_PREFIX = "/sfc"
 
-DEFAULT_CHAIN_PARAMETERS = {'correlation': 'mpls', 'symmetric': False}
+DEFAULT_CHAIN_CORRELATION = 'mpls'
+DEFAULT_CHAIN_SYMMETRY = False
+DEFAULT_CHAIN_PARAMETERS = {'correlation': DEFAULT_CHAIN_CORRELATION,
+                            'symmetric': DEFAULT_CHAIN_SYMMETRY}
 DEFAULT_SF_PARAMETERS = {'correlation': None, 'weight': 1}
 DEFAULT_PPG_PARAMETERS = {'lb_fields': []}
 SUPPORTED_LB_FIELDS = [
@@ -140,7 +143,13 @@ def normalize_port_pair_groups(port_pair_groups):
 
 
 def normalize_chain_parameters(parameters):
-    return parameters if parameters else DEFAULT_CHAIN_PARAMETERS
+    if not parameters:
+        return DEFAULT_CHAIN_PARAMETERS
+    if 'correlation' not in parameters:
+        parameters['correlation'] = DEFAULT_CHAIN_CORRELATION
+    if 'symmetric' not in parameters:
+        parameters['symmetric'] = DEFAULT_CHAIN_SYMMETRY
+    return parameters
 
 
 def normalize_sf_parameters(parameters):
