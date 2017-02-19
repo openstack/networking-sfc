@@ -92,9 +92,7 @@ class TestSfc(base.SfcScenarioTest):
     def _wait_for_port_chain_status(self, port_chain, status):
         time.sleep(10)
 
-    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a8')
-    @test.services('compute', 'network')
-    def test_create_port_chain(self):
+    def _create_port_chain_helper(self, symmetric):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
         ) = self._setup_server(self.net1)
@@ -106,11 +104,19 @@ class TestSfc(base.SfcScenarioTest):
             [],
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
-        fc = self._create_flowclassifier(
-            logical_source_port=server1_port_id,
-            source_ip_prefix='%s/32' % server1_fixed_ip,
-            destination_ip_prefix='%s/32' % server2_fixed_ip
-        )
+        if symmetric:
+            fc = self._create_flowclassifier(
+                logical_source_port=server1_port_id,
+                source_ip_prefix='%s/32' % server1_fixed_ip,
+                logical_destination_port=server2_port_id,
+                destination_ip_prefix='%s/32' % server2_fixed_ip
+            )
+        else:
+            fc = self._create_flowclassifier(
+                logical_source_port=server1_port_id,
+                source_ip_prefix='%s/32' % server1_fixed_ip,
+                destination_ip_prefix='%s/32' % server2_fixed_ip
+            )
         port_pair = self._create_port_pair(
             ingress=self.router2_net1['id'],
             egress=self.router2_net1['id']
@@ -120,7 +126,8 @@ class TestSfc(base.SfcScenarioTest):
         )
         port_chain = self._create_port_chain(
             port_pair_groups=[port_pair_group['id']],
-            flow_classifiers=[fc['id']]
+            flow_classifiers=[fc['id']],
+            chain_parameters={'symmetric': symmetric}
         )
         self._check_connectivity(
             server1_floating_ip, server2_fixed_ip,
@@ -131,6 +138,92 @@ class TestSfc(base.SfcScenarioTest):
         self._wait_for_port_chain_status(port_chain, 'DELETED')
         self._check_connectivity(
             server1_floating_ip, server2_fixed_ip,
+            [],
+            username=self.ssh_user,
+            private_key=self.keypair['private_key'])
+
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a8')
+    @test.services('compute', 'network')
+    def test_create_port_chain(self):
+        self._create_port_chain_helper(False)
+
+    @decorators.idempotent_id('35927961-1904-4a6b-9d08-ad819f1cf812')
+    @test.services('compute', 'network')
+    def test_create_port_chain_symmetric(self):
+        self._create_port_chain_helper(True)
+
+    def _create_port_chain_multi_fc_helper(self, symmetric):
+        (
+            server1_floating_ip, server1_port_id, server1_fixed_ip
+        ) = self._setup_server(self.net1)
+        (
+            server2_floating_ip, server2_port_id, server2_fixed_ip
+        ) = self._setup_server(self.net1)
+        self._check_connectivity(
+            server1_floating_ip, server2_fixed_ip,
+            [],
+            username=self.ssh_user,
+            private_key=self.keypair['private_key'])
+        self._check_connectivity(
+            server2_floating_ip, server1_fixed_ip,
+            [],
+            username=self.ssh_user,
+            private_key=self.keypair['private_key'])
+        if symmetric:
+            fc1 = self._create_flowclassifier(
+                logical_source_port=server1_port_id,
+                source_ip_prefix='%s/32' % server1_fixed_ip,
+                logical_destination_port=server2_port_id,
+                destination_ip_prefix='%s/32' % server2_fixed_ip
+            )
+            fc2 = self._create_flowclassifier(
+                logical_source_port=server2_port_id,
+                source_ip_prefix='%s/32' % server2_fixed_ip,
+                logical_destination_port=server1_port_id,
+                destination_ip_prefix='%s/32' % server1_fixed_ip
+            )
+        else:
+            fc1 = self._create_flowclassifier(
+                logical_source_port=server1_port_id,
+                source_ip_prefix='%s/32' % server1_fixed_ip,
+                destination_ip_prefix='%s/32' % server2_fixed_ip
+            )
+            fc2 = self._create_flowclassifier(
+                logical_source_port=server2_port_id,
+                source_ip_prefix='%s/32' % server2_fixed_ip,
+                destination_ip_prefix='%s/32' % server1_fixed_ip
+            )
+        port_pair = self._create_port_pair(
+            ingress=self.router2_net1['id'],
+            egress=self.router2_net1['id']
+        )
+        port_pair_group = self._create_port_pair_group(
+            port_pairs=[port_pair['id']]
+        )
+        port_chain = self._create_port_chain(
+            port_pair_groups=[port_pair_group['id']],
+            flow_classifiers=[fc1['id'], fc2['id']],
+            chain_parameters={'symmetric': symmetric}
+        )
+        self._check_connectivity(
+            server1_floating_ip, server2_fixed_ip,
+            [[self.router2_net1_fixed_ip]],
+            username=self.ssh_user,
+            private_key=self.keypair['private_key'])
+        self._check_connectivity(
+            server2_floating_ip, server1_fixed_ip,
+            [[self.router2_net1_fixed_ip]],
+            username=self.ssh_user,
+            private_key=self.keypair['private_key'])
+        self.portchain_client.delete_port_chain(port_chain['id'])
+        self._wait_for_port_chain_status(port_chain, 'DELETED')
+        self._check_connectivity(
+            server1_floating_ip, server2_fixed_ip,
+            [],
+            username=self.ssh_user,
+            private_key=self.keypair['private_key'])
+        self._check_connectivity(
+            server2_floating_ip, server1_fixed_ip,
             [],
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
@@ -138,70 +231,14 @@ class TestSfc(base.SfcScenarioTest):
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a9')
     @test.services('compute', 'network')
     def test_create_port_chain_multi_flow_classifiers(self):
-        (
-            server1_floating_ip, server1_port_id, server1_fixed_ip
-        ) = self._setup_server(self.net1)
-        (
-            server2_floating_ip, server2_port_id, server2_fixed_ip
-        ) = self._setup_server(self.net1)
-        self._check_connectivity(
-            server1_floating_ip, server2_fixed_ip,
-            [],
-            username=self.ssh_user,
-            private_key=self.keypair['private_key'])
-        self._check_connectivity(
-            server2_floating_ip, server1_fixed_ip,
-            [],
-            username=self.ssh_user,
-            private_key=self.keypair['private_key'])
-        fc1 = self._create_flowclassifier(
-            logical_source_port=server1_port_id,
-            source_ip_prefix='%s/32' % server1_fixed_ip,
-            destination_ip_prefix='%s/32' % server2_fixed_ip
-        )
-        fc2 = self._create_flowclassifier(
-            logical_source_port=server2_port_id,
-            source_ip_prefix='%s/32' % server2_fixed_ip,
-            destination_ip_prefix='%s/32' % server1_fixed_ip
-        )
+        self._create_port_chain_multi_fc_helper(False)
 
-        port_pair = self._create_port_pair(
-            ingress=self.router2_net1['id'],
-            egress=self.router2_net1['id']
-        )
-        port_pair_group = self._create_port_pair_group(
-            port_pairs=[port_pair['id']]
-        )
-        port_chain = self._create_port_chain(
-            port_pair_groups=[port_pair_group['id']],
-            flow_classifiers=[fc1['id'], fc2['id']]
-        )
-        self._check_connectivity(
-            server1_floating_ip, server2_fixed_ip,
-            [[self.router2_net1_fixed_ip]],
-            username=self.ssh_user,
-            private_key=self.keypair['private_key'])
-        self._check_connectivity(
-            server2_floating_ip, server1_fixed_ip,
-            [[self.router2_net1_fixed_ip]],
-            username=self.ssh_user,
-            private_key=self.keypair['private_key'])
-        self.portchain_client.delete_port_chain(port_chain['id'])
-        self._wait_for_port_chain_status(port_chain, 'DELETED')
-        self._check_connectivity(
-            server1_floating_ip, server2_fixed_ip,
-            [],
-            username=self.ssh_user,
-            private_key=self.keypair['private_key'])
-        self._check_connectivity(
-            server2_floating_ip, server1_fixed_ip,
-            [],
-            username=self.ssh_user,
-            private_key=self.keypair['private_key'])
-
-    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21aa')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21b1')
     @test.services('compute', 'network')
-    def test_create_port_chain_multi_port_pairs(self):
+    def test_create_port_chain_multi_flow_classifiers_symmetric(self):
+        self._create_port_chain_multi_fc_helper(True)
+
+    def _create_port_chain_multi_port_pairs_helper(self, symmetric):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
         ) = self._setup_server(self.net1)
@@ -213,11 +250,19 @@ class TestSfc(base.SfcScenarioTest):
             [],
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
-        fc = self._create_flowclassifier(
-            logical_source_port=server1_port_id,
-            source_ip_prefix='%s/32' % server1_fixed_ip,
-            destination_ip_prefix='%s/32' % server2_fixed_ip
-        )
+        if symmetric:
+            fc = self._create_flowclassifier(
+                logical_source_port=server1_port_id,
+                source_ip_prefix='%s/32' % server1_fixed_ip,
+                logical_destination_port=server2_port_id,
+                destination_ip_prefix='%s/32' % server2_fixed_ip
+            )
+        else:
+            fc = self._create_flowclassifier(
+                logical_source_port=server1_port_id,
+                source_ip_prefix='%s/32' % server1_fixed_ip,
+                destination_ip_prefix='%s/32' % server2_fixed_ip
+            )
         port_pair1 = self._create_port_pair(
             ingress=self.router2_net1['id'],
             egress=self.router2_net1['id']
@@ -231,7 +276,8 @@ class TestSfc(base.SfcScenarioTest):
         )
         port_chain = self._create_port_chain(
             port_pair_groups=[port_pair_group['id']],
-            flow_classifiers=[fc['id']]
+            flow_classifiers=[fc['id']],
+            chain_parameters={'symmetric': symmetric}
         )
         self._check_connectivity(
             server1_floating_ip, server2_fixed_ip,
@@ -246,9 +292,17 @@ class TestSfc(base.SfcScenarioTest):
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
 
-    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ab')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21aa')
     @test.services('compute', 'network')
-    def test_create_port_chain_multi_port_pair_groups(self):
+    def test_create_port_chain_multi_port_pairs(self):
+        self._create_port_chain_multi_port_pairs_helper(False)
+
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ad')
+    @test.services('compute', 'network')
+    def test_create_port_chain_multi_port_pairs_symmetric(self):
+        self._create_port_chain_multi_port_pairs_helper(True)
+
+    def _create_port_chain_multi_ppg_helper(self, symmetric):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
         ) = self._setup_server(self.net1)
@@ -260,11 +314,19 @@ class TestSfc(base.SfcScenarioTest):
             [],
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
-        fc = self._create_flowclassifier(
-            logical_source_port=server1_port_id,
-            source_ip_prefix='%s/32' % server1_fixed_ip,
-            destination_ip_prefix='%s/32' % server2_fixed_ip
-        )
+        if symmetric:
+            fc = self._create_flowclassifier(
+                logical_source_port=server1_port_id,
+                source_ip_prefix="%s/32" % server1_fixed_ip,
+                logical_destination_port=server2_port_id,
+                destination_ip_prefix="%s/32" % server2_fixed_ip
+            )
+        else:
+            fc = self._create_flowclassifier(
+                logical_source_port=server1_port_id,
+                source_ip_prefix="%s/32" % server1_fixed_ip,
+                destination_ip_prefix="%s/32" % server2_fixed_ip
+            )
         port_pair1 = self._create_port_pair(
             ingress=self.router2_net1['id'],
             egress=self.router2_net1['id']
@@ -281,7 +343,8 @@ class TestSfc(base.SfcScenarioTest):
         )
         port_chain = self._create_port_chain(
             port_pair_groups=[port_pair_group1['id'], port_pair_group2['id']],
-            flow_classifiers=[fc['id']]
+            flow_classifiers=[fc['id']],
+            chain_parameters={'symmetric': symmetric}
         )
         self._check_connectivity(
             server1_floating_ip, server2_fixed_ip,
@@ -295,6 +358,16 @@ class TestSfc(base.SfcScenarioTest):
             [],
             username=self.ssh_user,
             private_key=self.keypair['private_key'])
+
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ab')
+    @test.services('compute', 'network')
+    def test_create_port_chain_multi_port_pair_groups(self):
+        self._create_port_chain_multi_ppg_helper(False)
+
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21b0')
+    @test.services('compute', 'network')
+    def test_create_port_chain_multi_port_pair_groups_symmetric(self):
+        self._create_port_chain_multi_ppg_helper(True)
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e22ab')
     @test.services('compute', 'network')
