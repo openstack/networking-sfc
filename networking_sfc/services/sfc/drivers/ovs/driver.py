@@ -134,8 +134,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     next_hop['net_uuid'])
             segment = {}
             if agent_active_ports == 0:
-                filters = dict(network_id=[next_hop['net_uuid']],
-                               mac_address=[next_hop['mac_address']])
+                filters = {'network_id': [next_hop['net_uuid']],
+                           'mac_address': [next_hop['mac_address']]}
                 ports = core_plugin.get_ports(self.admin_context,
                                               filters=filters)
                 if not ports:
@@ -216,9 +216,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             pp = context._plugin.get_port_pair(context._plugin_context, pp_id)
             filters = {}
             if pp.get('ingress', None):
-                filters = dict(dict(ingress=pp['ingress']), **filters)
+                filters.update({'ingress': pp['ingress']})
             if pp.get('egress', None):
-                filters = dict(dict(egress=pp['egress']), **filters)
+                filters.update({'egress': pp['egress']})
             pd = self.get_port_detail_by_filter(filters)
             if pd:
                 next_group_members.append(
@@ -232,9 +232,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                                            port_pair_id)
         filters = {}
         if pp.get('ingress', None):
-            filters = dict(dict(ingress=pp['ingress']), **filters)
+            filters.update({'ingress': pp['ingress']})
         if pp.get('egress', None):
-            filters = dict(dict(egress=pp['egress']), **filters)
+            filters.update({'egress': pp['egress']})
         pd = self.get_port_detail_by_filter(filters)
 
         return pd
