@@ -16,9 +16,11 @@ import neutron.common.constants as nc_const
 import neutron.common.rpc as n_rpc
 import neutron.context as n_context
 import neutron.db.api as db_api
+from neutron.db import models_v2
 import neutron.plugins.common.constants as np_const
 import neutron.plugins.ml2.drivers.l2pop.db as l2pop_db
 import neutron.plugins.ml2.drivers.l2pop.rpc as l2pop_rpc
+from neutron_lib import constants as const
 from neutron_lib.plugins import directory
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -608,9 +610,39 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             new_fc.pop('name')
             new_fc.pop('project_id')
             new_fc.pop('description')
+            router_ints = const.ROUTER_INTERFACE_OWNERS
+            logical_source_port = new_fc['logical_source_port']
+            if logical_source_port is not None:
+                port_src = self._get_by_id(
+                    self.admin_context, models_v2.Port, logical_source_port
+                )
+                if (
+                    new_fc['source_ip_prefix'] is None and
+                    port_src['device_owner'] not in router_ints
+                ):
+                    src_ips = port_src['fixed_ips']
+                    # For now, only handle when the port has a single IP
+                    if len(src_ips) == 1:
+                        new_fc['source_ip_prefix'] = src_ips[0]['ip_address']
+
+            logical_destination_port = new_fc['logical_destination_port']
+            if logical_destination_port is not None:
+                port_dst = self._get_by_id(
+                    self.admin_context, models_v2.Port,
+                    logical_destination_port
+                )
+                if (
+                    new_fc['destination_ip_prefix'] is None and
+                    port_dst['device_owner'] not in router_ints
+                ):
+                    dst_ips = port_dst['fixed_ips']
+                    # For now, only handle when the port has a single IP
+                    if len(dst_ips) == 1:
+                        new_fc['destination_ip_prefix'] = (
+                            dst_ips[0]['ip_address']
+                        )
 
             if flow_rule['fwd_path'] is False:
-
                 # swap logcial_source_port & logical_destination_port
                 new_fc['logical_source_port'] = fc['logical_destination_port']
                 new_fc['logical_destination_port'] = fc['logical_source_port']
