@@ -160,6 +160,17 @@ class FlowClassifierDbPluginTestCase(
                 'logical_source_port': port['port']['id']
             })
 
+    def test_create_flow_classifier_with_logical_destination_port(self):
+        with self.port(
+            name='test1'
+        ) as src_port, self.port(
+            name='test1'
+        ) as dst_port:
+            self._test_create_flow_classifier({
+                'logical_source_port': src_port['port']['id'],
+                'logical_destination_port': dst_port['port']['id']
+            })
+
     def test_quota_create_flow_classifier(self):
         cfg.CONF.set_override('quota_flow_classifier', 3, group='QUOTAS')
         with self.port(

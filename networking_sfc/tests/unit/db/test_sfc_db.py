@@ -715,6 +715,15 @@ class SfcDbPluginTestCase(
                 }, expected_res_status=400
             )
 
+    def test_create_port_chain_with_invalid_chain_parameters_symmetric(self):
+        with self.port_pair_group(port_pair_group={}) as pg:
+            self._create_port_chain(
+                self.fmt, {
+                    'chain_parameters': {'symmetric': 'abc'},
+                    'port_pair_groups': [pg['port_pair_group']['id']]
+                }, expected_res_status=400
+            )
+
     def test_create_port_chain_unknown_flow_classifiers(self):
         with self.port_pair_group(port_pair_group={}) as pg:
             self._create_port_chain(
