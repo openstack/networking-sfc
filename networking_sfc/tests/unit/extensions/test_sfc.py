@@ -206,6 +206,20 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             self.serialize(data),
             content_type='application/%s' % self.fmt)
 
+    def test_create_port_chain_invalid_chain_parameters_symmetric(self):
+        tenant_id = _uuid()
+        data = {'port_chain': {
+            'port_pair_groups': [_uuid()],
+            'chain_parameters': {'symmetric': 'abc', 'correlation': 'mpls'},
+            'tenant_id': tenant_id, 'project_id': tenant_id
+        }}
+        self.assertRaises(
+            webtest.app.AppError,
+            self.api.post,
+            _get_path(PORT_CHAIN_PATH, fmt=self.fmt),
+            self.serialize(data),
+            content_type='application/%s' % self.fmt)
+
     def test_port_chain_list(self):
         portchain_id = _uuid()
         tenant_id = _uuid()
