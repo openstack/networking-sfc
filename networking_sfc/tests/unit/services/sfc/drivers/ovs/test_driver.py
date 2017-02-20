@@ -653,6 +653,9 @@ class OVSSfcDriverTestCase(
                                 {flow1, flow2, flow3, flow4})
                             add_fcs = update_flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
+                            ip_src = (
+                                src_port['port']['fixed_ips'][0]['ip_address']
+                            )
                             self.assertDictContainsSubset({
                                 'destination_ip_prefix': None,
                                 'destination_port_range_max': None,
@@ -660,7 +663,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -687,7 +690,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -711,7 +714,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -735,7 +738,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -883,6 +886,9 @@ class OVSSfcDriverTestCase(
                                 {flow1, flow2, flow3, flow4})
                             add_fcs = update_flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
+                            ip_src = (
+                                src_port['port']['fixed_ips'][0]['ip_address']
+                            )
                             self.assertDictContainsSubset({
                                 'destination_ip_prefix': None,
                                 'destination_port_range_max': None,
@@ -890,7 +896,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -917,7 +923,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -941,7 +947,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -965,7 +971,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -1150,6 +1156,9 @@ class OVSSfcDriverTestCase(
                                 {flow1, flow2, flow3, flow4, flow5})
                             add_fcs = update_flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
+                            ip_src = (
+                                src_port['port']['fixed_ips'][0]['ip_address']
+                            )
                             self.assertDictContainsSubset({
                                 'destination_ip_prefix': None,
                                 'destination_port_range_max': None,
@@ -1157,7 +1166,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -1183,7 +1192,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -1208,7 +1217,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -1233,7 +1242,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -1257,7 +1266,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -1360,6 +1369,9 @@ class OVSSfcDriverTestCase(
                                 {flow1, flow2, flow3})
                             add_fcs = update_flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
+                            ip_src1 = (
+                                src_port1['port']['fixed_ips'][0]['ip_address']
+                            )
                             self.assertDictContainsSubset({
                                 'destination_ip_prefix': None,
                                 'destination_port_range_max': None,
@@ -1367,7 +1379,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src1,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -1383,6 +1395,9 @@ class OVSSfcDriverTestCase(
                                 'src_node')
                             add_fcs = update_flow_rules[flow2]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
+                            ip_src2 = (
+                                src_port2['port']['fixed_ips'][0]['ip_address']
+                            )
                             self.assertDictContainsSubset({
                                 'destination_ip_prefix': None,
                                 'destination_port_range_max': None,
@@ -1390,7 +1405,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src2,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -1413,7 +1428,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src1,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -1424,7 +1439,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': 'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src2,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[1])
@@ -1852,6 +1867,9 @@ class OVSSfcDriverTestCase(
                             {flow1, flow2})
                         add_fcs = update_flow_rules[flow1]['add_fcs']
                         self.assertEqual(len(add_fcs), 1)
+                        ip_src = (
+                            src_port['port']['fixed_ips'][0]['ip_address']
+                        )
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
                             'destination_port_range_max': None,
@@ -1859,7 +1877,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -1883,7 +1901,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -2019,6 +2037,9 @@ class OVSSfcDriverTestCase(
                             {flow1, flow2})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
+                        ip_src = (
+                            src_port['port']['fixed_ips'][0]['ip_address']
+                        )
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
                             'destination_port_range_max': None,
@@ -2026,7 +2047,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -2050,7 +2071,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -2075,7 +2096,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -2212,6 +2233,9 @@ class OVSSfcDriverTestCase(
                             {flow1, flow2})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
+                        ip_src = (
+                            src_port['port']['fixed_ips'][0]['ip_address']
+                        )
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
                             'destination_port_range_max': None,
@@ -2219,7 +2243,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -2242,7 +2266,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -2267,7 +2291,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -2289,7 +2313,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -2411,6 +2435,9 @@ class OVSSfcDriverTestCase(
                             {flow1, flow3})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
+                        ip_src1 = (
+                            src_port1['port']['fixed_ips'][0]['ip_address']
+                        )
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
                             'destination_port_range_max': None,
@@ -2418,7 +2445,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src1,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -2434,6 +2461,9 @@ class OVSSfcDriverTestCase(
                             'src_node')
                         del_fcs = delete_flow_rules[flow3]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
+                        ip_src2 = (
+                            src_port2['port']['fixed_ips'][0]['ip_address']
+                        )
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
                             'destination_port_range_max': None,
@@ -2441,7 +2471,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src1,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -2466,7 +2496,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src2,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -2488,7 +2518,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src2,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -2634,6 +2664,9 @@ class OVSSfcDriverTestCase(
                             {flow1, flow2})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
+                        ip_src = (
+                            src_port['port']['fixed_ips'][0]['ip_address']
+                        )
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
                             'destination_port_range_max': None,
@@ -2641,7 +2674,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -2664,7 +2697,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -2689,7 +2722,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -2712,7 +2745,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -2735,7 +2768,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -2883,6 +2916,9 @@ class OVSSfcDriverTestCase(
                             {flow1, flow2, flow3})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
+                        ip_src = (
+                            src_port['port']['fixed_ips'][0]['ip_address']
+                        )
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
                             'destination_port_range_max': None,
@@ -2890,7 +2926,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -2913,7 +2949,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -2936,7 +2972,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -2961,7 +2997,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -2984,7 +3020,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -3129,6 +3165,9 @@ class OVSSfcDriverTestCase(
                             {flow1, flow2})
                         del_fcs = delete_flow_rules[flow1]['del_fcs']
                         self.assertEqual(len(del_fcs), 1)
+                        ip_src = (
+                            src_port['port']['fixed_ips'][0]['ip_address']
+                        )
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
                             'destination_port_range_max': None,
@@ -3136,7 +3175,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -3159,7 +3198,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, del_fcs[0])
@@ -3184,7 +3223,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -3207,7 +3246,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -3358,6 +3397,9 @@ class OVSSfcDriverTestCase(
                             {flow1})
                         add_fcs = flow_rules[flow1]['add_fcs']
                         self.assertEqual(len(add_fcs), 1)
+                        ip_src = (
+                            src_port['port']['fixed_ips'][0]['ip_address']
+                        )
                         self.assertDictContainsSubset({
                             'destination_ip_prefix': None,
                             'destination_port_range_max': None,
@@ -3365,7 +3407,7 @@ class OVSSfcDriverTestCase(
                             'ethertype': u'IPv4',
                             'l7_parameters': {},
                             'protocol': None,
-                            'source_ip_prefix': None,
+                            'source_ip_prefix': ip_src,
                             'source_port_range_max': None,
                             'source_port_range_min': None
                         }, add_fcs[0])
@@ -3475,6 +3517,9 @@ class OVSSfcDriverTestCase(
                                 {flow1, flow2})
                             add_fcs = flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
+                            ip_src = (
+                                src_port['port']['fixed_ips'][0]['ip_address']
+                            )
                             self.assertDictContainsSubset({
                                 'destination_ip_prefix': None,
                                 'destination_port_range_max': None,
@@ -3482,7 +3527,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -3503,7 +3548,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -3691,6 +3736,9 @@ class OVSSfcDriverTestCase(
                                 {flow1, flow2, flow3, flow4})
                             add_fcs = flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
+                            ip_src = (
+                                src_port['port']['fixed_ips'][0]['ip_address']
+                            )
                             self.assertDictContainsSubset({
                                 'destination_ip_prefix': None,
                                 'destination_port_range_max': None,
@@ -3698,7 +3746,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -3720,7 +3768,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -3741,7 +3789,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -3762,7 +3810,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -3938,6 +3986,9 @@ class OVSSfcDriverTestCase(
                                 {flow1, flow2, flow3, flow4})
                             add_fcs = flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
+                            ip_src = (
+                                src_port['port']['fixed_ips'][0]['ip_address']
+                            )
                             self.assertDictContainsSubset({
                                 'destination_ip_prefix': None,
                                 'destination_port_range_max': None,
@@ -3945,7 +3996,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -3969,7 +4020,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -3990,7 +4041,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -4011,7 +4062,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -4134,6 +4185,9 @@ class OVSSfcDriverTestCase(
                                 {flow1, flow2, flow3})
                             add_fcs = flow_rules[flow1]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
+                            ip_src1 = (
+                                src_port1['port']['fixed_ips'][0]['ip_address']
+                            )
                             self.assertDictContainsSubset({
                                 'destination_ip_prefix': None,
                                 'destination_port_range_max': None,
@@ -4141,7 +4195,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src1,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -4156,6 +4210,9 @@ class OVSSfcDriverTestCase(
                                 'src_node')
                             add_fcs = flow_rules[flow2]['add_fcs']
                             self.assertEqual(len(add_fcs), 1)
+                            ip_src2 = (
+                                src_port2['port']['fixed_ips'][0]['ip_address']
+                            )
                             self.assertDictContainsSubset({
                                 'destination_ip_prefix': None,
                                 'destination_port_range_max': None,
@@ -4163,7 +4220,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src2,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -4185,7 +4242,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src1,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[0])
@@ -4196,7 +4253,7 @@ class OVSSfcDriverTestCase(
                                 'ethertype': u'IPv4',
                                 'l7_parameters': {},
                                 'protocol': None,
-                                'source_ip_prefix': None,
+                                'source_ip_prefix': ip_src2,
                                 'source_port_range_max': None,
                                 'source_port_range_min': None
                             }, add_fcs[1])
