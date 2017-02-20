@@ -45,6 +45,27 @@ class FlowClassifierExtensionTestJSON(base.BaseFlowClassifierTest):
             m['logical_source_port'],
         ) for m in fcs['flow_classifiers']])
 
+    @decorators.idempotent_id('b2ed2a37-fc64-4be5-819b-9cf2a13db70b')
+    def test_list_flowclassifier_with_logical_destination_port(self):
+        # List flow classifiers with logical_destination_port
+        fc = self._try_create_flowclassifier()
+        fcs = self.flowclassifier_client.list_flowclassifiers()
+        self.assertIn((
+            fc['id'],
+            fc['name'],
+            fc['source_ip_prefix'],
+            fc['destination_ip_prefix'],
+            fc['logical_source_port'],
+            fc['logical_destination_port']
+        ), [(
+            m['id'],
+            m['name'],
+            m['source_ip_prefix'],
+            m['destination_ip_prefix'],
+            m['logical_source_port'],
+            m['logical_destination_port']
+        ) for m in fcs['flow_classifiers']])
+
     @decorators.idempotent_id('563564f7-7077-4f5e-8cdc-51f37ae5a2b9')
     def test_update_flowclassifier(self):
         # Create flow classifier

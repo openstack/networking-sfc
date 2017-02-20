@@ -256,6 +256,43 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             set(m['flow_classifiers'])
         ) for m in pcs['port_chains']])
 
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076669')
+    def test_create_port_chain_flowclassifiers_symmetric(self):
+        # Create symmetric port chain
+        router = self.admin_routers_client.create_router(
+            name=data_utils.rand_name('router-'))['router']
+        self.addCleanup(
+            self.admin_routers_client.delete_router, router['id'])
+        port_kwargs = {"binding:host_id": self.host_id}
+        dst_port = self._create_port(
+            network=self.network, **port_kwargs)
+        self.addCleanup(self._try_delete_port, dst_port['id'])
+        self.admin_routers_client.add_router_interface(
+            router['id'], port_id=dst_port['id'])
+        self.addCleanup(self.admin_routers_client.remove_router_interface,
+                        router['id'],
+                        port_id=dst_port['id'])
+        pp = self._try_create_port_pair()
+        pg = self._try_create_port_pair_group(port_pairs=[pp['id']])
+        fc = self._try_create_flowclassifier(
+            logical_destination_port=dst_port['id'])
+        pc = self._try_create_port_chain(
+            port_pair_groups=[pg['id']],
+            flow_classifiers=[fc['id']],
+            chain_parameters={'symmetric': True})
+        pcs = self.portchain_client.list_port_chains()
+        self.assertIn((
+            pc['id'],
+            pc['name'],
+            pc['chain_parameters'],
+            set(pc['flow_classifiers'])
+        ), [(
+            m['id'],
+            m['name'],
+            m['chain_parameters'],
+            set(m['flow_classifiers'])
+        ) for m in pcs['port_chains']])
+
     @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076478')
     def test_create_port_chain_multi_port_pair_groups(self):
         # Create port chain
@@ -276,6 +313,43 @@ class SfcExtensionTestJSON(base.BaseSfcTest):
             m['id'],
             m['name'],
             m['port_pair_groups']
+        ) for m in pcs['port_chains']])
+
+    @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076490')
+    def test_create_port_chain_port_pair_group_symmetric(self):
+        # Create symmetric port chain with port_pair_group
+        router = self.admin_routers_client.create_router(
+            name=data_utils.rand_name('router-'))['router']
+        self.addCleanup(
+            self.admin_routers_client.delete_router, router['id'])
+        port_kwargs = {"binding:host_id": self.host_id}
+        dst_port = self._create_port(
+            network=self.network, **port_kwargs)
+        self.addCleanup(self._try_delete_port, dst_port['id'])
+        self.admin_routers_client.add_router_interface(
+            router['id'], port_id=dst_port['id'])
+        self.addCleanup(self.admin_routers_client.remove_router_interface,
+                        router['id'],
+                        port_id=dst_port['id'])
+        pp = self._try_create_port_pair()
+        pg = self._try_create_port_pair_group(port_pairs=[pp['id']])
+        fc = self._try_create_flowclassifier(
+            logical_destination_port=dst_port['id'])
+        pc = self._try_create_port_chain(
+            port_pair_groups=[pg['id']],
+            flow_classifiers=[fc['id']],
+            chain_parameters={'symmetric': True})
+        pcs = self.portchain_client.list_port_chains()
+        self.assertIn((
+            pc['id'],
+            pc['name'],
+            pc['port_pair_groups'],
+            pc['chain_parameters']
+        ), [(
+            m['id'],
+            m['name'],
+            m['port_pair_groups'],
+            m['chain_parameters']
         ) for m in pcs['port_chains']])
 
     @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076468')
