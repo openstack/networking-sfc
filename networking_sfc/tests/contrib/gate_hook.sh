@@ -12,21 +12,14 @@ DEVSTACK_PATH=$GATE_DEST/devstack
 LOCAL_CONF=$DEVSTACK_PATH/local.conf
 
 
-# Inject config from hook into localrc
-function load_rc_hook {
+# Inject config from hook
+function load_conf_hook {
     local hook="$1"
     config=$(cat $GATE_HOOKS/$hook)
     export DEVSTACK_LOCAL_CONFIG+="
 # generated from hook '$hook'
 ${config}
 "
-}
-
-
-# Inject config from hook into local.conf
-function load_conf_hook {
-    local hook="$1"
-    cat $GATE_HOOKS/$hook >> $LOCAL_CONF
 }
 
 
