@@ -16,9 +16,9 @@ from oslo_log import log as logging
 
 from tempest import config
 from tempest.lib import exceptions as lib_exc
-from tempest.scenario import manager
 
 from networking_sfc.tests.tempest_plugin.tests import flowclassifier_client
+from networking_sfc.tests.tempest_plugin.tests.scenario import manager
 from networking_sfc.tests.tempest_plugin.tests import sfc_client
 
 CONF = config.CONF
