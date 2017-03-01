@@ -1,0 +1,13 @@
+---
+features:
+  - |
+    Symmetric Port Chains can now be created, when using the
+    OVS Driver, which will instantiate both a forward and a reverse
+    path for the Port Chain. To enable, set ``symmetric=True`` as a
+    ``chain_parameters`` key and value pair.
+    Path-ID can now be configured.
+fixes:
+  - |
+    SFC path-ID parameter (Bug `1567654 <https://launchpad.net/bugs/1567654>`_)
+    Path-ID generation in plugin (Bug `1588460 <https://launchpad.net/bugs/1588460>`_)
+    Port Pair Group parameter (Bug `1588463 <https://launchpad.net/bugs/1588463>`_)
