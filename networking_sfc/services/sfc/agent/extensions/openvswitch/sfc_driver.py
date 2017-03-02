@@ -1,5 +1,6 @@
 # Copyright 2015 Huawei.
 # Copyright 2016 Red Hat, Inc.
+# Copyright 2017 Intel Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -105,7 +106,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             if flowrule.get('egress', None):
                 self._setup_egress_flow_rules(flowrule)
             if flowrule.get('ingress', None):
-                self._setup_ingress_flow_rules_with_mpls(flowrule)
+                self._setup_ingress_flow_rules(flowrule)
             flowrule_status_temp = {'id': flowrule['id'],
                                     'status': constants.STATUS_ACTIVE}
             flowrule_status.append(flowrule_status_temp)
@@ -123,6 +124,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 flowrule['ingress']
         try:
             LOG.debug("delete_flow_rule, flowrule = %s", flowrule)
+            pc_corr = flowrule['pc_corr']
 
             # delete tunnel table flow rule on br-int(egress match)
             if flowrule['egress'] is not None:
@@ -156,12 +158,8 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 if vif_port:
                     # third, install br-int flow rule on table INGRESS_TABLE
                     # for ingress traffic
-                    self.br_int.delete_flows(
-                        table=INGRESS_TABLE,
-                        dl_type=0x8847,
-                        dl_dst=vif_port.vif_mac,
-                        mpls_label=flowrule['nsp'] << 8 | (flowrule['nsi'] + 1)
-                    )
+                    if pc_corr == 'mpls':
+                        self._delete_flows_mpls(flowrule, vif_port)
         except Exception as e:
             flowrule_status_temp = {'id': flowrule['id'],
                                     'status': constants.STATUS_ERROR}
@@ -309,6 +307,10 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         inport_match = {}
         priority = PC_DEF_PRI
 
+        # no pp_corr means that classification will not be based on encap
+        pp_corr = flowrule.get('pp_corr', None)
+        node_type = flowrule['node_type']
+
         if match_inport is True:
             egress_port = self.br_int.get_vif_port_by_id(flowrule['egress'])
             if egress_port:
@@ -319,6 +321,13 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 flow_classifier_list, flowrule):
             match_info = dict(inport_match)
             match_info.update(flow_info)
+            if node_type == constants.SF_NODE:
+                if pp_corr:
+                    match_info = {'in_port': match_info['in_port']}
+                    if pp_corr == 'mpls':
+                        match_info = self._build_classification_match_sfc_mpls(
+                            flowrule, match_info)
+
             if add_flow:
                 self.br_int.add_flow(table=ovs_consts.LOCAL_SWITCHING,
                                      priority=priority,
@@ -332,13 +341,31 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
     def _setup_egress_flow_rules(self, flowrule, match_inport=True):
         group_id = flowrule.get('next_group_id', None)
         next_hops = flowrule.get('next_hops', None)
-
+        pc_corr = flowrule.get('pc_corr', 'mpls')
+        pp_corr = flowrule.get('pp_corr', None)
+        node_type = flowrule.get('node_type')
         # if the group is not none, install the egress rule for this SF
         if group_id and next_hops:
             # 1st, install br-int flow rule on table ACROSS_SUBNET_TABLE
             # and group table
             buckets = []
             vlan = self._get_vlan_by_port(flowrule['egress'])
+
+            # to avoid heterogeneous next hops (i.e. next hops with different
+            # correlation capabilities), where one could support an
+            # SFC Encapsulation protocol but not the other, this "pre-check"
+            # cycle is executed to determine whether traffic should be
+            # encapsulated in ACROSS_SUBNET table (as networking-sfc always
+            # did, or in table 0 to prevent loss of chain encapsulation/id).
+            # a better long-term solution for this is to add correlation to
+            # port-pair-group and validate whether all included port-pairs
+            # are consistent with the group regarding the correlation defined.
+            all_pps_correlated = True
+            for item in next_hops:
+                pp_corr_nh = item.get('pp_corr', None)
+                if pp_corr_nh != pc_corr:
+                    all_pps_correlated = False
+                    break
             for item in next_hops:
                 if flowrule['fwd_path']:
                     bucket = (
@@ -354,13 +381,18 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                             ACROSS_SUBNET_TABLE))
                 buckets.append(bucket)
                 subnet_actions_list = []
-                push_mpls = ('push_mpls:0x8847, '
-                             'set_mpls_label:%d, '
-                             'set_mpls_ttl:%d, '
-                             'mod_vlan_vid:%d,' % (
-                                 (flowrule['nsp'] << 8) | flowrule['nsi'],
-                                 flowrule['nsi'], vlan))
-                subnet_actions_list.append(push_mpls)
+
+                across_flow = "mod_vlan_vid:%d," % vlan
+                # the classic encapsulation of packets in ACROSS_SUBNET_TABLE
+                # is kept unchanged for the same scenarios, i.e. when the next
+                # hops don't support encapsulation and neither the current one.
+                if not pp_corr and not all_pps_correlated:
+                    if pc_corr == 'mpls':
+                        push_encap = self._build_push_mpls(flowrule['nsp'],
+                                                           flowrule['nsi'])
+                        across_flow = push_encap + across_flow
+
+                subnet_actions_list.append(across_flow)
 
                 if item['local_endpoint'] == self.local_ip:
                     subnet_actions = 'resubmit(,%d)' % INGRESS_TABLE
@@ -407,9 +439,16 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                                           type='select',
                                           buckets=buckets)
 
-            # 2nd, install br-int flow rule on table 0  for egress traffic
-            # for egress traffic
-            enc_actions = ('group:%d' % group_id)
+            # 2nd, install br-int flow rule on table 0 for egress traffic
+            enc_actions = ""
+            # we only encapsulate on table 0 if we know the next hops will
+            # support that encapsulation but the current hop doesn't already.
+            if not pp_corr and all_pps_correlated:
+                if pc_corr == 'mpls':
+                    enc_actions = self._build_push_mpls(flowrule['nsp'],
+                                                        flowrule['nsi'])
+            enc_actions = enc_actions + ("group:%d" % group_id)
+
             # to uninstall the removed flow classifiers
             self._setup_local_switch_flows_on_int_br(
                 flowrule,
@@ -425,6 +464,12 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 add_flow=True,
                 match_inport=match_inport)
         else:
+            end_of_chain_actions = 'normal'
+            # at the end of the chain, the header must be removed (if used)
+            if (node_type != constants.SRC_NODE) and pp_corr:
+                if pc_corr == 'mpls':
+                    end_of_chain_actions = ('pop_mpls:0x0800,' +
+                                            end_of_chain_actions)
             # to uninstall the new removed flow classifiers
             self._setup_local_switch_flows_on_int_br(
                 flowrule,
@@ -437,7 +482,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             self._setup_local_switch_flows_on_int_br(
                 flowrule,
                 flowrule['add_fcs'],
-                actions='normal',
+                actions=end_of_chain_actions,
                 add_flow=True,
                 match_inport=True)
 
@@ -448,22 +493,69 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         except (vlanmanager.VifIdNotFound, vlanmanager.MappingNotFound):
             return None
 
-    def _setup_ingress_flow_rules_with_mpls(self, flowrule):
+    def _setup_ingress_flow_rules(self, flowrule):
         vif_port = self.br_int.get_vif_port_by_id(flowrule['ingress'])
         if vif_port:
             vlan = self._get_vlan_by_port(flowrule['ingress'])
+            pc_corr = flowrule['pc_corr']
+            pp_corr = flowrule['pp_corr']
+
             # install br-int flow rule on table 0 for ingress traffic
-            match_field = {}
-
-            actions = ('strip_vlan, pop_mpls:0x0800, output:%s' %
-                       vif_port.ofport)
-            match_field = dict(
-                table=INGRESS_TABLE,
-                priority=1,
-                dl_dst=vif_port.vif_mac,
-                dl_vlan=vlan,
-                dl_type=0x8847,
-                mpls_label=flowrule['nsp'] << 8 | (flowrule['nsi'] + 1),
-                actions=actions)
-
+            if pc_corr == 'mpls':
+                if pp_corr is None:
+                    # install an SFC Proxy if the port pair doesn't support the
+                    # SFC encapsulation (pc_corr) specified in the chain
+                    match_field = self._build_proxy_sfc_mpls(flowrule,
+                                                             vif_port, vlan)
+                elif pp_corr == 'mpls':
+                    match_field = self._build_forward_sfc_mpls(flowrule,
+                                                               vif_port, vlan)
             self.br_int.add_flow(**match_field)
+
+    def _build_classification_match_sfc_mpls(self, flowrule, match_info):
+        match_info['dl_type'] = 0x8847
+        match_info['mpls_label'] = flowrule['nsp'] << 8 | flowrule['nsi']
+        return match_info
+
+    def _build_push_mpls(self, nsp, nsi):
+        return (
+            "push_mpls:0x8847,"
+            "set_mpls_label:%d,"
+            "set_mpls_ttl:%d," %
+            (nsp << 8 | nsi, nsi))
+
+    def _build_ingress_common_match_field(self, vif_port, vlan):
+        return dict(
+            table=INGRESS_TABLE,
+            priority=1,
+            dl_dst=vif_port.vif_mac,
+            dl_vlan=vlan)
+
+    def _build_ingress_match_field_sfc_mpls(self, flowrule, vif_port, vlan):
+        match_field = self._build_ingress_common_match_field(vif_port, vlan)
+        match_field['dl_type'] = 0x8847
+        match_field['mpls_label'] = flowrule['nsp'] << 8 | flowrule['nsi'] + 1
+        return match_field
+
+    def _build_proxy_sfc_mpls(self, flowrule, vif_port, vlan):
+        match_field = self._build_ingress_match_field_sfc_mpls(
+            flowrule, vif_port, vlan)
+        actions = ("strip_vlan, pop_mpls:0x0800,"
+                   "output:%s" % vif_port.ofport)
+        match_field['actions'] = actions
+        return match_field
+
+    def _build_forward_sfc_mpls(self, flowrule, vif_port, vlan):
+        match_field = self._build_ingress_match_field_sfc_mpls(
+            flowrule, vif_port, vlan)
+        actions = ("strip_vlan, output:%s" % vif_port.ofport)
+        match_field['actions'] = actions
+        return match_field
+
+    def _delete_flows_mpls(self, flowrule, vif_port):
+        self.br_int.delete_flows(
+            table=INGRESS_TABLE,
+            dl_type=0x8847,
+            dl_dst=vif_port.vif_mac,
+            mpls_label=flowrule['nsp'] << 8 | flowrule['nsi'] + 1
+        )

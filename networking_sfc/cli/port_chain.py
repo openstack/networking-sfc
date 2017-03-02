@@ -67,7 +67,7 @@ class PortChainCreate(extension.ClientExtensionCreate, PortChain):
             type=utils.str2dict_type(optional_keys=['correlation',
                                                     'symmetric']),
             help=_('Dictionary of chain parameters. Supports '
-                   'correlation=mpls and symmetric=true|false'))
+                   'correlation=mpls and symmetric=true|false.'))
 
     def args2body(self, parsed_args):
         body = {}

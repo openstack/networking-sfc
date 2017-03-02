@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Port Pairs now support ``correlation='mpls'`` as a
+    ``service_function_parameters`` key and value pair,
+    when using the OVS Driver.
+    Having this correlation prevents the insertion of "SFC Proxy" flows that
+    remove the MPLS labels before sending packets to the Service Functions.

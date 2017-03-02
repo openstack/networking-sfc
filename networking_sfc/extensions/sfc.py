@@ -31,6 +31,7 @@ from neutron.services import service_base
 from networking_sfc._i18n import _
 from networking_sfc import extensions as sfc_extensions
 
+
 cfg.CONF.import_opt('api_extensions_path', 'neutron.common.config')
 neutron_ext.append_api_extensions_path(sfc_extensions.__path__)
 
@@ -201,7 +202,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                 'type:dict': {
                     'correlation': {
                         'default': DEFAULT_SF_PARAMETERS['correlation'],
-                        'type:values': [None]
+                        'type:values': [None, 'mpls']
                     },
                     'weight': {
                         'default': DEFAULT_SF_PARAMETERS['weight'],
