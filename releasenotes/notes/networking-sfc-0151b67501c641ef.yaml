@@ -9,5 +9,7 @@ features:
 fixes:
   - |
     SFC path-ID parameter (Bug `1567654 <https://launchpad.net/bugs/1567654>`_)
+  - |
     Path-ID generation in plugin (Bug `1588460 <https://launchpad.net/bugs/1588460>`_)
+  - |
     Port Pair Group parameter (Bug `1588463 <https://launchpad.net/bugs/1588463>`_)
