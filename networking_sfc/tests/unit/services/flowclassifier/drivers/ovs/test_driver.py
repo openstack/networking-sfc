@@ -13,12 +13,12 @@
 #    under the License.
 
 from neutron_lib.api.definitions import portbindings
+from neutron_lib import context
 
 from oslo_utils import importutils
 
 from neutron.api import extensions as api_ext
 from neutron.common import config
-from neutron import context
 
 from networking_sfc.db import flowclassifier_db as fdb
 from networking_sfc.extensions import flowclassifier

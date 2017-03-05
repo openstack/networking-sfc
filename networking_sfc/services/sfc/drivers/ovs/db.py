@@ -13,8 +13,8 @@
 #    under the License.
 #
 
-from neutron import context as n_context
 from neutron.db import common_db_mixin
+from neutron_lib import context as n_context
 from neutron_lib.db import model_base
 from neutron_lib import exceptions as n_exc
 

@@ -14,13 +14,13 @@
 
 import mock
 
-from neutron import context
 from neutron.plugins.ml2.drivers.openvswitch.agent import (
     ovs_agent_extension_api as ovs_ext_api)
 from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants
 from neutron.plugins.ml2.drivers.openvswitch.agent.openflow.ovs_ofctl import (
     ovs_bridge)
 from neutron.tests import base
+from neutron_lib import context
 
 from networking_sfc.services.sfc.agent.extensions import sfc
 

@@ -15,13 +15,13 @@
 
 import neutron.common.constants as nc_const
 import neutron.common.rpc as n_rpc
-import neutron.context as n_context
 import neutron.db.api as db_api
 from neutron.db import models_v2
 import neutron.plugins.common.constants as np_const
 import neutron.plugins.ml2.drivers.l2pop.db as l2pop_db
 import neutron.plugins.ml2.drivers.l2pop.rpc as l2pop_rpc
 from neutron_lib import constants as const
+from neutron_lib import context as n_context
 from neutron_lib.plugins import directory
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging

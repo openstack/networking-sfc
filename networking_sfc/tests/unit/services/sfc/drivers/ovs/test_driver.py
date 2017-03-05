@@ -17,9 +17,9 @@ import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron.common import rpc as n_rpc
-from neutron import context
 from neutron.plugins.ml2.drivers import type_vxlan
 from neutron_lib.api.definitions import portbindings
+from neutron_lib import context
 from oslo_utils import importutils
 
 from networking_sfc.db import flowclassifier_db as fdb
