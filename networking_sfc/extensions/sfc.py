@@ -22,11 +22,11 @@ from neutron_lib.api import extensions
 from neutron_lib.api import validators as lib_validators
 from neutron_lib.db import constants as db_const
 from neutron_lib import exceptions as neutron_exc
+from neutron_lib.services import base as service_base
 from oslo_config import cfg
 
 from neutron.api import extensions as neutron_ext
 from neutron.api.v2 import resource_helper
-from neutron.services import service_base
 
 from networking_sfc._i18n import _
 from networking_sfc import extensions as sfc_extensions
