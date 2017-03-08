@@ -1,0 +1,1 @@
+NETWORK_API_EXTENSIONS="all,sfc,flow_classifier"
