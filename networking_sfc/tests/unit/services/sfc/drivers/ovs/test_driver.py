@@ -438,10 +438,8 @@ class OVSSfcDriverTestCase(
                                 'sf_node')
 
                             # src_node flow rule doesn't have pp_corr:
-                            self.assertEqual(
-                                update_flow_rules[flow1]['pp_corr'],
-                                None
-                            )
+                            self.assertIsNone(
+                                update_flow_rules[flow1]['pp_corr'])
                             # but the sf_node does:
                             self.assertEqual(
                                 update_flow_rules[flow2]['pp_corr'],
