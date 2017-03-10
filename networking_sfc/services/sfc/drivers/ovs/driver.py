@@ -346,7 +346,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     cidr2 = subnet2['cidr']
                     if cidr1 != cidr2:
                         LOG.error(_LE('Cross-subnet chain not supported'))
-                        raise exc.SfcDriverError()
+                        raise exc.SfcDriverError(
+                            method='create_portchain_path')
 
         # Compare subnets for PPG egress ports
         # and next PPG ingress ports
@@ -377,7 +378,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                         cidr4 = subnet2['cidr']
                         if cidr3 != cidr4:
                             LOG.error(_LE('Cross-subnet chain not supported'))
-                            raise exc.SfcDriverError()
+                            raise exc.SfcDriverError(
+                                method='create_portchain_path')
 
         next_group_intid = None
         next_group_members = None
