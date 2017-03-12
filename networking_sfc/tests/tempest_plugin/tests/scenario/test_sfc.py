@@ -48,14 +48,18 @@ class TestSfc(base.SfcScenarioTest):
         cls.set_network_resources()
         super(TestSfc, cls).setup_credentials()
 
+    def _setup_security_group(self):
+        self.security_group = self._create_security_group()
+        self._create_security_group_rule(
+            self.security_group, protocol=None,
+            direction='ingress'
+        )
+
     def setUp(self):
         super(TestSfc, self).setUp()
         self.ssh_user = CONF.validation.image_ssh_user
         self.keypair = self.create_keypair()
-        self.security_group = self._create_security_group()
-        self._create_security_group_rule(
-            self.security_group, protocol=None,
-            direction='ingress')
+        self._setup_security_group()
         self.net1, self.subnet1, self.router1 = self.create_networks()
         self.router2 = self._create_router()
         self.router3 = self._create_router()
@@ -297,7 +301,7 @@ class TestSfc(base.SfcScenarioTest):
     def test_create_port_chain_multi_port_pairs(self):
         self._create_port_chain_multi_port_pairs_helper(False)
 
-    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ad')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f869be1e21ad')
     @test.services('compute', 'network')
     def test_create_port_chain_multi_port_pairs_symmetric(self):
         self._create_port_chain_multi_port_pairs_helper(True)

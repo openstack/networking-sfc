@@ -32,15 +32,38 @@ class TestSfcMultinode(test_sfc.TestSfc):
             raise cls.skipException(
                 "Less than 2 compute nodes, skipping multinode tests.")
 
+    # @classmethod
+    # def setup_credentials(cls):
+    #     super(TestSfcMultinode, cls).setup_credentials()
+    #     cls.manager = cls.admin_manager
+    #     cls.os = cls.os_adm
+
     @classmethod
     def setup_clients(cls):
         super(TestSfcMultinode, cls).setup_clients()
         # Use admin client by default
-        cls.manager = cls.admin_manager
+        # cls.manager = cls.admin_manager
         # this is needed so that we can use the availability_zone:host
         # scheduler hint, which is admin_only by default
-        cls.servers_client = cls.admin_manager.servers_client
-        super(TestSfcMultinode, cls).resource_setup()
+        # cls.servers_client = cls.admin_manager.servers_client
+        # super(TestSfcMultinode, cls).resource_setup()
+
+    def _setup_security_group(self):
+        self.security_group = self._create_security_group(
+            security_group_rules_client=(
+                self.admin_manager.security_group_rules_client
+            ),
+            security_groups_client=self.admin_manager.security_groups_client
+        )
+        self._create_security_group_rule(
+            self.security_group,
+            security_group_rules_client=(
+                self.admin_manager.security_group_rules_client
+            ),
+            security_groups_client=self.admin_manager.security_groups_client,
+            protocol=None,
+            direction='ingress'
+        )
 
     def setUp(self):
         super(TestSfcMultinode, self).setUp()
@@ -71,6 +94,7 @@ class TestSfcMultinode(test_sfc.TestSfc):
             availability_zone='%(zone)s:%(host_name)s' % host,
             networks=[{'uuid': network['id']}],
             wait_until='ACTIVE',
+            clients=self.admin_manager,
             **kwargs)
         waiters.wait_for_server_status(self.servers_client,
                                        server['id'], 'ACTIVE')
