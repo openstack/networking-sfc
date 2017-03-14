@@ -17,7 +17,6 @@ import neutron.common.constants as nc_const
 import neutron.common.rpc as n_rpc
 import neutron.db.api as db_api
 from neutron.db import models_v2
-import neutron.plugins.common.constants as np_const
 import neutron.plugins.ml2.drivers.l2pop.db as l2pop_db
 import neutron.plugins.ml2.drivers.l2pop.rpc as l2pop_rpc
 from neutron_lib import constants as const
@@ -980,7 +979,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             network_type = network_info['provider:network_type']
             segment_id = network_info['provider:segmentation_id']
 
-        if network_type != np_const.TYPE_VXLAN:
+        if network_type != const.TYPE_VXLAN:
             LOG.warning("Currently only support vxlan network")
             return ((None, ) * 5)
         elif not host_id:
