@@ -4,8 +4,10 @@
 # http://git.openstack.org/cgit/openstack-infra/project-config/tree/jenkins/jobs/networking-sfc.yaml
 #
 
-export OVERRIDE_ENABLED_SERVICES=q-svc,q-dhcp,q-meta,neutron,tempest,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch,g-api,g-reg,mysql,rabbit,key,dstat
-
+OVERRIDE_ENABLED_SERVICES=q-svc,q-dhcp,q-meta,neutron,tempest
+OVERRIDE_ENABLED_SERVICES+=,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch,placement-api
+OVERRIDE_ENABLED_SERVICES+=,g-api,g-reg,mysql,rabbit,key,dstat
+export OVERRIDE_ENABLED_SERVICES
 # Begin list of exclusions.
 r="^(?!.*"
 
