@@ -1,1 +1,1 @@
-NETWORK_API_EXTENSIONS="sfc,flow_classifier"
+NETWORK_API_EXTENSIONS="all,sfc,flow_classifier"
