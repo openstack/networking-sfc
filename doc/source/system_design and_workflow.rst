@@ -258,14 +258,9 @@ Agent specification <http://docs.openstack.org/developer/networking-sfc/portchai
 SFC Encapsulation
 =================
 
-Launchpad blueprint/RFE:
+This section explains SFC Encapsulation support in networking-sfc.
 
-https://bugs.launchpad.net/networking-sfc/+bug/1587486
-
-This document explains SFC Encapsulation support in networking-sfc. This
-is not a blueprint specification (spec).
-
-The link to Launchpad above is an umbrella for SFC Encapsulation work with the
+The link to Launchpad at [4] is an umbrella for SFC Encapsulation work with the
 following scope:
 
 * MPLS correlation support in networking (labels exposed to SFs)
@@ -293,11 +288,11 @@ Problem Description
 
 SFC Encapsulation is an architectural concept from IETF SFC, which states [1]:
 
-"The SFC Encapsulation provides, at a minimum, SFP identification, and is used
- by the SFC-aware functions, such as the SFF and SFC-aware SFs. The SFC
- encapsulation is not used for network packet forwarding. In addition to SFP
- identification, the SFC Encapsulation carries metadata including data-plane
- context information."
+*"The SFC Encapsulation provides, at a minimum, SFP identification, and is used
+by the SFC-aware functions, such as the SFF and SFC-aware SFs. The SFC
+encapsulation is not used for network packet forwarding. In addition to SFP
+identification, the SFC Encapsulation carries metadata including data-plane
+context information."*
 
 Metadata is a very important capability of SFC Encapsulation, but it's out of
 scope for this first umbrella of work in networking-sfc.
@@ -353,11 +348,11 @@ At the API side, the MPLS correlation is defined as a possible option to the
 ``port_pair`` resource.
 
 The parameter is saved in the database in the same way as any other port-pair
-parameter, inside the ``sfc_service_function_params`` table:
+parameter, inside the ``sfc_service_function_params`` table::
 
-``keyword='correlation'``
-``value='mpls'``
-``pair_id=PORT_PAIR_UUID``
+ keyword='correlation'
+ value='mpls'
+ pair_id=PORT_PAIR_UUID
 
 The MPLS correlation parameter will eventually be fed to the enabled backend,
 such as Open vSwitch. Through the OVS SFC driver and agent, the vswitches
@@ -377,7 +372,8 @@ Moreover, a ``pp_corr`` key is also specified in each of the hops of the
 
 ``pc_corr`` is the correlation mechanism (SFC Encapsulation) to be used for
 the entire  port-chain. The values may be ``None``, ``'mpls'``, or ``'nsh'``
- (when supported).
+(when supported).
+
 ``pp_corr`` is the correlation mechanism supported by an individual SF. The
 values may be ``'None'``, ``'mpls'``, or ``'nsh'`` (when supported).
 
@@ -387,9 +383,8 @@ SFC Encapsulation mechanism. For example, if ``pc_corr`` is
 ``'mpls'`` and ``pp_corr`` is ``None``, the SFC Proxy is needed.
 
 The following is an example of an sf_node flow
-rule (taken from one of the SFC OVS agent's unit tests).
+rule (taken from one of the SFC OVS agent's unit tests)::
 
-::
                 'nsi': 255,
                 'ingress': '6331a00d-779b-462b-b0e4-6a65aa3164ef',
                 'next_hops': [{
@@ -458,7 +453,7 @@ let's take a look at the possible scenarios:
 
 The following further explains each of the possibilities from the table above.
 
-1. pp_corr=mpls and every next_hop's pp_corr=mpls
+1. **pp_corr=mpls and every next_hop's pp_corr=mpls**
 
 The ingress of this sf_node will not remove the MPLS labels. When
 egressing from this sf_node, OVS will not attempt to match on the
@@ -468,7 +463,7 @@ decremented by 1 by the SF). When preparing the packet to go to the next hop,
 no attempt at inserting MPLS labels will be done,
 since the packet already has the correct labels.
 
-2. pp_corr=mpls and every next_hop's pp_corr=None
+2. **pp_corr=mpls and every next_hop's pp_corr=None**
 
 The ingress of this sf_node will not remove the MPLS labels. When
 egressing from this sf_node, OVS will not attempt to match on the
@@ -480,7 +475,7 @@ since the packet already has the correct labels.
 The next hop's own flow rule (not the one shown above) will have an action to
 first remove the MPLS labels and then forward to the SF.
 
-3. pp_corr=None and every next_hop's pp_corr=mpls
+3. **pp_corr=None and every next_hop's pp_corr=mpls**
 
 The ingress of this sf_node will first remove the MPLS labels and then forward
 to the SF, as its actions. When egressing from this sf_node, OVS will match on
@@ -502,7 +497,7 @@ part of). So, again, the encapsulation/adding of MPLS labels will have to be
 done in Table 0 for this specific scenario where in the current hop the packets
 don't have labels but on the next hop they are expected to.
 
-4. pp_corr=None and every next_hop's pp_corr=None
+4. **pp_corr=None and every next_hop's pp_corr=None**
 
 This is "classic" networking-sfc. The ingress of this sf_node will first remove
 the MPLS labels and then forward to the SF, as its actions. When egressing from
@@ -525,5 +520,9 @@ References
 ----------
 
 [1] https://datatracker.ietf.org/doc/rfc7665/?include_text=1
+
 [2] http://i.imgur.com/rxzNNUZ.png
+
 [3] http://i.imgur.com/nzgatKB.png
+
+[4] https://bugs.launchpad.net/networking-sfc/+bug/1587486
