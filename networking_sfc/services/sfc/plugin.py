@@ -21,6 +21,7 @@ from neutron.db import api as db_api
 from networking_sfc.db import sfc_db
 from networking_sfc.extensions import servicegraph as sg_ext
 from networking_sfc.extensions import sfc as sfc_ext
+from networking_sfc.extensions import tap as tap_ext
 from networking_sfc.services.sfc.common import context as sfc_ctx
 from networking_sfc.services.sfc.common import exceptions as sfc_exc
 from networking_sfc.services.sfc import driver_manager as sfc_driver
@@ -32,7 +33,11 @@ LOG = logging.getLogger(__name__)
 class SfcPlugin(sfc_db.SfcDbPlugin):
     """SFC plugin implementation."""
 
-    supported_extension_aliases = [sfc_ext.SFC_EXT, sg_ext.SG_EXT]
+    # REVISIT(vks1) This should be changed to string instead of importing
+    # extensions explicitly. So that even if extensions increase in future,
+    # imports do not.
+    supported_extension_aliases = [sfc_ext.SFC_EXT, sg_ext.SG_EXT,
+                                   tap_ext.TAP_EXT]
     path_prefix = sfc_ext.SFC_PREFIX
 
     def __init__(self):

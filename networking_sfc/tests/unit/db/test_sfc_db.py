@@ -30,6 +30,7 @@ from networking_sfc import extensions
 from networking_sfc.extensions import flowclassifier as fc_ext
 from networking_sfc.extensions import servicegraph as sg_ext
 from networking_sfc.extensions import sfc
+from networking_sfc.extensions import tap as tap_ext
 from networking_sfc.tests import base
 from networking_sfc.tests.unit.db import test_flowclassifier_db
 
@@ -332,7 +333,7 @@ class SfcDbPluginTestCase(
             fc_ext.FLOW_CLASSIFIER_EXT: flowclassifier_plugin
         }
         sfc_db.SfcDbPlugin.supported_extension_aliases = [
-            sfc.SFC_EXT, sg_ext.SG_EXT]
+            sfc.SFC_EXT, sg_ext.SG_EXT, tap_ext.TAP_EXT]
         sfc_db.SfcDbPlugin.path_prefix = sfc.SFC_PREFIX
         fdb.FlowClassifierDbPlugin.supported_extension_aliases = [
             fc_ext.FLOW_CLASSIFIER_EXT]
@@ -348,13 +349,8 @@ class SfcDbPluginTestCase(
             self.sfc_plugin = importutils.import_object(sfc_plugin)
             self.flowclassifier_plugin = importutils.import_object(
                 flowclassifier_plugin)
-            ext_mgr = api_ext.PluginAwareExtensionManager(
-                extensions_path,
-                {
-                    sfc.SFC_EXT: self.sfc_plugin,
-                    fc_ext.FLOW_CLASSIFIER_EXT: self.flowclassifier_plugin
-                }
-            )
+            # Note (vks1): Auto-load extensions.
+            ext_mgr = api_ext.PluginAwareExtensionManager.get_instance()
             app = config.load_paste_app('extensions_test_app')
             self.ext_api = api_ext.ExtensionMiddleware(app, ext_mgr=ext_mgr)
 
@@ -759,6 +755,123 @@ class SfcDbPluginTestCase(
         self._create_port_chain(
             self.fmt, {}, expected_res_status=400
         )
+
+    def test_create_port_chain_with_consecutive_tap_port_pair_groups(self):
+        with self.port(
+            name='port1',
+            device_id='tap_device1'
+        ) as tap_port1, self.port(
+            name='port2',
+            device_id='tap_device2'
+        ) as tap_port2:
+            with self.port_pair(
+                port_pair={
+                    'ingress': tap_port1['port']['id'],
+                    'egress': tap_port1['port']['id']
+                }
+            ) as tap_pp1, self.port_pair(
+                port_pair={
+                    'ingress': tap_port2['port']['id'],
+                    'egress': tap_port2['port']['id']
+                }
+            ) as tap_pp2:
+                with self.port_pair_group(
+                    self.fmt,
+                    {
+                        'port_pairs': [tap_pp1['port_pair']['id']],
+                        'tap_enabled': True
+                    }
+                ) as pg1, self.port_pair_group(
+                    self.fmt,
+                    {
+                        'port_pairs': [tap_pp2['port_pair']['id']],
+                        'tap_enabled': True
+                    }
+                ) as pg2:
+                    self._create_port_chain(
+                        self.fmt,
+                        {
+                            'port_pair_groups': [
+                                pg1['port_pair_group']['id'],
+                                pg2['port_pair_group']['id']
+                            ]
+                        },
+                        expected_res_status=400
+                    )
+
+    def test_create_port_chain_with_non_consecutive_tap_port_pair_groups(self):
+        with self.port(
+            name='port1',
+            device_id='tap_device1'
+        ) as tap_port1, self.port(
+            name='port2',
+            device_id='default_device'
+        ) as ingress_default, self.port(
+            name='port3',
+            device_id='default_device'
+        ) as egress_default, self.port(
+            name='port4',
+            device_id='tap_device2'
+        ) as tap_port2:
+            with self.port_pair(
+                port_pair={
+                    'ingress': tap_port1['port']['id'],
+                    'egress': tap_port1['port']['id']
+                }
+            ) as tap_pp1, self.port_pair(
+                port_pair={
+                    'ingress': ingress_default['port']['id'],
+                    'egress': egress_default['port']['id']
+                }
+            ) as default_pp, self.port_pair(
+                port_pair={
+                    'ingress': tap_port2['port']['id'],
+                    'egress': tap_port2['port']['id']
+                }
+            ) as tap_pp2:
+                with self.port_pair_group(
+                    self.fmt,
+                    {
+                        'port_pairs': [tap_pp1['port_pair']['id']],
+                        'tap_enabled': True,
+                        'port_pair_group_parameters': {
+                            'lb_fields': [],
+                            'ppg_n_tuple_mapping': {'ingress_n_tuple': {},
+                                                    'egress_n_tuple': {}}}
+                    }
+                ) as tap_pg1, self.port_pair_group(
+                    self.fmt,
+                    {
+                        'port_pairs': [default_pp['port_pair']['id']],
+                        'tap_enabled': False,
+                        'port_pair_group_parameters': {
+                            'lb_fields': [],
+                            'ppg_n_tuple_mapping': {'ingress_n_tuple': {},
+                                                    'egress_n_tuple': {}}
+                        }
+                    }
+                ) as default_pg, self.port_pair_group(
+                    self.fmt,
+                    {
+                        'port_pairs': [tap_pp2['port_pair']['id']],
+                        'tap_enabled': True,
+                        'port_pair_group_parameters': {
+                            'lb_fields': [],
+                            'ppg_n_tuple_mapping': {'ingress_n_tuple': {},
+                                                    'egress_n_tuple': {}
+                                                    }
+                        }
+                    }
+                ) as tap_pg2:
+                    self._test_create_port_chain(
+                        {
+                            'port_pair_groups': [
+                                tap_pg1['port_pair_group']['id'],
+                                default_pg['port_pair_group']['id'],
+                                tap_pg2['port_pair_group']['id']
+                            ]
+                        }
+                    )
 
     def test_create_port_chain_with_invalid_chain_parameters(self):
         with self.port_pair_group(port_pair_group={}) as pg:
@@ -1307,6 +1420,115 @@ class SfcDbPluginTestCase(
                     res = req.get_response(self.ext_api)
                     self.assertEqual(200, res.status_int)
 
+    def test_update_port_chain_consistency_with_consecutive_tap_ppg(self):
+        with self.port(
+            name='port1',
+            device_id='tap_device1'
+        ) as tap_port1, self.port(
+            name='port2',
+            device_id='tap_device2'
+        ) as tap_port2:
+            with self.port_pair(
+                port_pair={
+                    'ingress': tap_port1['port']['id'],
+                    'egress': tap_port1['port']['id']
+                }
+            ) as tap_pp1, self.port_pair(
+                port_pair={
+                    'ingress': tap_port2['port']['id'],
+                    'egress': tap_port2['port']['id']
+                }
+            ) as tap_pp2:
+                with self.port_pair_group(
+                    self.fmt,
+                    {
+                        'port_pairs': [tap_pp1['port_pair']['id']],
+                        'tap_enabled': True
+                    }
+                ) as pg1, self.port_pair_group(
+                    self.fmt,
+                    {
+                        'port_pairs': [tap_pp2['port_pair']['id']],
+                        'tap_enabled': True
+                    }
+                ) as pg2:
+                    with self.port_chain(
+                            port_chain={
+                                'port_pair_groups': [
+                                    pg1['port_pair_group']['id']
+                                ]
+                            }
+                    ) as pc:
+                        updates = {
+                            'port_pair_groups': [
+                                pg1['port_pair_group']['id'],
+                                pg2['port_pair_group']['id']
+                            ]
+                        }
+                        req = self.new_update_request(
+                            'port_chains', {'port_chain': updates},
+                            pc['port_chain']['id']
+                        )
+                        res = req.get_response(self.ext_api)
+                        self.assertEqual(400, res.status_int)
+
+    def test_update_tap_port_chain_consistency(self):
+        with self.port(
+            name='port1',
+            device_id='tap_device1'
+        ) as tap_port1, self.port(
+            name='port2',
+            device_id='tap_device2'
+        ) as tap_port2:
+            with self.port_pair(
+                port_pair={
+                    'ingress': tap_port1['port']['id'],
+                    'egress': tap_port1['port']['id']
+                }
+            ) as tap_pp1, self.port_pair(
+                port_pair={
+                    'ingress': tap_port2['port']['id'],
+                    'egress': tap_port2['port']['id']
+                }
+            ) as tap_pp2:
+                with self.port_pair_group(
+                    self.fmt,
+                    {
+                        'port_pairs': [tap_pp1['port_pair']['id']],
+                        'tap_enabled': True
+                    }
+                ) as pg1, self.port_pair_group(
+                    self.fmt,
+                    {
+                        'port_pairs': [tap_pp2['port_pair']['id']],
+                        'tap_enabled': False
+                    }
+                ) as pg2:
+                    with self.port_chain(
+                            port_chain={
+                                'port_pair_groups': [
+                                    pg1['port_pair_group']['id']
+                                ]
+                            }
+                    ) as pc:
+                        updates = {
+                            'port_pair_groups': [
+                                pg1['port_pair_group']['id'],
+                                pg2['port_pair_group']['id']
+                            ]
+                        }
+                        req = self.new_update_request(
+                            'port_chains', {'port_chain': updates},
+                            pc['port_chain']['id']
+                        )
+                        resp = req.get_response(self.ext_api)
+                        self.assertEqual(200, resp.status_int)
+                        res = self.deserialize(self.fmt, resp)
+                        expected = pc['port_chain']
+                        expected.update(updates)
+                        self._assert_port_chain_equal(res['port_chain'],
+                                                      expected)
+
     def test_delete_port_chain(self):
         with self.port_pair_group(
             port_pair_group={}
@@ -1406,6 +1628,7 @@ class SfcDbPluginTestCase(
             'name': 'test1',
             'description': 'desc1',
             'port_pairs': [],
+            'tap_enabled': False,
             'port_pair_group_parameters': {
                 'lb_fields': ['ip_src', 'ip_dst'],
                 'ppg_n_tuple_mapping': {
@@ -1435,11 +1658,50 @@ class SfcDbPluginTestCase(
             'name': 'test1',
             'description': 'desc1',
             'port_pairs': [],
+            'tap_enabled': False,
             'port_pair_group_parameters': {
                 'lb_fields': [],
                 'ppg_n_tuple_mapping': {}
             }
         })
+
+    def test_create_port_pair_group_with_tap_enabled_parameter_true(self):
+        self._test_create_port_pair_group(
+            {
+                'name': 'test1',
+                'description': 'desc1',
+                'port_pairs': [],
+                'tap_enabled': True,
+                'port_pair_group_parameters': {}
+            },
+            expected_port_pair_group={
+                'name': 'test1',
+                'description': 'desc1',
+                'port_pairs': [],
+                'tap_enabled': True,
+                'port_pair_group_parameters': {
+                    'lb_fields': [],
+                    'ppg_n_tuple_mapping': {u'egress_n_tuple': {},
+                                            u'ingress_n_tuple': {}},
+                }
+            }
+        )
+
+    def test_create_ppg_with_all_params_and_tap_enabled_parameter_true(self):
+        self._create_port_pair_group(
+            self.fmt,
+            {
+                'name': 'test1',
+                'description': 'desc1',
+                'port_pairs': [],
+                'tap_enabled': True,
+                'port_pair_group_parameters': {
+                    'lb_fields': ['ip_src', 'ip_dst'],
+                    'ppg_n_tuple_mapping': {
+                        'ingress_n_tuple': {'source_ip_prefix': None},
+                        'egress_n_tuple': {'destination_ip_prefix': None}}
+                }
+            })
 
     def test_create_port_pair_group_with_port_pairs(self):
         with self.port(
@@ -1462,6 +1724,54 @@ class SfcDbPluginTestCase(
                         pp2['port_pair']['id']
                     ]
                 })
+
+    def test_create_tap_port_pair_group_with_single_port_pair(self):
+        with self.port(
+            name='port1',
+            device_id='default'
+        ) as src_port, self.port(
+            name='port2',
+            device_id='default'
+        ) as dst_port:
+            with self.port_pair(port_pair={
+                'ingress': src_port['port']['id'],
+                'egress': dst_port['port']['id']
+            }) as pp1:
+                self._test_create_port_pair_group(
+                    {
+                        'port_pairs': [
+                            pp1['port_pair']['id'],
+                        ],
+                        'tap_enabled': True
+                    }
+                )
+
+    def test_create_tap_pair_group_with_multiple_port_pairs(self):
+        with self.port(
+            name='port1',
+            device_id='default'
+        ) as src_port, self.port(
+            name='port2',
+            device_id='default'
+        ) as dst_port:
+            with self.port_pair(port_pair={
+                'ingress': src_port['port']['id'],
+                'egress': dst_port['port']['id']
+            }) as pp1, self.port_pair(port_pair={
+                'ingress': dst_port['port']['id'],
+                'egress': src_port['port']['id']
+            }) as pp2:
+                self._create_port_pair_group(
+                    self.fmt,
+                    {
+                        'port_pairs': [
+                            pp1['port_pair']['id'],
+                            pp2['port_pair']['id']
+                        ],
+                        'tap_enabled': True
+                    },
+                    expected_res_status=400
+                )
 
     def test_create_port_pair_group_consistent_correlations(self):
         with self.port(
@@ -1727,6 +2037,41 @@ class SfcDbPluginTestCase(
                     )
                     for k, v in expected.items():
                         self.assertEqual(res['port_pair_group'][k], v)
+
+    def test_update_tap_port_pair_group_consistency(self):
+        with self.port(
+            name='port1',
+            device_id='default'
+        ) as src_port, self.port(
+            name='port2',
+            device_id='default'
+        ) as dst_port:
+            with self.port_pair(port_pair={
+                'ingress': src_port['port']['id'],
+                'egress': dst_port['port']['id']
+            }) as pp1, self.port_pair(port_pair={
+                'ingress': dst_port['port']['id'],
+                'egress': src_port['port']['id']
+            }) as pp2:
+                with self.port_pair_group(port_pair_group={
+                    'name': 'test1',
+                    'description': 'desc1',
+                    'port_pairs': [pp1['port_pair']['id']],
+
+                }) as pg:
+                    updates = {
+                        'name': 'test2',
+                        'description': 'desc2',
+                        'port_pairs': [pp1['port_pair']['id'],
+                                       pp2['port_pair']['id']],
+                        'tap_enabled': True
+                    }
+                    req = self.new_update_request(
+                        'port_pair_groups', {'port_pair_group': updates},
+                        pg['port_pair_group']['id']
+                    )
+                    resp = req.get_response(self.ext_api)
+                    self.assertEqual(400, resp.status_int)
 
     def test_delete_port_pair_group(self):
         with self.port_pair_group(port_pair_group={

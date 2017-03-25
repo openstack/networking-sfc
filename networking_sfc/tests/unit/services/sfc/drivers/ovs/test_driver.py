@@ -28,6 +28,7 @@ from networking_sfc.db import sfc_db
 from networking_sfc.extensions import flowclassifier
 from networking_sfc.extensions import servicegraph
 from networking_sfc.extensions import sfc
+from networking_sfc.extensions import tap
 from networking_sfc.services.sfc.common import context as sfc_ctx
 from networking_sfc.services.sfc.common import exceptions as sfc_exc
 from networking_sfc.services.sfc.drivers.ovs import driver
@@ -97,7 +98,7 @@ class OVSSfcDriverTestCase(
             flowclassifier.FLOW_CLASSIFIER_EXT: flowclassifier_plugin
         }
         sfc_db.SfcDbPlugin.supported_extension_aliases = [
-            sfc.SFC_EXT, servicegraph.SG_EXT]
+            sfc.SFC_EXT, servicegraph.SG_EXT, tap.TAP_EXT]
         sfc_db.SfcDbPlugin.path_prefix = sfc.SFC_PREFIX
         fdb.FlowClassifierDbPlugin.supported_extension_aliases = [
             flowclassifier.FLOW_CLASSIFIER_EXT]
@@ -112,13 +113,7 @@ class OVSSfcDriverTestCase(
         self.sfc_plugin = importutils.import_object(sfc_plugin)
         self.flowclassifier_plugin = importutils.import_object(
             flowclassifier_plugin)
-        ext_mgr = api_ext.PluginAwareExtensionManager(
-            test_sfc_db.extensions_path,
-            {
-                sfc.SFC_EXT: self.sfc_plugin,
-                flowclassifier.FLOW_CLASSIFIER_EXT: self.flowclassifier_plugin
-            }
-        )
+        ext_mgr = api_ext.PluginAwareExtensionManager.get_instance()
         app = config.load_paste_app('extensions_test_app')
         self.ext_api = api_ext.ExtensionMiddleware(app, ext_mgr=ext_mgr)
         self.init_rpc_calls()

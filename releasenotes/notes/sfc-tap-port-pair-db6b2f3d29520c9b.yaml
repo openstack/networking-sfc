@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    Service Function Chaining now supports insertion of Tap Service Functions.
+    These SFs are deployed to passively monitor/analyze network traffic. One of
+    the widely deployed use case is IDS. To flag a SF to be Tap, Port Pair
+    Group should be created with ``--enable-tap`` flag.
+
+    openstack sfc port pair group create tap-ppg --port-pair tap-pp
+    --enable-tap

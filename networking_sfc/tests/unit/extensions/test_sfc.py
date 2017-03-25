@@ -348,7 +348,8 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                 'port_pair_group_parameters'
             ) or {'lb_fields': [],
                   'ppg_n_tuple_mapping': {'ingress_n_tuple': {},
-                                          'egress_n_tuple': {}}}
+                                          'egress_n_tuple': {}}
+                  }
         }}
         if port_pair_group.get('group_id'):
             ret['port_pair_group']['group_id'] = port_pair_group['group_id']

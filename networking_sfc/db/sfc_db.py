@@ -35,6 +35,7 @@ from networking_sfc.db import flowclassifier_db as fc_db
 from networking_sfc.extensions import flowclassifier as ext_fc
 from networking_sfc.extensions import servicegraph as ext_sg
 from networking_sfc.extensions import sfc as ext_sfc
+from networking_sfc.extensions import tap as ext_tap
 
 
 LOG = logging.getLogger(__name__)
@@ -149,6 +150,8 @@ class PortPairGroup(model_base.BASEV2, model_base.HasId,
     group_id = sa.Column(sa.Integer(), unique=True, nullable=False)
     name = sa.Column(sa.String(db_const.NAME_FIELD_SIZE))
     description = sa.Column(sa.String(db_const.DESCRIPTION_FIELD_SIZE))
+    tap_enabled = sa.Column(sa.Boolean(), server_default=sa.sql.false(),
+                            nullable=False)
     port_pairs = orm.relationship(
         PortPair,
         backref='port_pair_group'
@@ -243,8 +246,14 @@ class SfcDbPlugin(
 
     def _validate_port_pair_groups(self, context, pg_ids, pc_id=None):
         with db_api.context_manager.reader.using(context):
+            prev_pg_tap_enabled = False
             for pg_id in pg_ids:
-                self._get_port_pair_group(context, pg_id)
+                pg = self._get_port_pair_group(context, pg_id)
+                curr_pg_tap_enabled = pg['tap_enabled']
+                if prev_pg_tap_enabled and curr_pg_tap_enabled:
+                    raise ext_tap.ConsecutiveTapPPGNotSupported()
+                else:
+                    prev_pg_tap_enabled = curr_pg_tap_enabled
             query = self._model_query(context, PortChain)
             for port_chain_db in query.all():
                 if port_chain_db['id'] == pc_id:
@@ -571,6 +580,7 @@ class SfcDbPlugin(
             'description': port_pair_group['description'],
             'project_id': port_pair_group['project_id'],
             'port_pairs': [pp['id'] for pp in port_pair_group['port_pairs']],
+            'tap_enabled': port_pair_group['tap_enabled'],
             'port_pair_group_parameters': {
                 param['keyword']: jsonutils.loads(param['value'])
                 for k, param in
@@ -610,6 +620,8 @@ class SfcDbPlugin(
             portpairs_list = [self._get_port_pair(context, pp_id)
                               for pp_id in pg['port_pairs']]
             self._validate_pps_in_ppg(portpairs_list)
+            if pg['tap_enabled'] and len(portpairs_list) > 1:
+                raise ext_tap.MultiplePortPairsInTapPPGNotSupported()
             port_pair_group_parameters = {
                 key: PortPairGroupParam(
                     keyword=key, value=jsonutils.dumps(val))
@@ -636,7 +648,9 @@ class SfcDbPlugin(
                 project_id=project_id,
                 port_pairs=portpairs_list,
                 port_pair_group_parameters=port_pair_group_parameters,
-                group_id=group_id)
+                group_id=group_id,
+                tap_enabled=pg['tap_enabled']
+            )
             context.session.add(port_pair_group_db)
             return self._make_port_pair_group_dict(port_pair_group_db)
 
@@ -684,6 +698,8 @@ class SfcDbPlugin(
                               for pp_id in new_pg.get('port_pairs', [])]
             self._validate_pps_in_ppg(portpairs_list, id)
             old_pg = self._get_port_pair_group(context, id)
+            if old_pg['tap_enabled'] and len(portpairs_list) > 1:
+                raise ext_tap.MultiplePortPairsInTapPPGNotSupported()
             for k, v in new_pg.items():
                 if k == 'port_pairs':
                     port_pairs = [
