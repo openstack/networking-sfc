@@ -61,23 +61,13 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.mock_add_flow
         )
         self.add_flow.start()
-        self.add_flow_cookie = mock.patch(
-            'neutron.plugins.ml2.drivers.openvswitch.agent'
-            + '.ovs_agent_extension_api.OVSCookieBridge.add_flow',
-            self.mock_add_flow
-        )
-        self.add_flow_cookie.start()
-        self.delete_flows = mock.patch.object(
-            ovs_ext_lib.SfcOVSBridgeExt, "delete_flows",
+        self.delete_flows = mock.patch(
+            ("networking_sfc.services.sfc.common.ovs_ext_lib."
+             "SfcOVSBridgeExt.delete_flows"),
             self.mock_delete_flows
         )
         self.delete_flows.start()
-        self.delete_flows_cookie = mock.patch(
-            'neutron.plugins.ml2.drivers.openvswitch'
-            + '.agent.ovs_agent_extension_api.OVSCookieBridge.delete_flows',
-            self.mock_delete_flows
-        )
-        self.delete_flows_cookie.start()
+
         self.int_patch = 1
         self.tun_patch = 2
         self.default_port_mapping = {
@@ -164,8 +154,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.mock_apply_flows
         )
         self.apply_flows.start()
-        self.group_mapping = {}
-        self.deleted_groups = []
+
         self.dump_group_for_id = mock.patch.object(
             ovs_ext_lib.SfcOVSBridgeExt, "dump_group_for_id",
             self.mock_dump_group_for_id
@@ -194,17 +183,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.sfc_driver.consume_api(self.agent_api)
         self.sfc_driver.initialize()
 
-        self.default_flow_rules = [{
-            'actions': 'resubmit(,10)', 'eth_type': 34887,
-            'priority': 20, 'table': 0
-        }, {
-            'actions': 'drop', 'priority': 0, 'table': 10
-        }]
-        self.default_delete_flow_rules = [{
-            'table': 5
-        }, {
-            'table': 10
-        }]
+        self._clear_local_entries()
 
     def mock_delete_group(self, group_id):
         if group_id == 'all':
@@ -378,9 +357,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.execute.stop()
         self.set_protocols.stop()
         self.add_flow.stop()
-        self.add_flow_cookie.stop()
         self.delete_flows.stop()
-        self.delete_flows_cookie.stop()
         self.get_vif_port_by_id.stop()
         self.get_vlan_by_port.stop()
         self.get_port_ofport.stop()
@@ -445,7 +422,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
                 'dl_dst': '00:01:02:03:05:07',
                 'dl_type': 34887,
@@ -468,7 +445,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': 'strip_vlan, output:6',
                 'dl_dst': '00:01:02:03:05:07',
                 'dl_type': 34887,
@@ -515,7 +492,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
         self.assertEqual(
-            self.default_flow_rules + [],
+            [],
             self.added_flows
         )
         self.assertEqual(
@@ -583,7 +560,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_update_flow_rules_src_node_empty_next_hops_a_d(
             pc_corr, None)
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': 'normal',
                 'dl_type': 2048,
                 'in_port': 42,
@@ -598,7 +575,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.added_flows
         )
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -623,7 +600,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_update_flow_rules_src_node_empty_next_hops_a_d(
             'mpls', 'mpls')
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': 'normal',
                 'dl_type': 2048,
                 'in_port': 42,
@@ -638,7 +615,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.added_flows
         )
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -724,7 +701,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.executed_cmds
         )
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': 'normal',
                 'dl_type': 2048,
                 'in_port': 42,
@@ -747,7 +724,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.added_flows
         )
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -770,7 +747,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_update_flow_rules_sf_node_empty_next_hops_a_d(
             'mpls', 'mpls')
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': 'pop_mpls:0x0800,normal',
                 'dl_type': 34887,
                 'in_port': 42,
@@ -789,7 +766,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.added_flows
         )
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_type': 34887,
                 'in_port': 42,
                 'mpls_label': 65791,
@@ -867,7 +844,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_update_flow_rules_src_node_next_hops_add_fcs(
             'mpls', None)
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,'
                     'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
@@ -908,7 +885,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_update_flow_rules_src_node_next_hops_add_fcs(
             'mpls', 'mpls')
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
@@ -1008,7 +985,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_update_flow_rules_src_node_next_hops_same_host_a(
             'mpls', None)
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,'
                     'set_mpls_ttl:255,mod_vlan_vid:0,,resubmit(,10)'),
@@ -1049,7 +1026,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_update_flow_rules_src_node_next_hops_same_host_a(
             'mpls', 'mpls')
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
@@ -1159,7 +1136,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                                                                   None,
                                                                   None)
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,'
                     'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
@@ -1209,7 +1186,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                                                                   None,
                                                                   'mpls')
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
@@ -1312,7 +1289,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     self.executed_cmds
                 )
                 self.assertEqual(
-                    self.default_flow_rules + [{
+                    [{
                         'actions': 'normal',
                         'dl_type': 2048,
                         'in_port': 42,
@@ -1327,7 +1304,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     self.added_flows
                 )
                 self.assertEqual(
-                    self.default_delete_flow_rules + [{
+                    [{
                         'dl_type': 2048,
                         'in_port': 42,
                         'nw_dst': u'10.200.0.0/16',
@@ -1387,7 +1364,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     self.executed_cmds
                 )
                 self.assertEqual(
-                    self.default_flow_rules + [{
+                    [{
                         'actions': 'normal',
                         'dl_type': 2048,
                         'in_port': 32,
@@ -1402,7 +1379,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     self.added_flows
                 )
                 self.assertEqual(
-                    self.default_delete_flow_rules + [{
+                    [{
                         'dl_type': 2048,
                         'in_port': 32,
                         'nw_dst': u'10.100.0.0/16',
@@ -1425,7 +1402,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                                                                   'mpls',
                                                                   pp_corr_nh)
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
@@ -1541,7 +1518,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
             'mpls', None, None)
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
                     'mod_vlan_vid:0,,resubmit(,10)'),
@@ -1590,7 +1567,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
             'mpls', None, 'mpls')
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
@@ -1640,7 +1617,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_update_flow_rules_sf_node_next_hops_same_host_add_fcs(
             'mpls', 'mpls', pp_c_nh)
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
@@ -1853,7 +1830,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
 
     def _assert_update_flow_rules_sf_node_many_hops_no_proxy(self):
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
@@ -1914,7 +1891,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
     def test_update_flow_rules_sf_node_many_hops_not_all_mpls(self):
         self._prepare_update_flow_rules_sf_node_many_hops_not_all_mpls(None)
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
                     'mod_vlan_vid:0,,resubmit(,10)'),
@@ -1973,7 +1950,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
     def test_update_flow_rules_sf_node_many_hops_all_mpls(self):
         self._prepare_update_flow_rules_sf_node_many_hops_all_mpls(None)
         self.assertEqual(
-            self.default_flow_rules + [{
+            [{
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
@@ -2070,7 +2047,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
     def test_delete_flow_rules_sf_node_empty_del_fcs(self):
         self._prepare_delete_flow_rules_sf_node_empty_del_fcs('mpls', None)
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_dst': '00:01:02:03:05:07',
                 'dl_type': 34887,
                 'mpls_label': 65791,
@@ -2079,16 +2056,14 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.deleted_flows
         )
         self.assertEqual(
-            [
-                "all"
-            ],
+            [],
             self.deleted_groups
         )
 
     def test_delete_flow_rules_sf_node_empty_del_fcs_no_proxy(self):
         self._prepare_delete_flow_rules_sf_node_empty_del_fcs('mpls', 'mpls')
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_dst': '00:01:02:03:05:07',
                 'dl_type': 34887,
                 'mpls_label': 65791,
@@ -2097,9 +2072,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.deleted_flows
         )
         self.assertEqual(
-            [
-                "all"
-            ],
+            [],
             self.deleted_groups
         )
 
@@ -2147,13 +2120,11 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_delete_flow_rules_src_node_empty_del_fcs(pc_corr,
                                                                pp_corr)
         self.assertEqual(
-            self.default_delete_flow_rules + [],
+            [],
             self.deleted_flows
         )
         self.assertEqual(
-            [
-                "all"
-            ],
+            [],
             self.deleted_groups
         )
 
@@ -2215,7 +2186,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
     def test_delete_flow_rules_sf_node_del_fcs(self):
         self._prepare_delete_flow_rules_sf_node_del_fcs('mpls', None)
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -2234,16 +2205,14 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.deleted_flows
         )
         self.assertEqual(
-            [
-                "all"
-            ],
+            [],
             self.deleted_groups
         )
 
     def test_delete_flow_rules_sf_node_del_fcs_no_proxy(self):
         self._prepare_delete_flow_rules_sf_node_del_fcs('mpls', 'mpls')
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_type': 34887,
                 'in_port': 42,
                 'mpls_label': 65790,
@@ -2258,9 +2227,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.deleted_flows
         )
         self.assertEqual(
-            [
-                "all"
-            ],
+            [],
             self.deleted_groups
         )
 
@@ -2317,7 +2284,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_delete_flow_rules_src_node_del_fcs(pc_corr,
                                                          pp_corr)
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -2331,9 +2298,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.deleted_flows
         )
         self.assertEqual(
-            [
-                "all"
-            ],
+            [],
             self.deleted_groups
         )
 
@@ -2413,7 +2378,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                                                                    pp_corr,
                                                                    pp_corr_nh)
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -2430,7 +2395,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.deleted_flows
         )
         self.assertEqual(
-            ['all', 1],
+            [1],
             self.deleted_groups
         )
 
@@ -2517,7 +2482,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                                                                   None,
                                                                   pp_corr_nh)
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
@@ -2539,7 +2504,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.deleted_flows
         )
         self.assertEqual(
-            ['all', 1],
+            [1],
             self.deleted_groups
         )
 
@@ -2555,7 +2520,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                                                                   'mpls',
                                                                   pp_corr_nh)
         self.assertEqual(
-            self.default_delete_flow_rules + [{
+            [{
                 'dl_type': 34887,
                 'mpls_label': 65791,
                 'in_port': 42,
@@ -2573,7 +2538,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.deleted_flows
         )
         self.assertEqual(
-            ['all', 1],
+            [1],
             self.deleted_groups
         )
 
@@ -2584,6 +2549,10 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._test_delete_flow_rules_sf_node_next_hops_del_fcs_no_proxy('mpls')
 
     def test_init_agent_empty_flowrules(self):
+        # in setUp we call _clear_local_entries() so whatever was done
+        # during initialize() is lost ; here, we really want to check the
+        # _clear_sfc_flow_on_int_br done at initialize
+        self.sfc_driver._clear_sfc_flow_on_int_br()
         self.assertEqual(
             [{
                 'actions': 'resubmit(,10)',
@@ -2596,5 +2565,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 10
             }],
             self.added_flows
+        )
+        self.assertEqual(
+            ["all"],
+            self.deleted_groups
         )
         self.assertEqual({}, self.group_mapping)

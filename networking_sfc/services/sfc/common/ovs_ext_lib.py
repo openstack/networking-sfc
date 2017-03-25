@@ -12,13 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.agent.common import ovs_lib
 from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
     as ovs_consts
-from neutron.plugins.ml2.drivers.openvswitch.agent.ovs_agent_extension_api \
-    import OVSCookieBridge
 from neutron_lib import exceptions
 from oslo_log import log as logging
+import six
 
 from networking_sfc._i18n import _
 
@@ -47,32 +45,36 @@ def get_port_mask(min_port, max_port):
     return masks
 
 
-class SfcOVSBridgeExt(OVSCookieBridge):
+def decorate_run_ofctl(f, sfc_ovs_bridge):
+    @six.wraps(f)
+    def run_ofctl(cmd, args, process_input=None):
+        return f(cmd, ["-O " + sfc_ovs_bridge.of_version] + args,
+                 process_input)
+
+    return run_ofctl
+
+
+class SfcOVSBridgeExt(object):
 
     def __init__(self, ovs_bridge):
-        super(SfcOVSBridgeExt, self).__init__(ovs_bridge)
+        self.bridge = ovs_bridge
         # OpenFlow 1.1 for groups
         self.of_version = ovs_consts.OPENFLOW11
+
+        # this is so that our own run_ofctl is used when we call e.g. add_flows
+        # (proxying is not enough, because the proxied bridge would still call
+        # its own run_ofctl):
+        ovs_bridge.run_ofctl = decorate_run_ofctl(
+            ovs_bridge.run_ofctl,
+            self)
 
     def set_protocols(self, protocols):
         self.of_version = protocols[-1]
         self.bridge.set_protocols(protocols)
 
-    def run_ofctl(self, cmd, args, process_input=None):
-        return self.bridge.run_ofctl(
-            cmd, ["-O " + self.of_version] + args, process_input)
-
-    def do_action_flows(self, action, kwargs_list):
-        # We force our own run_ofctl to keep OpenFlow version parameter
-        for kw in kwargs_list:
-            kw.setdefault('cookie', self._cookie)
-
-            if action is 'mod' or action is 'del':
-                kw['cookie'] = ovs_lib.check_cookie_mask(str(kw['cookie']))
-
-        flow_strs = [ovs_lib._build_flow_expr_str(kw, action)
-                     for kw in kwargs_list]
-        self.run_ofctl('%s-flows' % action, ['-'], '\n'.join(flow_strs))
+    # proxy most methods to self.bridge
+    def __getattr__(self, name):
+        return getattr(self.bridge, name)
 
     def do_action_groups(self, action, kwargs_list):
         group_strs = [_build_group_expr_str(kw, action) for kw in kwargs_list]
