@@ -53,9 +53,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             spec=utils.execute)
         self.execute.start()
 
-        self.set_protocols = mock.patch(
-            'neutron.agent.common.ovs_lib.OVSBridge.set_protocols')
-        self.set_protocols.start()
+        self.use_at_least_protocol = mock.patch(
+            'neutron.agent.common.ovs_lib.OVSBridge.use_at_least_protocol')
+        self.use_at_least_protocol.start()
         self.add_flow = mock.patch(
             "neutron.agent.common.ovs_lib.OVSBridge.add_flow",
             self.mock_add_flow
@@ -354,7 +354,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
 
     def tearDown(self):
         self.execute.stop()
-        self.set_protocols.stop()
+        self.use_at_least_protocol.stop()
         self.add_flow.stop()
         self.delete_flows.stop()
         self.get_vif_port_by_id.stop()
