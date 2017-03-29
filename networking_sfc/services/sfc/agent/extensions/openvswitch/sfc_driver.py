@@ -335,6 +335,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             else:
                 self.br_int.delete_flows(table=ovs_consts.LOCAL_SWITCHING,
                                          priority=priority,
+                                         strict=True,
                                          **match_info)
 
     def _setup_egress_flow_rules(self, flowrule, match_inport=True):

@@ -105,20 +105,6 @@ class SfcOVSBridgeExt(object):
                                if 'NXST' not in item)
         return retval
 
-    def delete_flows(self, **kwargs):
-        # Run precision deletion with option --strict and priority
-        flow_expr_arr = []
-        for key, value in kwargs.items():
-            if key == "proto":
-                flow_expr_arr.append(value)
-            else:
-                flow_expr_arr.append("%s=%s" % (key, str(value)))
-        flow_str = ','.join(flow_expr_arr) + '\n'
-        if "priority" in flow_str:
-            self.run_ofctl('del-flows', ['--strict', '-'], flow_str)
-        else:
-            self.run_ofctl('del-flows', ['-'], flow_str)
-
 
 def _build_group_expr_str(group_dict, cmd):
     group_expr_arr = []

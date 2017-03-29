@@ -62,8 +62,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.add_flow.start()
         self.delete_flows = mock.patch(
-            ("networking_sfc.services.sfc.common.ovs_ext_lib."
-             "SfcOVSBridgeExt.delete_flows"),
+            "neutron.agent.common.ovs_lib.OVSBridge.delete_flows",
             self.mock_delete_flows
         )
         self.delete_flows.start()
@@ -584,7 +583,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'priority': 30,
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
+                'tp_src': '0x64/0xffff',
+                'strict': True,
             }],
             self.deleted_flows
         )
@@ -624,7 +624,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'priority': 30,
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
+                'tp_src': '0x64/0xffff',
+                'strict': True,
             }],
             self.deleted_flows
         )
@@ -733,7 +734,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'priority': 30,
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
+                'tp_src': '0x64/0xffff',
+                'strict': True,
             }],
             self.deleted_flows
         )
@@ -771,7 +773,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'in_port': 42,
                 'mpls_label': 65791,
                 'priority': 30,
-                'table': 0
+                'table': 0,
+                'strict': True,
             }],
             self.deleted_flows
         )
@@ -1387,7 +1390,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                         'nw_src': u'10.200.0.0/16',
                         'table': 0,
                         'tp_dst': '0x64/0xffff',
-                        'tp_src': '0x64/0xffff'
+                        'tp_src': '0x64/0xffff',
+                        'strict': True,
                     }],
                     self.deleted_flows
                 )
@@ -2195,7 +2199,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'priority': 30,
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
+                'tp_src': '0x64/0xffff',
+                'strict': True,
             }, {
                 'dl_dst': '00:01:02:03:05:07',
                 'dl_type': 34887,
@@ -2217,7 +2222,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'in_port': 42,
                 'mpls_label': 65790,
                 'priority': 30,
-                'table': 0
+                'table': 0,
+                'strict': True,
             }, {
                 'dl_dst': '00:01:02:03:05:07',
                 'dl_type': 34887,
@@ -2293,7 +2299,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'priority': 30,
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
+                'tp_src': '0x64/0xffff',
+                'strict': True,
             }],
             self.deleted_flows
         )
@@ -2387,7 +2394,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'priority': 30,
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
+                'tp_src': '0x64/0xffff',
+                'strict': True,
             }, {
                 'dl_dst': '12:34:56:78:cf:23',
                 'table': 5
@@ -2491,7 +2499,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'priority': 30,
                 'table': 0,
                 'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
+                'tp_src': '0x64/0xffff',
+                'strict': True,
             }, {
                 'dl_dst': '12:34:56:78:cf:23',
                 'table': 5
@@ -2525,7 +2534,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'mpls_label': 65791,
                 'in_port': 42,
                 'priority': 30,
-                'table': 0
+                'table': 0,
+                'strict': True,
             }, {
                 'dl_dst': '12:34:56:78:cf:23',
                 'table': 5
