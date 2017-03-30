@@ -29,7 +29,6 @@ from neutron_lib.db import model_base
 from neutron.db import common_db_mixin
 from neutron.db import models_v2
 
-from networking_sfc._i18n import _LI
 from networking_sfc.extensions import flowclassifier as fc_ext
 
 LOG = logging.getLogger(__name__)
@@ -339,4 +338,4 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
         except AssertionError:
             raise fc_ext.FlowClassifierInUse(id=id)
         except fc_ext.FlowClassifierNotFound:
-            LOG.info(_LI("Deleting a non-existing flow classifier."))
+            LOG.info("Deleting a non-existing flow classifier.")

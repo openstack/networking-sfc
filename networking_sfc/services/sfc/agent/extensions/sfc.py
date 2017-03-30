@@ -27,7 +27,6 @@ from neutron import manager
 from neutron_lib.agent import l2_extension
 
 from networking_sfc.services.sfc.drivers.ovs import rpc_topics as sfc_topics
-from networking_sfc._i18n import _LE, _LI
 
 LOG = logging.getLogger(__name__)
 
@@ -109,7 +108,7 @@ class SfcAgentExtension(l2_extension.L2AgentExtension):
                         flow, flowrule_status)
         except Exception as e:
             LOG.exception(e)
-            LOG.error(_LE("SFC L2 extension handle_port failed"))
+            LOG.error("SFC L2 extension handle_port failed")
             resync = True
 
         if flowrule_status:
@@ -122,13 +121,13 @@ class SfcAgentExtension(l2_extension.L2AgentExtension):
         """Handle agent SFC extension port delete."""
         port_id = port['port_id']
         resync = False
-        LOG.info(_LI("a device %s is removed"), port_id)
+        LOG.info("a device %s is removed", port_id)
         try:
             self._delete_ports_flowrules_by_id(context, port_id)
         except Exception as e:
             LOG.exception(e)
             LOG.error(
-                _LE("delete port flow rule failed for %(port_id)s"),
+                "delete port flow rule failed for %(port_id)s",
                 {'port_id': port_id}
             )
             resync = True
@@ -147,7 +146,7 @@ class SfcAgentExtension(l2_extension.L2AgentExtension):
                     flowrules, flowrule_status)
         except Exception as e:
             LOG.exception(e)
-            LOG.error(_LE("update_flow_rules failed"))
+            LOG.error("update_flow_rules failed")
 
         if flowrule_status:
             self.sfc_plugin_rpc.update_flowrules_status(
@@ -163,7 +162,7 @@ class SfcAgentExtension(l2_extension.L2AgentExtension):
                     flowrules, flowrule_status)
         except Exception as e:
             LOG.exception(e)
-            LOG.error(_LE("delete_flow_rules failed"))
+            LOG.error("delete_flow_rules failed")
 
         if flowrule_status:
             self.sfc_plugin_rpc.update_flowrules_status(
@@ -205,7 +204,7 @@ class SfcAgentExtension(l2_extension.L2AgentExtension):
                 "_delete_ports_flowrules_by_id received, count= %s", count)
         except Exception as e:
             LOG.exception(e)
-            LOG.error(_LE("delete_port_id_flows failed"))
+            LOG.error("delete_port_id_flows failed")
         if flowrule_status:
             self.sfc_plugin_rpc.update_flowrules_status(
                 context, flowrule_status)

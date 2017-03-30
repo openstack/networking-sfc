@@ -100,7 +100,7 @@ class PortPairPortNotFound(neutron_exc.NotFound):
 
 
 class PortPairIngressEgressDifferentHost(neutron_exc.InvalidInput):
-    message = _("Port Pair ingress port %(ingress)s and"
+    message = _("Port Pair ingress port %(ingress)s and "
                 "egress port %(egress)s not in the same host.")
 
 

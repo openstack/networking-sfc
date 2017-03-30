@@ -22,7 +22,6 @@ from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
     as ovs_consts
 from neutron.plugins.ml2.drivers.openvswitch.agent import vlanmanager
 
-from networking_sfc._i18n import _LE
 from networking_sfc.services.sfc.agent.extensions import sfc
 from networking_sfc.services.sfc.common import ovs_ext_lib
 from networking_sfc.services.sfc.drivers.ovs import constants
@@ -115,7 +114,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                                     'status': constants.STATUS_ERROR}
             flowrule_status.append(flowrule_status_temp)
             LOG.exception(e)
-            LOG.error(_LE("update_flow_rules failed"))
+            LOG.error("update_flow_rules failed")
 
     def delete_flow_rule(self, flowrule, flowrule_status):
         if flowrule['fwd_path'] is False and flowrule['node_type'] == \
@@ -165,7 +164,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                                     'status': constants.STATUS_ERROR}
             flowrule_status.append(flowrule_status_temp)
             LOG.exception(e)
-            LOG.error(_LE("delete_flow_rule failed"))
+            LOG.error("delete_flow_rule failed")
 
     def _clear_sfc_flow_on_int_br(self):
         self.br_int.delete_group(group_id='all')
@@ -225,9 +224,9 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             else:
                 nw_proto = None
         elif "IPv6" == flow_classifier['ethertype']:
-            LOG.error(_LE("Current portchain agent doesn't support IPv6"))
+            LOG.error("Current portchain agent doesn't support IPv6")
         else:
-            LOG.error(_LE("invalid protocol input"))
+            LOG.error("invalid protocol input")
         return (dl_type, nw_proto,
                 source_port_masks,
                 destination_port_masks)
@@ -237,7 +236,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         nw_src, nw_dst, tp_src, tp_dst = ((None, ) * 4)
 
         if "IPv4" != flow_classifier['ethertype']:
-            LOG.error(_LE("Current portchain agent only supports IPv4"))
+            LOG.error("Current portchain agent only supports IPv4")
             return flow_infos
 
         # parse and transfer flow info to match field info

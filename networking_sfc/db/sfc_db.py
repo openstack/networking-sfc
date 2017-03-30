@@ -29,7 +29,6 @@ from neutron.db import models_v2
 from neutron_lib.db import constants as db_const
 from neutron_lib.db import model_base
 
-from networking_sfc._i18n import _LI
 from networking_sfc.db import flowclassifier_db as fc_db
 from networking_sfc.extensions import flowclassifier as ext_fc
 from networking_sfc.extensions import sfc as ext_sfc
@@ -380,7 +379,7 @@ class SfcDbPlugin(
                 pc = self._get_port_chain(context, id)
                 context.session.delete(pc)
         except ext_sfc.PortChainNotFound:
-            LOG.info(_LI("Deleting a non-existing port chain."))
+            LOG.info("Deleting a non-existing port chain.")
 
     @log_helpers.log_method_call
     def update_port_chain(self, context, id, port_chain):
@@ -523,7 +522,7 @@ class SfcDbPlugin(
                     raise ext_sfc.PortPairInUse(id=id)
                 context.session.delete(pp)
         except ext_sfc.PortPairNotFound:
-            LOG.info(_LI("Deleting a non-existing port pair."))
+            LOG.info("Deleting a non-existing port pair.")
 
     def _make_port_pair_group_dict(self, port_pair_group, fields=None):
         res = {
@@ -655,4 +654,4 @@ class SfcDbPlugin(
                     raise ext_sfc.PortPairGroupInUse(id=id)
                 context.session.delete(pg)
         except ext_sfc.PortPairGroupNotFound:
-            LOG.info(_LI("Deleting a non-existing port pair group."))
+            LOG.info("Deleting a non-existing port pair group.")

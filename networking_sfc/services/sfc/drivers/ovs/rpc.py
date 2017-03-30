@@ -18,7 +18,6 @@ import oslo_messaging
 from neutron.common import rpc as n_rpc
 from neutron.common import topics
 
-from networking_sfc._i18n import _LI
 from networking_sfc.services.sfc.drivers.ovs import rpc_topics as sfc_topics
 
 LOG = logging.getLogger(__name__)
@@ -42,7 +41,7 @@ class SfcRpcCallback(object):
 
     def update_flowrules_status(self, context, **kwargs):
         flowrules_status = kwargs.get('flowrules_status')
-        LOG.info(_LI('update_flowrules_status: %s'), flowrules_status)
+        LOG.info('update_flowrules_status: %s', flowrules_status)
         for flowrule_dict in flowrules_status:
             self.driver.update_flowrule_status(context,
                                                flowrule_dict['id'],

@@ -16,7 +16,6 @@ from oslo_config import cfg
 from oslo_log import log
 from stevedore.named import NamedExtensionManager
 
-from networking_sfc._i18n import _LE, _LI
 from networking_sfc.services.sfc.common import exceptions as sfc_exc
 
 
@@ -36,12 +35,12 @@ class SfcDriverManager(NamedExtensionManager):
         # Ordered list of sfc drivers, defining
         # the order in which the drivers are called.
         self.ordered_drivers = []
-        LOG.info(_LI("Configured SFC drivers: %s"), names)
+        LOG.info("Configured SFC drivers: %s", names)
         super(SfcDriverManager, self).__init__(namespace,
                                                names,
                                                invoke_on_load=True,
                                                name_order=True)
-        LOG.info(_LI("Loaded SFC drivers: %s"), self.names())
+        LOG.info("Loaded SFC drivers: %s", self.names())
         self._register_drivers()
 
     @classmethod
@@ -76,14 +75,14 @@ class SfcDriverManager(NamedExtensionManager):
         for ext in self:
             self.drivers[ext.name] = ext
             self.ordered_drivers.append(ext)
-        LOG.info(_LI("Registered SFC drivers: %s"),
+        LOG.info("Registered SFC drivers: %s",
                  [driver.name for driver in self.ordered_drivers])
 
     def initialize(self):
         # ServiceChain bulk operations requires each driver to support them
         self.native_bulk_support = True
         for driver in self.ordered_drivers:
-            LOG.info(_LI("Initializing SFC driver '%s'"), driver.name)
+            LOG.info("Initializing SFC driver '%s'", driver.name)
             driver.obj.initialize()
             self.native_bulk_support &= getattr(driver.obj,
                                                 'native_bulk_support', True)
@@ -103,7 +102,7 @@ class SfcDriverManager(NamedExtensionManager):
                 # This is an internal failure.
                 LOG.exception(e)
                 LOG.error(
-                    _LE("SFC driver '%(name)s' failed in %(method)s"),
+                    "SFC driver '%(name)s' failed in %(method)s",
                     {'name': driver.name, 'method': method_name}
                 )
                 if raise_orig_exc:
