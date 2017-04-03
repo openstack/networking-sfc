@@ -17,7 +17,6 @@ from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from networking_sfc._i18n import _LE
 from networking_sfc.db import flowclassifier_db as fc_db
 from networking_sfc.extensions import flowclassifier as fc_ext
 from networking_sfc.services.flowclassifier.common import context as fc_ctx
@@ -58,8 +57,8 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
         except fc_exc.FlowClassifierDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Create flow classifier failed, "
-                              "deleting flow_classifier '%s'"),
+                LOG.error("Create flow classifier failed, "
+                          "deleting flow_classifier '%s'",
                           fc_db['id'])
                 self.delete_flow_classifier(context, fc_db['id'])
         return fc_db
@@ -82,8 +81,8 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
         except fc_exc.FlowClassifierDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Update flow classifier failed, "
-                              "flow_classifier '%s'"),
+                LOG.error("Update flow classifier failed, "
+                          "flow_classifier '%s'",
                           updated_fc['id'])
 
         return updated_fc
@@ -97,8 +96,8 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
         except fc_exc.FlowClassfierDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Delete flow classifier failed, "
-                              "flow_classifier '%s'"),
+                LOG.error("Delete flow classifier failed, "
+                          "flow_classifier '%s'",
                           fc_id)
 
         with context.session.begin(subtransactions=True):

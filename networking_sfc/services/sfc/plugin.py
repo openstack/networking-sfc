@@ -16,7 +16,6 @@ from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from networking_sfc._i18n import _LE
 from networking_sfc.db import sfc_db
 from networking_sfc.extensions import sfc as sfc_ext
 from networking_sfc.services.sfc.common import context as sfc_ctx
@@ -53,8 +52,8 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Create port chain failed, "
-                              "deleting port_chain '%s'"),
+                LOG.error("Create port chain failed, "
+                          "deleting port_chain '%s'",
                           port_chain_db['id'])
                 self.delete_port_chain(context, port_chain_db['id'])
 
@@ -78,7 +77,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Update port chain failed, port_chain '%s'"),
+                LOG.error("Update port chain failed, port_chain '%s'",
                           updated_portchain['id'])
 
         # TODO(qijing): should we rollback the database update here?
@@ -93,7 +92,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Delete port chain failed, portchain '%s'"),
+                LOG.error("Delete port chain failed, portchain '%s'",
                           portchain_id)
 
         # TODO(qijing): unsync in case deleted in driver but fail in database
@@ -118,8 +117,8 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Create port pair failed, "
-                              "deleting port_pair '%s'"),
+                LOG.error("Create port pair failed, "
+                          "deleting port_pair '%s'",
                           portpair_db['id'])
                 self.delete_port_pair(context, portpair_db['id'])
 
@@ -140,7 +139,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Update port pair failed, port_pair '%s'"),
+                LOG.error("Update port pair failed, port_pair '%s'",
                           updated_portpair['id'])
 
         return updated_portpair
@@ -155,7 +154,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Delete port pair failed, port_pair '%s'"),
+                LOG.error("Delete port pair failed, port_pair '%s'",
                           portpair_id)
 
         with context.session.begin(subtransactions=True):
@@ -181,8 +180,8 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Create port pair group failed, "
-                              "deleting port_pair_group '%s'"),
+                LOG.error("Create port pair group failed, "
+                          "deleting port_pair_group '%s'",
                           portpairgroup_db['id'])
                 self.delete_port_pair_group(context, portpairgroup_db['id'])
 
@@ -209,8 +208,8 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Update port pair group failed, "
-                              "port_pair_group '%s'"),
+                LOG.error("Update port pair group failed, "
+                          "port_pair_group '%s'",
                           updated_portpairgroup['id'])
 
         return updated_portpairgroup
@@ -225,8 +224,8 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Delete port pair group failed, "
-                              "port_pair_group '%s'"),
+                LOG.error("Delete port pair group failed, "
+                          "port_pair_group '%s'",
                           portpairgroup_id)
 
         with context.session.begin(subtransactions=True):

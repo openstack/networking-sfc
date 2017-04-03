@@ -27,7 +27,6 @@ from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 
-from networking_sfc._i18n import _LE, _LW
 from networking_sfc.extensions import flowclassifier
 from networking_sfc.extensions import sfc
 from networking_sfc.services.sfc.common import exceptions as exc
@@ -71,13 +70,13 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         agent_ip = l2pop_db.get_agent_ip(agent)
         if not agent_ip:
-            LOG.warning(_LW("Unable to retrieve the agent ip, check the agent "
-                            "configuration."))
+            LOG.warning("Unable to retrieve the agent ip, check the agent "
+                        "configuration.")
             return
 
         if not segment:
-            LOG.warning(_LW("Port %(port)s updated by agent %(agent)s "
-                            "isn't bound to any segment"),
+            LOG.warning("Port %(port)s updated by agent %(agent)s "
+                        "isn't bound to any segment",
                         {'port': port['id'], 'agent': agent})
             return
 
@@ -321,7 +320,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         path_id = port_chain['chain_id']
 
         if not path_id:
-            LOG.error(_LE('No path_id available for creating port chain path'))
+            LOG.error('No path_id available for creating port chain path')
             return
 
         port_pair_groups = port_chain['port_pair_groups']
@@ -345,7 +344,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     subnet2 = self._get_subnet_by_port(pd1['ingress'])
                     cidr2 = subnet2['cidr']
                     if cidr1 != cidr2:
-                        LOG.error(_LE('Cross-subnet chain not supported'))
+                        LOG.error('Cross-subnet chain not supported')
                         raise exc.SfcDriverError(
                             method='create_portchain_path')
 
@@ -377,7 +376,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                         subnet2 = self._get_subnet_by_port(pd2['ingress'])
                         cidr4 = subnet2['cidr']
                         if cidr3 != cidr4:
-                            LOG.error(_LE('Cross-subnet chain not supported'))
+                            LOG.error('Cross-subnet chain not supported')
                             raise exc.SfcDriverError(
                                 method='create_portchain_path')
 
@@ -720,7 +719,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             directory.get_plugin(flowclassifier.FLOW_CLASSIFIER_EXT)
         )
         if not fc_plugin:
-            LOG.warning(_LW("Not found the flow classifier service plugin"))
+            LOG.warning("Not found the flow classifier service plugin")
             return flow_classifiers
 
         for fc_id in fc_ids:
@@ -982,10 +981,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             segment_id = network_info['provider:segmentation_id']
 
         if network_type != np_const.TYPE_VXLAN:
-            LOG.warning(_LW("Currently only support vxlan network"))
+            LOG.warning("Currently only support vxlan network")
             return ((None, ) * 5)
         elif not host_id:
-            LOG.warning(_LW("This port has not been binding"))
+            LOG.warning("This port has not been binding")
             return ((None, ) * 5)
         else:
             driver = core_plugin.type_manager.drivers.get(network_type)
@@ -1106,7 +1105,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         except Exception as e:
             LOG.exception(e)
-            LOG.error(_LE("get_flowrules_by_host_portid failed"))
+            LOG.error("get_flowrules_by_host_portid failed")
 
     def update_flowrule_status(self, context, id, status):
         """FIXME
@@ -1125,7 +1124,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         #     self.update_path_node(id, flowrule_status)
         # except Exception as e:
         #     LOG.exception(e)
-        #     LOG.error(_LE("update_flowrule_status failed"))
+        #     LOG.error("update_flowrule_status failed")
 
     def _update_portchain_group_reference_count(self, flow_rule, host):
         group_refcnt = 0

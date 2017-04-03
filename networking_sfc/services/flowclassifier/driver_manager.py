@@ -16,7 +16,6 @@ from oslo_config import cfg
 from oslo_log import log
 from stevedore.named import NamedExtensionManager
 
-from networking_sfc._i18n import _LE, _LI
 from networking_sfc.services.flowclassifier.common import exceptions as fc_exc
 
 
@@ -36,13 +35,13 @@ class FlowClassifierDriverManager(NamedExtensionManager):
         # Ordered list of flow classifier drivers, defining
         # the order in which the drivers are called.
         self.ordered_drivers = []
-        LOG.info(_LI("Configured Flow Classifier drivers: %s"), names)
+        LOG.info("Configured Flow Classifier drivers: %s", names)
         super(FlowClassifierDriverManager, self).__init__(
             namespace,
             names,
             invoke_on_load=True,
             name_order=True)
-        LOG.info(_LI("Loaded Flow Classifier drivers: %s"),
+        LOG.info("Loaded Flow Classifier drivers: %s",
                  self.names())
         self._register_drivers()
 
@@ -78,14 +77,14 @@ class FlowClassifierDriverManager(NamedExtensionManager):
         for ext in self:
             self.drivers[ext.name] = ext
             self.ordered_drivers.append(ext)
-        LOG.info(_LI("Registered Flow Classifier drivers: %s"),
+        LOG.info("Registered Flow Classifier drivers: %s",
                  [driver.name for driver in self.ordered_drivers])
 
     def initialize(self):
         # ServiceChain bulk operations requires each driver to support them
         self.native_bulk_support = True
         for driver in self.ordered_drivers:
-            LOG.info(_LI("Initializing Flow Classifier driver '%s'"),
+            LOG.info("Initializing Flow Classifier driver '%s'",
                      driver.name)
             driver.obj.initialize()
             self.native_bulk_support &= getattr(driver.obj,
@@ -106,8 +105,8 @@ class FlowClassifierDriverManager(NamedExtensionManager):
                 # This is an internal failure.
                 LOG.exception(e)
                 LOG.error(
-                    _LE("Flow Classifier driver '%(name)s' "
-                        "failed in %(method)s"),
+                    "Flow Classifier driver '%(name)s' "
+                    "failed in %(method)s",
                     {'name': driver.name, 'method': method_name}
                 )
                 if raise_orig_exc:
