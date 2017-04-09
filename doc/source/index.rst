@@ -56,6 +56,9 @@ Networking-SFC Internals
    ovs_driver_and_agent_workflow
    command_extensions
    alembic_migration
+   sfc_ovn_driver
+   ovs_symmetric_port_chain
+   sfc_port_chain_tap
 
 Indices and tables
 ------------------
