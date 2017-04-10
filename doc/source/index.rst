@@ -52,7 +52,7 @@ Networking-SFC Internals
    :maxdepth: 2
 
    api
-   system_design and_workflow
+   system_design_and_workflow
    ovs_driver_and_agent_workflow
    command_extensions
    alembic_migration
