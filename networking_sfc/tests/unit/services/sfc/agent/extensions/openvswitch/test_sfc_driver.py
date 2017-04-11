@@ -547,7 +547,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'id': uuidutils.generate_uuid(),
                 'fwd_path': True,
                 'pc_corr': pc_corr,
-                'pp_corr': pp_corr,
+                'pp_corr': pp_corr
             },
             status
         )
@@ -831,7 +831,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 }],
                 'id': uuidutils.generate_uuid(),
                 'fwd_path': True,
-                'pc_corr': pc_corr
+                'pc_corr': pc_corr,
+                'pp_corr': None
             },
             status
         )
@@ -889,7 +890,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'dl_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
@@ -972,7 +973,8 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 }],
                 'id': uuidutils.generate_uuid(),
                 'fwd_path': True,
-                'pc_corr': pc_corr
+                'pc_corr': pc_corr,
+                'pp_corr': None
             },
             status
         )
@@ -1030,7 +1032,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'dl_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
@@ -1190,7 +1192,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'dl_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
@@ -1406,7 +1408,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'dl_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
@@ -1571,7 +1573,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'dl_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
@@ -1621,7 +1623,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'dl_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
@@ -1834,14 +1836,14 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'dl_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:ab:cd',
-                'dl_type': 2048,
+                'dl_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
@@ -1954,14 +1956,14 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'dl_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:ab:cd',
-                'dl_type': 2048,
+                'dl_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
