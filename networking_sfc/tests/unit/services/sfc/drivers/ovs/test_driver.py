@@ -1583,28 +1583,30 @@ class OVSSfcDriverTestCase(
                                 'src_node')
                             add_fcs = update_flow_rules[flow3]['add_fcs']
                             self.assertEqual(len(add_fcs), 2)
-                            self.assertDictContainsSubset({
-                                'destination_ip_prefix': None,
-                                'destination_port_range_max': None,
-                                'destination_port_range_min': None,
-                                'ethertype': 'IPv4',
-                                'l7_parameters': {},
-                                'protocol': None,
-                                'source_ip_prefix': ip_src1,
-                                'source_port_range_max': None,
-                                'source_port_range_min': None
-                            }, add_fcs[0])
-                            self.assertDictContainsSubset({
-                                'destination_ip_prefix': None,
-                                'destination_port_range_max': None,
-                                'destination_port_range_min': None,
-                                'ethertype': 'IPv4',
-                                'l7_parameters': {},
-                                'protocol': None,
-                                'source_ip_prefix': ip_src2,
-                                'source_port_range_max': None,
-                                'source_port_range_min': None
-                            }, add_fcs[1])
+                            self._assert_flow_classifiers_match_subsets(
+                                add_fcs,
+                                [{
+                                    'destination_ip_prefix': None,
+                                    'destination_port_range_max': None,
+                                    'destination_port_range_min': None,
+                                    'ethertype': 'IPv4',
+                                    'l7_parameters': {},
+                                    'protocol': None,
+                                    'source_ip_prefix': ip_src1,
+                                    'source_port_range_max': None,
+                                    'source_port_range_min': None
+                                }, {
+                                    'destination_ip_prefix': None,
+                                    'destination_port_range_max': None,
+                                    'destination_port_range_min': None,
+                                    'ethertype': 'IPv4',
+                                    'l7_parameters': {},
+                                    'protocol': None,
+                                    'source_ip_prefix': ip_src2,
+                                    'source_port_range_max': None,
+                                    'source_port_range_min': None
+                                }],
+                                'source_ip_prefix')
                             next_hops = self.next_hops_info(
                                 update_flow_rules[flow3].get('next_hops'))
                             self.assertEqual(
@@ -4397,28 +4399,30 @@ class OVSSfcDriverTestCase(
                                 'src_node')
                             add_fcs = flow_rules[flow3]['add_fcs']
                             self.assertEqual(len(add_fcs), 2)
-                            self.assertDictContainsSubset({
-                                'destination_ip_prefix': None,
-                                'destination_port_range_max': None,
-                                'destination_port_range_min': None,
-                                'ethertype': u'IPv4',
-                                'l7_parameters': {},
-                                'protocol': None,
-                                'source_ip_prefix': ip_src1,
-                                'source_port_range_max': None,
-                                'source_port_range_min': None
-                            }, add_fcs[0])
-                            self.assertDictContainsSubset({
-                                'destination_ip_prefix': None,
-                                'destination_port_range_max': None,
-                                'destination_port_range_min': None,
-                                'ethertype': u'IPv4',
-                                'l7_parameters': {},
-                                'protocol': None,
-                                'source_ip_prefix': ip_src2,
-                                'source_port_range_max': None,
-                                'source_port_range_min': None
-                            }, add_fcs[1])
+                            self._assert_flow_classifiers_match_subsets(
+                                add_fcs,
+                                [{
+                                    'destination_ip_prefix': None,
+                                    'destination_port_range_max': None,
+                                    'destination_port_range_min': None,
+                                    'ethertype': u'IPv4',
+                                    'l7_parameters': {},
+                                    'protocol': None,
+                                    'source_ip_prefix': ip_src1,
+                                    'source_port_range_max': None,
+                                    'source_port_range_min': None
+                                }, {
+                                    'destination_ip_prefix': None,
+                                    'destination_port_range_max': None,
+                                    'destination_port_range_min': None,
+                                    'ethertype': u'IPv4',
+                                    'l7_parameters': {},
+                                    'protocol': None,
+                                    'source_ip_prefix': ip_src2,
+                                    'source_port_range_max': None,
+                                    'source_port_range_min': None
+                                }],
+                                'source_ip_prefix')
                             next_hops = self.next_hops_info(
                                 flow_rules[flow3].get('next_hops'))
                             self.assertEqual(
@@ -4957,17 +4961,19 @@ class OVSSfcDriverTestCase(
                                 'src_node')
                             add_fcs = update_flow_rules[flow2]['add_fcs']
                             self.assertEqual(len(add_fcs), 2)
-                            self.assertDictContainsSubset({
-                                'destination_ip_prefix': '10.200.0.0/16',
-                                'destination_port_range_max': 400,
-                                'destination_port_range_min': 300,
-                                'ethertype': 'IPv4',
-                                'l7_parameters': {},
-                                'protocol': 'tcp',
-                                'source_ip_prefix': '10.100.0.0/16',
-                                'source_port_range_max': 200,
-                                'source_port_range_min': 100
-                            }, add_fcs[0])
+                            self._assert_flow_classifiers_match_subsets(
+                                add_fcs,
+                                [{
+                                    'destination_ip_prefix': '10.200.0.0/16',
+                                    'destination_port_range_max': 400,
+                                    'destination_port_range_min': 300,
+                                    'ethertype': 'IPv4',
+                                    'l7_parameters': {},
+                                    'protocol': 'tcp',
+                                    'source_ip_prefix': '10.100.0.0/16',
+                                    'source_port_range_max': 200,
+                                    'source_port_range_min': 100
+                                }] * 2)
                             next_hops = self.next_hops_info(
                                 update_flow_rules[flow2].get('next_hops'))
                             self.assertEqual(
@@ -5003,17 +5009,19 @@ class OVSSfcDriverTestCase(
                                 'src_node')
                             add_fcs = update_flow_rules[flow4]['add_fcs']
                             self.assertEqual(len(add_fcs), 2)
-                            self.assertDictContainsSubset({
-                                'destination_ip_prefix': '10.200.0.0/16',
-                                'destination_port_range_max': 400,
-                                'destination_port_range_min': 300,
-                                'ethertype': 'IPv4',
-                                'l7_parameters': {},
-                                'protocol': 'tcp',
-                                'source_ip_prefix': '10.100.0.0/16',
-                                'source_port_range_max': 200,
-                                'source_port_range_min': 100
-                            }, add_fcs[0])
+                            self._assert_flow_classifiers_match_subsets(
+                                add_fcs,
+                                [{
+                                    'destination_ip_prefix': '10.200.0.0/16',
+                                    'destination_port_range_max': 400,
+                                    'destination_port_range_min': 300,
+                                    'ethertype': 'IPv4',
+                                    'l7_parameters': {},
+                                    'protocol': 'tcp',
+                                    'source_ip_prefix': '10.100.0.0/16',
+                                    'source_port_range_max': 200,
+                                    'source_port_range_min': 100
+                                }] * 2)
                             next_hops = self.next_hops_info(
                                 update_flow_rules[flow4].get('next_hops'))
                             self.assertEqual(
