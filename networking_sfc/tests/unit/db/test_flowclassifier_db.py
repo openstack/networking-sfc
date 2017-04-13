@@ -101,6 +101,18 @@ class FlowClassifierDbPluginTestCaseBase(base.BaseTestCase):
         }
         return expected_flow_classifier
 
+    def _assert_flow_classifiers_match_subsets(self, flow_classifiers,
+                                               subsets, sort_key=None):
+        # Sort both lists
+        if sort_key:
+            flow_classifiers.sort(key=lambda fc: fc[sort_key])
+            subsets.sort(key=lambda fc: fc[sort_key])
+        for fc, subset in zip(flow_classifiers, subsets):
+            # Get matching items from subset
+            sub_fc = dict([(k, fc[k]) for k
+                           in subset.keys() if k in fc.keys()])
+            self.assertEqual(subset, sub_fc)
+
     def _test_create_flow_classifier(
         self, flow_classifier, expected_flow_classifier=None
     ):
