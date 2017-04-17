@@ -181,7 +181,9 @@ class SfcDbPluginTestCaseBase(
             'port_pairs': port_pair_group.get('port_pairs') or [],
             'port_pair_group_parameters': port_pair_group.get(
                 'port_pair_group_parameters'
-            ) or {'lb_fields': []}
+            ) or {'lb_fields': [],
+                  'ppg_n_tuple_mapping': {'ingress_n_tuple': {},
+                                          'egress_n_tuple': {}}}
         }
         if port_pair_group.get('group_id'):
             ret['group_id'] = port_pair_group['group_id']
@@ -1281,7 +1283,10 @@ class SfcDbPluginTestCase(
             'description': 'desc1',
             'port_pairs': [],
             'port_pair_group_parameters': {
-                'lb_fields': ['ip_src', 'ip_dst']
+                'lb_fields': ['ip_src', 'ip_dst'],
+                'ppg_n_tuple_mapping': {
+                    'ingress_n_tuple': {'source_ip_prefix': None},
+                    'egress_n_tuple': {'destination_ip_prefix': None}}
             }
         })
 
@@ -1307,7 +1312,8 @@ class SfcDbPluginTestCase(
             'description': 'desc1',
             'port_pairs': [],
             'port_pair_group_parameters': {
-                'lb_fields': []
+                'lb_fields': [],
+                'ppg_n_tuple_mapping': {}
             }
         })
 

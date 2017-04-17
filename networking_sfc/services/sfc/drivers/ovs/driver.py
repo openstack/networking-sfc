@@ -401,7 +401,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     'status': ovs_const.STATUS_BUILDING,
                     'next_group_id': next_group_intid,
                     'next_hop': jsonutils.dumps(next_group_members),
-                    'fwd_path': fwd_path
+                    'fwd_path': fwd_path,
+                    'ppg_n_tuple_mapping': None
                     }
         src_node = self.create_path_node(src_args)
         LOG.debug('create src node: %s', src_node)
@@ -417,7 +418,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             'status': ovs_const.STATUS_BUILDING,
             'next_group_id': None,
             'next_hop': None,
-            'fwd_path': fwd_path
+            'fwd_path': fwd_path,
+            'ppg_n_tuple_mapping': None
         }
         dst_node = self.create_path_node(dst_args)
         LOG.debug('create dst node: %s', dst_node)
@@ -430,6 +432,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             src_node
         )
 
+        curr_group = context._plugin.get_port_pair_group(
+            context._plugin_context, port_pair_groups[0])
         for i in range(sf_path_length):
             cur_group_members = next_group_members
             # next_group for next hop
@@ -450,6 +454,30 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 next_group_intid = None
                 next_group_members = None
 
+            # Get current port_pair_group based on current port_pair_group id
+            if i < sf_path_length:
+                if fwd_path:
+                    curr_group = context._plugin.get_port_pair_group(
+                        context._plugin_context, port_pair_groups[i])
+                elif fwd_path is False:
+                    curr_group = context._plugin.get_port_pair_group(
+                        context._plugin_context,
+                        port_pair_groups[sf_path_length - 1 - i])
+
+            # Set curr_ppg_flag = 1, when current port_pair_group has
+            # ppg_n_tuple_mapping dict in port_pair_group_parameters
+            ppg_n_tuple_mapping = curr_group.get(
+                'port_pair_group_parameters', None)
+            if ppg_n_tuple_mapping:
+                ppg_n_tuple_mapping = ppg_n_tuple_mapping.get(
+                    'ppg_n_tuple_mapping', None)
+                if ppg_n_tuple_mapping:
+                    if ppg_n_tuple_mapping.get('ingress_n_tuple', None) or \
+                            ppg_n_tuple_mapping.get('egress_n_tuple', None):
+                        ppg_n_tuple_mapping['curr_ppg_flag'] = 1
+                    else:
+                        ppg_n_tuple_mapping = None
+
             # Create a node object
             node_args = {
                 'project_id': port_chain['project_id'],
@@ -464,6 +492,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     jsonutils.dumps(next_group_members)
                 ),
                 'fwd_path': fwd_path,
+                'ppg_n_tuple_mapping': (
+                    None if not ppg_n_tuple_mapping else
+                    jsonutils.dumps(ppg_n_tuple_mapping))
             }
             sf_node = self.create_path_node(node_args)
             LOG.debug('chain path node: %s', sf_node)
@@ -479,6 +510,83 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 sf_node['portpair_details'].append(member['portpair_id'])
             path_nodes.append(sf_node)
 
+            path_nodes = self._update_ppg_n_tuple_in_flow_rule(
+                path_nodes, fwd_path, sf_path_length)
+
+        return path_nodes
+
+    # Function to update adjacent node ppg_n_tuple_mapping values if have
+    # ppg_n_tuple_mapping in path_nodes
+    def _update_ppg_n_tuple_in_flow_rule(self, path_nodes,
+                                         fwd_path, sf_path_length):
+        for index, node in enumerate(path_nodes):
+            if not node['ppg_n_tuple_mapping']:
+                # Update reverse SRC_NODE ppg_n_tuple_mapping based on last
+                # forward SF_NODE ppg_n_tuple_mapping
+                if (
+                    node['node_type'] == ovs_const.SRC_NODE and
+                    fwd_path is False
+                ):
+                    last_fwd_sf_node = self.get_path_node_by_filter(
+                        filters={'portchain_id': node['portchain_id'],
+                                 'nsi': 0xff - sf_path_length,
+                                 'fwd_path': True}
+                    )
+                    if last_fwd_sf_node:
+                        if last_fwd_sf_node['ppg_n_tuple_mapping']:
+                            ppg_n_tuple_mapping = jsonutils.loads(
+                                last_fwd_sf_node['ppg_n_tuple_mapping'])
+                            if (
+                                ppg_n_tuple_mapping.get(
+                                    'ingress_n_tuple', None) or
+                                ppg_n_tuple_mapping.get('egress_n_tuple', None)
+                            ):
+                                # Set curr_ppg_flag = 2 when
+                                # ppg_n_tuple_mapping inherits from
+                                # last_fwd_sf_node
+                                ppg_n_tuple_mapping['curr_ppg_flag'] = 2
+                                node = self.update_path_node(
+                                    node['id'],
+                                    {'ppg_n_tuple_mapping':
+                                     None if not ppg_n_tuple_mapping else
+                                     jsonutils.dumps(ppg_n_tuple_mapping)}
+                                )
+                                path_nodes[index] = node
+                # Update SF_NODE ppg_n_tuple_mapping based on current
+                # ppg_n_tuple_mapping and prev_node ppg_n_tuple_mapping
+                elif node['node_type'] == ovs_const.SF_NODE:
+                    if node['nsi'] == 0xfe:
+                        prev_node = path_nodes[index - 2]
+                    else:
+                        prev_node = path_nodes[index - 1]
+                    if prev_node:
+                        if prev_node['ppg_n_tuple_mapping']:
+                            ppg_n_tuple_mapping = jsonutils.loads(
+                                prev_node['ppg_n_tuple_mapping'])
+                            # Set curr_ppg_flag = 2 when
+                            # ppg_n_tuple_mapping inherits from previous
+                            # sf_node. Set curr_ppg_flag = 3 when
+                            # ppg_n_tuple_mapping inherits from previous
+                            # sf_node, and fwd_path is False
+                            if (
+                                ppg_n_tuple_mapping.get(
+                                    'ingress_n_tuple', None) or
+                                ppg_n_tuple_mapping.get('egress_n_tuple', None)
+                            ):
+                                if (
+                                    ppg_n_tuple_mapping['curr_ppg_flag'] == 1
+                                    and fwd_path is False
+                                ):
+                                    ppg_n_tuple_mapping['curr_ppg_flag'] = 3
+                                else:
+                                    ppg_n_tuple_mapping['curr_ppg_flag'] = 2
+                                node = self.update_path_node(
+                                    node['id'],
+                                    {'ppg_n_tuple_mapping':
+                                     None if not ppg_n_tuple_mapping else
+                                     jsonutils.dumps(ppg_n_tuple_mapping)}
+                                )
+                                path_nodes[index] = node
         return path_nodes
 
     def _delete_path_node_port_flowrule(self, node, port, pc_corr, fc_ids):
@@ -657,6 +765,23 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                         new_fc['destination_ip_prefix'] = (
                             dst_ips[0]['ip_address']
                         )
+            # Update new_fc n tuple info based flow_rule['ppg_n_tuple_mapping']
+            # and flow_rule['fwd_path']
+            if flow_rule['ppg_n_tuple_mapping']:
+                ppg_n_tuple_mapping = jsonutils.loads(
+                    flow_rule['ppg_n_tuple_mapping'])
+                if (
+                    flow_rule['fwd_path'] is False and
+                    ppg_n_tuple_mapping['curr_ppg_flag'] == 1 or
+                    ppg_n_tuple_mapping['curr_ppg_flag'] == 3
+                ):
+                    for ingress_key, ingress_value in \
+                            ppg_n_tuple_mapping['ingress_n_tuple'].items():
+                        new_fc[ingress_key] = ingress_value
+                else:
+                    for egress_key, egress_value in \
+                            ppg_n_tuple_mapping['egress_n_tuple'].items():
+                        new_fc[egress_key] = egress_value
 
             if flow_rule['fwd_path'] is False:
                 # swap logical_source_port & logical_destination_port

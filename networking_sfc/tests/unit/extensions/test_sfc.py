@@ -347,7 +347,9 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             'project_id': port_pair_group['project_id'],
             'port_pair_group_parameters': port_pair_group.get(
                 'port_pair_group_parameters'
-            ) or {'lb_fields': []}
+            ) or {'lb_fields': [],
+                  'ppg_n_tuple_mapping': {'ingress_n_tuple': {},
+                                          'egress_n_tuple': {}}}
         }}
         if port_pair_group.get('group_id'):
             ret['port_pair_group']['group_id'] = port_pair_group['group_id']
@@ -484,6 +486,25 @@ class SfcExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         data = {'port_pair_group': {
             'port_pairs': [_uuid()],
             'port_pair_group_parameters': {'lb_fields': ['def']},
+            'tenant_id': tenant_id, 'project_id': tenant_id
+        }}
+        self.assertRaises(
+            webtest.app.AppError,
+            self.api.post,
+            _get_path(PORT_PAIR_GROUP_PATH, fmt=self.fmt),
+            self.serialize(data),
+            content_type='application/%s' % self.fmt)
+
+    def test_create_port_pair_group_invalid_ppg_n_tuple_mapping_key(self):
+        tenant_id = _uuid()
+        data = {'port_pair_group': {
+            'port_pairs': [_uuid()],
+            'port_pair_group_parameters': {
+                'ppg_n_tuple_mapping': {
+                    'ingress_n_tuple': {'sssource_ip_prefix': None},
+                    'egress_n_tuple': {'protool': None}
+                }
+            },
             'tenant_id': tenant_id, 'project_id': tenant_id
         }}
         self.assertRaises(

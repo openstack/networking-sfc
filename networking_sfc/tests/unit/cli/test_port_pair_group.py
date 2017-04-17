@@ -83,8 +83,8 @@ class CLITestV20PortGroupExtensionJSON(test_cli20.CLITestV20Base):
         self._test_create_resource(resource, cmd, name, myid, args,
                                    position_names, position_values)
 
-    def test_create_port_pair_group_with_all_param(self):
-        """Create port_pair_group: myname with all parameter"""
+    def test_create_port_pair_group_with_lb_fields_param(self):
+        """Create port_pair_group: myname with lb_fields parameter"""
         resource = 'port_pair_group'
         cmd = pg.PortPairGroupCreate(test_cli20.MyApp(sys.stdout),
                                      None)
@@ -92,6 +92,27 @@ class CLITestV20PortGroupExtensionJSON(test_cli20.CLITestV20Base):
         myid = 'myid'
         ppg_param = 'lb_fields=ip_src&ip_dst'
         ppg_exp = {"lb_fields": ["ip_src", "ip_dst"]}
+        args = [name, '--port-pair', pp1,
+                '--port-pair-group-parameters', ppg_param]
+        position_names = ['name', 'port_pairs',
+                          'port_pair_group_parameters']
+        position_values = [name, [pp1], ppg_exp]
+        self._test_create_resource(resource, cmd, name, myid, args,
+                                   position_names, position_values)
+
+    def test_create_port_pair_group_with_ppg_n_tuple_mapping_param(self):
+        """Create port_pair_group: myname with ppg_n_tuple_mapping parameter"""
+        resource = 'port_pair_group'
+        cmd = pg.PortPairGroupCreate(test_cli20.MyApp(sys.stdout),
+                                     None)
+        name = 'myname'
+        myid = 'myid'
+        ppg_param = ('ppg_n_tuple_mapping=source_ip_prefix_ingress=None'
+                     '&source_ip_prefix_egress=None')
+        ppg_exp = {
+            'ppg_n_tuple_mapping': {
+                'ingress_n_tuple': {'source_ip_prefix': 'None'},
+                'egress_n_tuple': {'source_ip_prefix': 'None'}}}
         args = [name, '--port-pair', pp1,
                 '--port-pair-group-parameters', ppg_param]
         position_names = ['name', 'port_pairs',
