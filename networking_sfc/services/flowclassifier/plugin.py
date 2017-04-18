@@ -12,10 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron_lib.plugins import directory
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_utils import excutils
+
+from neutron_lib.plugins import directory
+
+from neutron.db import api as db_api
 
 from networking_sfc.db import flowclassifier_db as fc_db
 from networking_sfc.extensions import flowclassifier as fc_ext
@@ -44,7 +47,7 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
 
     @log_helpers.log_method_call
     def create_flow_classifier(self, context, flow_classifier):
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(context):
             fc_db = super(FlowClassifierPlugin, self).create_flow_classifier(
                 context, flow_classifier)
             fc_db_context = fc_ctx.FlowClassifierContext(self, context, fc_db)
@@ -65,7 +68,7 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
 
     @log_helpers.log_method_call
     def update_flow_classifier(self, context, id, flow_classifier):
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(context):
             original_flowclassifier = self.get_flow_classifier(context, id)
             updated_fc = super(
                 FlowClassifierPlugin, self
@@ -100,7 +103,7 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
                           "flow_classifier '%s'",
                           fc_id)
 
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(context):
             fc = self.get_flow_classifier(context, fc_id)
             fc_context = fc_ctx.FlowClassifierContext(self, context, fc)
             super(FlowClassifierPlugin, self).delete_flow_classifier(

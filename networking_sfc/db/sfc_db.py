@@ -24,6 +24,7 @@ from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm import exc
 
+from neutron.db import api as db_api
 from neutron.db import common_db_mixin
 from neutron.db import models_v2
 from neutron_lib.db import constants as db_const
@@ -209,7 +210,7 @@ class SfcDbPlugin(
         return self._fields(res, fields)
 
     def _validate_port_pair_groups(self, context, pg_ids, pc_id=None):
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.reader.using(context):
             for pg_id in pg_ids:
                 self._get_port_pair_group(context, pg_id)
             query = self._model_query(context, PortChain)
@@ -225,7 +226,7 @@ class SfcDbPlugin(
                         port_pair_groups=pg_ids, port_chain=port_chain_db.id)
 
     def _validate_flow_classifiers(self, context, fc_ids, pc_id=None):
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.reader.using(context):
             fcs = [
                 self._get_flow_classifier(context, fc_id)
                 for fc_id in fc_ids
@@ -261,7 +262,7 @@ class SfcDbPlugin(
     def _setup_chain_group_associations(
         self, context, port_chain, pg_ids
     ):
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.reader.using(context):
             chain_group_associations = []
             for pg_id in pg_ids:
                 query = self._model_query(context, ChainGroupAssoc)
@@ -278,7 +279,7 @@ class SfcDbPlugin(
     def _setup_chain_classifier_associations(
         self, context, port_chain, fc_ids
     ):
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.reader.using(context):
             chain_classifier_associations = []
             for fc_id in fc_ids:
                 query = self._model_query(context, ChainClassifierAssoc)
@@ -300,7 +301,7 @@ class SfcDbPlugin(
         pc = port_chain['port_chain']
         project_id = pc['project_id']
         chain_id = pc['chain_id']
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(context):
             chain_parameters = {
                 key: ChainParameter(keyword=key, value=jsonutils.dumps(val))
                 for key, val in pc['chain_parameters'].items()}
@@ -375,7 +376,7 @@ class SfcDbPlugin(
     @log_helpers.log_method_call
     def delete_port_chain(self, context, id):
         try:
-            with context.session.begin(subtransactions=True):
+            with db_api.context_manager.writer.using(context):
                 pc = self._get_port_chain(context, id)
                 context.session.delete(pc)
         except ext_sfc.PortChainNotFound:
@@ -384,7 +385,7 @@ class SfcDbPlugin(
     @log_helpers.log_method_call
     def update_port_chain(self, context, id, port_chain):
         pc = port_chain['port_chain']
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(context):
             pc_db = self._get_port_chain(context, id)
             for k, v in pc.items():
                 if k == 'flow_classifiers':
@@ -437,7 +438,7 @@ class SfcDbPlugin(
         """Create a port pair."""
         pp = port_pair['port_pair']
         project_id = pp['project_id']
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(context):
             query = self._model_query(context, PortPair)
             pp_in_use = query.filter_by(
                 ingress=pp['ingress'], egress=pp['egress']
@@ -508,7 +509,7 @@ class SfcDbPlugin(
     @log_helpers.log_method_call
     def update_port_pair(self, context, id, port_pair):
         new_pp = port_pair['port_pair']
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(context):
             old_pp = self._get_port_pair(context, id)
             old_pp.update(new_pp)
             return self._make_port_pair_dict(old_pp)
@@ -516,7 +517,7 @@ class SfcDbPlugin(
     @log_helpers.log_method_call
     def delete_port_pair(self, context, id):
         try:
-            with context.session.begin(subtransactions=True):
+            with db_api.context_manager.writer.using(context):
                 pp = self._get_port_pair(context, id)
                 if pp.portpairgroup_id:
                     raise ext_sfc.PortPairInUse(id=id)
@@ -547,7 +548,7 @@ class SfcDbPlugin(
         pg = port_pair_group['port_pair_group']
         project_id = pg['project_id']
 
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(context):
             portpairs_list = [self._get_port_pair(context, pp_id)
                               for pp_id in pg['port_pairs']]
             for portpair in portpairs_list:
@@ -622,7 +623,7 @@ class SfcDbPlugin(
     def update_port_pair_group(self, context, id, port_pair_group):
         new_pg = port_pair_group['port_pair_group']
 
-        with context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(context):
             portpairs_list = [self._get_port_pair(context, pp_id)
                               for pp_id in new_pg.get('port_pairs', [])]
             for portpair in portpairs_list:
@@ -648,7 +649,7 @@ class SfcDbPlugin(
     @log_helpers.log_method_call
     def delete_port_pair_group(self, context, id):
         try:
-            with context.session.begin(subtransactions=True):
+            with db_api.context_manager.writer.using(context):
                 pg = self._get_port_pair_group(context, id)
                 if pg.chain_group_associations:
                     raise ext_sfc.PortPairGroupInUse(id=id)

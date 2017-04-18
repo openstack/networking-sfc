@@ -13,6 +13,7 @@
 #    under the License.
 #
 
+from neutron.db import api as db_api
 from neutron.db import common_db_mixin
 from neutron_lib import context as n_context
 from neutron_lib.db import model_base
@@ -69,11 +70,11 @@ class IDAllocation(object):
         # Get the initial range from conf file.
         conf_obj = {'group': [1, 255], 'portchain': [256, 65536]}
         self.conf_obj = conf_obj
-        self.session = context.session
+        self.context = context
 
     @log_helpers.log_method_call
     def assign_intid(self, type_, uuid):
-        query = self.session.query(UuidIntidAssoc).filter_by(
+        query = self.context.session.query(UuidIntidAssoc).filter_by(
             type_=type_).order_by(UuidIntidAssoc.intid)
 
         allocated_int_ids = {obj.intid for obj in query.all()}
@@ -83,17 +84,17 @@ class IDAllocation(object):
         start, end = self.conf_obj[type_][0], self.conf_obj[type_][1] + 1
         for init_id in six.moves.range(start, end):
             if init_id not in allocated_int_ids:
-                with self.session.begin(subtransactions=True):
+                with db_api.context_manager.writer.using(self.context):
                     uuid_intid = UuidIntidAssoc(
                         uuid, init_id, type_)
-                    self.session.add(uuid_intid)
+                    self.context.session.add(uuid_intid)
                 return init_id
         return None
 
     @log_helpers.log_method_call
     def get_intid_by_uuid(self, type_, uuid):
 
-        query_obj = self.session.query(UuidIntidAssoc).filter_by(
+        query_obj = self.context.session.query(UuidIntidAssoc).filter_by(
             type_=type_, uuid=uuid).first()
         if query_obj:
             return query_obj.intid
@@ -107,8 +108,8 @@ class IDAllocation(object):
         @param: type_: str
         @param: intid: int
         """
-        with self.session.begin(subtransactions=True):
-            query_obj = self.session.query(UuidIntidAssoc).filter_by(
+        with db_api.context_manager.writer.using(self.context):
+            query_obj = self.context.session.query(UuidIntidAssoc).filter_by(
                 intid=intid, type_=type_).first()
 
             if query_obj:
@@ -234,7 +235,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
         return port
 
     def create_port_pair_detail(self, port):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(self.admin_context):
             args = self._filter_non_model_columns(port, PortPairDetail)
             args['id'] = uuidutils.generate_uuid()
             port_obj = PortPairDetail(**args)
@@ -242,7 +243,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
             return self._make_port_detail_dict(port_obj)
 
     def create_path_node(self, node):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(self.admin_context):
             args = self._filter_non_model_columns(node, PathNode)
             args['id'] = uuidutils.generate_uuid()
             node_obj = PathNode(**args)
@@ -250,20 +251,20 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
             return self._make_pathnode_dict(node_obj)
 
     def create_pathport_assoc(self, assoc):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(self.admin_context):
             args = self._filter_non_model_columns(assoc, PathPortAssoc)
             assoc_obj = PathPortAssoc(**args)
             self.admin_context.session.add(assoc_obj)
             return self._make_pathport_assoc_dict(assoc_obj)
 
     def delete_pathport_assoc(self, pathnode_id, portdetail_id):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(self.admin_context):
             self.admin_context.session.query(PathPortAssoc).filter_by(
                 pathnode_id=pathnode_id,
                 portpair_id=portdetail_id).delete()
 
     def update_port_detail(self, id, port):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(self.admin_context):
             port_obj = self._get_port_detail(id)
             for key, value in port.items():
                 if key == 'path_nodes':
@@ -291,7 +292,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
             return self._make_port_detail_dict(port_obj)
 
     def update_path_node(self, id, node):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(self.admin_context):
             node_obj = self._get_path_node(id)
             for key, value in node.items():
                 if key == 'portpair_details':
@@ -316,22 +317,22 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
             return self._make_pathnode_dict(node_obj)
 
     def delete_port_pair_detail(self, id):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(self.admin_context):
             port_obj = self._get_port_pair_detail(id)
             self.admin_context.session.delete(port_obj)
 
     def delete_path_node(self, id):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.writer.using(self.admin_context):
             node_obj = self._get_path_node(id)
             self.admin_context.session.delete(node_obj)
 
     def get_port_detail(self, id):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.reader.using(self.admin_context):
             port_obj = self._get_port_pair_detail(id)
             return self._make_port_detail_dict(port_obj)
 
     def get_port_detail_without_exception(self, id):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.reader.using(self.admin_context):
             try:
                 port = self._get_by_id(
                     self.admin_context, PortPairDetail, id)
@@ -340,12 +341,12 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
             return self._make_port_detail_dict(port)
 
     def get_path_node(self, id):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.reader.using(self.admin_context):
             node_obj = self._get_path_node(id)
         return self._make_pathnode_dict(node_obj)
 
     def get_path_nodes_by_filter(self, filters=None):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.reader.using(self.admin_context):
             qry = self._get_path_nodes_by_filter(filters)
             all_items = qry.all()
             if all_items:
@@ -353,7 +354,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
         return None
 
     def get_path_node_by_filter(self, filters=None):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.reader.using(self.admin_context):
             qry = self._get_path_nodes_by_filter(filters)
             first = qry.first()
             if first:
@@ -373,7 +374,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
         return qry
 
     def get_port_details_by_filter(self, filters=None):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.reader.using(self.admin_context):
             qry = self._get_port_details_by_filter(filters)
             all_items = qry.all()
             if all_items:
@@ -382,7 +383,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
         return None
 
     def get_port_detail_by_filter(self, filters=None):
-        with self.admin_context.session.begin(subtransactions=True):
+        with db_api.context_manager.reader.using(self.admin_context):
             qry = self._get_port_details_by_filter(filters)
             first = qry.first()
             if first:
