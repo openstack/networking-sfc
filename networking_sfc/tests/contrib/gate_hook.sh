@@ -55,7 +55,6 @@ case $VENV in
     source $NEUTRON_PATH/tools/configure_for_func_testing.sh
 
     configure_host_for_func_testing
-    upgrade_ovs_if_necessary
 
     load_conf_hook ovs
     # Make the workspace owned by the stack user
