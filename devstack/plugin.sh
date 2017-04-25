@@ -14,14 +14,16 @@ function _networking_sfc_install_server {
 }
 
 function _networking_sfc_install_agent {
-    iniset /$Q_PLUGIN_CONF_FILE agent extensions "sfc"
+    source $NEUTRON_DIR/devstack/lib/l2_agent
+    plugin_agent_add_l2_agent_extension sfc
+    configure_l2_agent
 }
 
 function networking_sfc_configure_common {
     if is_service_enabled q-svc; then
         _networking_sfc_install_server
     fi
-    if is_service_enabled q-agt; then
+    if is_service_enabled q-agt && [[ "$Q_AGENT" == "openvswitch" ]]; then
         _networking_sfc_install_agent
     fi
 }
