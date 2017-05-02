@@ -446,7 +446,10 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 if pc_corr == 'mpls':
                     enc_actions = self._build_push_mpls(flowrule['nsp'],
                                                         flowrule['nsi'])
-            enc_actions = enc_actions + ("group:%d" % group_id)
+            if flowrule['fwd_path']:
+                enc_actions = enc_actions + ("group:%d" % group_id)
+            else:
+                enc_actions = enc_actions + ("group:%d" % rev_group_id)
 
             # to uninstall the removed flow classifiers
             self._setup_local_switch_flows_on_int_br(
