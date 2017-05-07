@@ -172,7 +172,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         self.br_int.delete_flows(table=INGRESS_TABLE)
         self.br_int.install_goto(dest_table_id=INGRESS_TABLE,
                                  priority=PC_DEF_PRI,
-                                 eth_type=0x8847)
+                                 eth_type=constants.ETH_TYPE_MPLS)
         self.br_int.install_drop(table_id=INGRESS_TABLE)
 
     def _parse_flow_classifier(self, flow_classifier):
@@ -214,7 +214,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 flow_classifier['destination_port_range_max'])
 
         if "IPv4" == flow_classifier['ethertype']:
-            dl_type = 0x0800
+            dl_type = constants.ETH_TYPE_IP
             if n_consts.PROTO_NAME_TCP == flow_classifier['protocol']:
                 nw_proto = n_consts.PROTO_NUM_TCP
             elif n_consts.PROTO_NAME_UDP == flow_classifier['protocol']:
@@ -366,6 +366,10 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     all_pps_correlated = False
                     break
             for item in next_hops:
+                if not all_pps_correlated:
+                    pp_corr_nh = None
+                else:
+                    pp_corr_nh = item.get('pp_corr', None)
                 if flowrule['fwd_path']:
                     bucket = (
                         'bucket=weight=%d, mod_dl_dst:%s, resubmit(,%d)' % (
@@ -400,19 +404,23 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     subnet_actions = 'output:%s' % self.patch_tun_ofport
                 subnet_actions_list.append(subnet_actions)
 
+                dl_type = constants.ETH_TYPE_IP
+                if pp_corr == 'mpls' or pp_corr_nh == 'mpls':
+                    dl_type = constants.ETH_TYPE_MPLS
+
                 if flowrule['fwd_path']:
                     self.br_int.add_flow(
                         table=ACROSS_SUBNET_TABLE,
                         priority=0,
                         dl_dst=item['in_mac_address'],
-                        dl_type=0x0800,
+                        dl_type=dl_type,
                         actions="%s" % ','.join(subnet_actions_list))
                 else:
                     self.br_int.add_flow(
                         table=ACROSS_SUBNET_TABLE,
                         priority=0,
                         dl_dst=item['mac_address'],
-                        dl_type=0x0800,
+                        dl_type=dl_type,
                         actions="%s" % ','.join(subnet_actions_list))
 
             group_content = self.br_int.dump_group_for_id(group_id)
@@ -470,8 +478,9 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             # at the end of the chain, the header must be removed (if used)
             if (node_type != constants.SRC_NODE) and pp_corr:
                 if pc_corr == 'mpls':
-                    end_of_chain_actions = ('pop_mpls:0x0800,' +
-                                            end_of_chain_actions)
+                    end_of_chain_actions = ("pop_mpls:0x%04x,%s" % (
+                                            constants.ETH_TYPE_IP,
+                                            end_of_chain_actions))
             # to uninstall the new removed flow classifiers
             self._setup_local_switch_flows_on_int_br(
                 flowrule,
@@ -515,16 +524,16 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             self.br_int.add_flow(**match_field)
 
     def _build_classification_match_sfc_mpls(self, flowrule, match_info):
-        match_info['dl_type'] = 0x8847
+        match_info['dl_type'] = constants.ETH_TYPE_MPLS
         match_info['mpls_label'] = flowrule['nsp'] << 8 | flowrule['nsi']
         return match_info
 
     def _build_push_mpls(self, nsp, nsi):
         return (
-            "push_mpls:0x8847,"
+            "push_mpls:0x%04x,"
             "set_mpls_label:%d,"
             "set_mpls_ttl:%d," %
-            (nsp << 8 | nsi, nsi))
+            (constants.ETH_TYPE_MPLS, nsp << 8 | nsi, nsi))
 
     def _build_ingress_common_match_field(self, vif_port, vlan):
         return dict(
@@ -535,15 +544,15 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
 
     def _build_ingress_match_field_sfc_mpls(self, flowrule, vif_port, vlan):
         match_field = self._build_ingress_common_match_field(vif_port, vlan)
-        match_field['dl_type'] = 0x8847
+        match_field['dl_type'] = constants.ETH_TYPE_MPLS
         match_field['mpls_label'] = flowrule['nsp'] << 8 | flowrule['nsi'] + 1
         return match_field
 
     def _build_proxy_sfc_mpls(self, flowrule, vif_port, vlan):
         match_field = self._build_ingress_match_field_sfc_mpls(
             flowrule, vif_port, vlan)
-        actions = ("strip_vlan, pop_mpls:0x0800,"
-                   "output:%s" % vif_port.ofport)
+        actions = ("strip_vlan, pop_mpls:0x%04x,"
+                   "output:%s" % (constants.ETH_TYPE_IP, vif_port.ofport))
         match_field['actions'] = actions
         return match_field
 
@@ -557,7 +566,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
     def _delete_flows_mpls(self, flowrule, vif_port):
         self.br_int.delete_flows(
             table=INGRESS_TABLE,
-            dl_type=0x8847,
+            dl_type=constants.ETH_TYPE_MPLS,
             dl_dst=vif_port.vif_mac,
             mpls_label=flowrule['nsp'] << 8 | flowrule['nsi'] + 1
         )
