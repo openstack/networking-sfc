@@ -6801,3 +6801,302 @@ class OVSSfcDriverTestCase(
 
     def test_delete_service_graph_complex(self):
         self._test_service_graph_complex(False)
+
+    def test_create_port_chain_with_tap_enabled_ppg_only(self):
+        with self.port(
+                name='port1',
+                device_owner='compute',
+                device_id='test',
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+        ) as src_port, self.port(
+            name='ingress',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress:
+            self.host_endpoint_mapping = {
+                'test': '10.0.0.1',
+            }
+            with self.port_pair(port_pair={
+                'ingress': ingress['port']['id'],
+                'egress': ingress['port']['id']
+            }) as pp:
+                pp_context = sfc_ctx.PortPairContext(
+                    self.sfc_plugin, self.ctx,
+                    pp['port_pair']
+                )
+                self.driver.create_port_pair(pp_context)
+                with self.port_pair_group(port_pair_group={
+                    'port_pairs': [pp['port_pair']['id']],
+                    'tap_enabled': True
+                }) as pg:
+                    pg_context = sfc_ctx.PortPairGroupContext(
+                        self.sfc_plugin, self.ctx,
+                        pg['port_pair_group']
+                    )
+                    self.driver.create_port_pair_group(pg_context)
+                    with self.flow_classifier(flow_classifier={
+                        'source_port_range_min': 100,
+                        'source_port_range_max': 200,
+                        'destination_port_range_min': 300,
+                        'destination_port_range_max': 400,
+                        'ethertype': 'IPv4',
+                        'source_ip_prefix': '10.100.0.0/16',
+                        'destination_ip_prefix': '10.200.0.0/16',
+                        'l7_parameters': {},
+                        'protocol': 'tcp',
+                        'logical_source_port': src_port['port']['id']
+                    }) as fc:
+                        with self.port_chain(port_chain={
+                            'name': 'test1',
+                            'port_pair_groups': [pg['port_pair_group']['id']],
+                            'flow_classifiers': [fc['flow_classifier']['id']]
+                        }) as pc:
+                            pc_context = sfc_ctx.PortChainContext(
+                                self.sfc_plugin, self.ctx,
+                                pc['port_chain']
+                            )
+                            self.driver.create_port_chain(pc_context)
+                            self.wait()
+                            update_flow_rules = self.map_flow_rules(
+                                self.rpc_calls['update_flow_rules'])
+                            # proxy
+                            flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
+                                None,
+                                src_port['port']['id'])
+                            # flow2 - sf_node
+                            flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
+                                ingress['port']['id'],
+                                None
+                            )
+                            self.assertEqual(
+                                set(update_flow_rules.keys()),
+                                {flow1, flow2})
+                            self.assertIn('skip_ingress_flow_config',
+                                          update_flow_rules[flow1])
+                            self.assertIsNone(
+                                update_flow_rules[flow2]['egress']
+                            )
+                            self.assertEqual(
+                                update_flow_rules[flow2]['node_type'],
+                                update_flow_rules[flow1]['node_type']
+                            )
+                            self.assertTrue(
+                                update_flow_rules[flow2]['tap_enabled'])
+
+    def test_create_port_chain_with_default_and_tap_enabled_ppg(self):
+        with self.port(
+                name='port1',
+                device_owner='compute',
+                device_id='test',
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+        ) as src_port, self.port(
+            name='ingress1',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress1, self.port(
+            name='egress1',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as egress1, self.port(
+            name='ingress2',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress2:
+            self.host_endpoint_mapping = {
+                'test': '10.0.0.1',
+            }
+            with self.port_pair(port_pair={
+                'ingress': ingress1['port']['id'],
+                'egress': egress1['port']['id']
+            }) as default_pp, self.port_pair(port_pair={
+                'ingress': ingress2['port']['id'],
+                'egress': ingress2['port']['id']
+            }) as tap_pp:
+                default_pp_context = sfc_ctx.PortPairContext(
+                    self.sfc_plugin, self.ctx, default_pp['port_pair']
+                )
+                self.driver.create_port_pair(default_pp_context)
+                tap_pp_context = sfc_ctx.PortPairContext(
+                    self.sfc_plugin, self.ctx, tap_pp['port_pair']
+                )
+                self.driver.create_port_pair(tap_pp_context)
+                with self.port_pair_group(port_pair_group={
+                    'port_pairs': [default_pp['port_pair']['id']]
+                }) as default_ppg, self.port_pair_group(port_pair_group={
+                    'port_pairs': [tap_pp['port_pair']['id']],
+                    'tap_enabled': True
+                }) as tap_ppg:
+                    default_ppg_context = sfc_ctx.PortPairGroupContext(
+                        self.sfc_plugin, self.ctx,
+                        default_ppg['port_pair_group']
+                    )
+                    self.driver.create_port_pair_group(default_ppg_context)
+                    tap_ppg_context = sfc_ctx.PortPairGroupContext(
+                        self.sfc_plugin, self.ctx,
+                        tap_ppg['port_pair_group']
+                    )
+                    self.driver.create_port_pair_group(tap_ppg_context)
+                    with self.flow_classifier(flow_classifier={
+                        'source_port_range_min': 100,
+                        'source_port_range_max': 200,
+                        'destination_port_range_min': 300,
+                        'destination_port_range_max': 400,
+                        'ethertype': 'IPv4',
+                        'source_ip_prefix': '10.100.0.0/16',
+                        'destination_ip_prefix': '10.200.0.0/16',
+                        'l7_parameters': {},
+                        'protocol': 'tcp',
+                        'logical_source_port': src_port['port']['id']
+                    }) as fc:
+                        with self.port_chain(port_chain={
+                            'name': 'test1',
+                            'port_pair_groups': [
+                                default_ppg['port_pair_group']['id'],
+                                tap_ppg['port_pair_group']['id']
+                            ],
+                            'flow_classifiers': [fc['flow_classifier']['id']]
+                        }) as pc:
+                            pc_context = sfc_ctx.PortChainContext(
+                                self.sfc_plugin, self.ctx,
+                                pc['port_chain']
+                            )
+                            self.driver.create_port_chain(pc_context)
+                            self.wait()
+                            update_flow_rules = self.map_flow_rules(
+                                self.rpc_calls['update_flow_rules'])
+
+                            flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
+                                None,
+                                src_port['port']['id']
+                            )
+                            flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
+                                ingress1['port']['id'],
+                                egress1['port']['id']
+                            )
+                            flow3 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
+                                ingress2['port']['id'],
+                                None
+                            )
+                            self.assertEqual(
+                                set(update_flow_rules.keys()),
+                                {flow1, flow2, flow3}
+                            )
+                            add_fcs = update_flow_rules[flow1]['add_fcs']
+                            self.assertEqual(len(add_fcs), 1)
+                            self.assertIsNone(
+                                update_flow_rules[flow3]['egress'])
+                            # egress mac of previous node as src mac for tap
+                            #  flow
+                            self.assertEqual(
+                                update_flow_rules[flow2]['mac_address'],
+                                update_flow_rules[flow3]['mac_address']
+                            )
+                            self.assertEqual(
+                                update_flow_rules[flow3]['node_type'],
+                                update_flow_rules[flow2]['node_type']
+                            )
+
+    def test_delete_port_chain_of_tap_enabled_ppg(self):
+        with self.port(
+                name='port1',
+                device_owner='compute',
+                device_id='test',
+                arg_list=(
+                    portbindings.HOST_ID,
+                ),
+                **{portbindings.HOST_ID: 'test'}
+        ) as src_port, self.port(
+            name='ingress',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress:
+            self.host_endpoint_mapping = {
+                'test': '10.0.0.1',
+            }
+            with self.port_pair(port_pair={
+                'ingress': ingress['port']['id'],
+                'egress': ingress['port']['id']
+            }) as pp:
+                pp_context = sfc_ctx.PortPairContext(
+                    self.sfc_plugin, self.ctx,
+                    pp['port_pair']
+                )
+                self.driver.create_port_pair(pp_context)
+                with self.port_pair_group(port_pair_group={
+                    'port_pairs': [pp['port_pair']['id']],
+                    'tap_enabled': True
+                }) as pg:
+                    pg_context = sfc_ctx.PortPairGroupContext(
+                        self.sfc_plugin, self.ctx,
+                        pg['port_pair_group']
+                    )
+                    self.driver.create_port_pair_group(pg_context)
+                    with self.flow_classifier(flow_classifier={
+                        'source_port_range_min': 100,
+                        'source_port_range_max': 200,
+                        'destination_port_range_min': 300,
+                        'destination_port_range_max': 400,
+                        'ethertype': 'IPv4',
+                        'source_ip_prefix': '10.100.0.0/16',
+                        'destination_ip_prefix': '10.200.0.0/16',
+                        'l7_parameters': {},
+                        'protocol': 'tcp',
+                        'logical_source_port': src_port['port']['id']
+                    }) as fc:
+                        with self.port_chain(port_chain={
+                            'name': 'test1',
+                            'port_pair_groups': [pg['port_pair_group']['id']],
+                            'flow_classifiers': [fc['flow_classifier']['id']]
+                        }) as pc:
+                            pc_context = sfc_ctx.PortChainContext(
+                                self.sfc_plugin, self.ctx,
+                                pc['port_chain']
+                            )
+                            self.driver.create_port_chain(pc_context)
+                            self.wait()
+                            self.driver.delete_port_chain(pc_context)
+                            delete_flow_rules = self.map_flow_rules(
+                                self.rpc_calls['delete_flow_rules'])
+                            flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
+                                None,
+                                src_port['port']['id'])
+                            flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
+                                ingress['port']['id'],
+                                None
+                            )
+                            self.assertEqual(
+                                set(delete_flow_rules.keys()),
+                                {flow1, flow2})

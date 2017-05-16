@@ -210,6 +210,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         ppg_obj = context._plugin._get_port_pair_group(context._plugin_context,
                                                        pg_id)
         group_intid = ppg_obj['group_id']
+        tap_enabled = ppg_obj['tap_enabled']
         LOG.debug('group_intid: %s', group_intid)
         pg = context._plugin.get_port_pair_group(context._plugin_context,
                                                  pg_id)
@@ -223,7 +224,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             pd = self.get_port_detail_by_filter(filters)
             if pd:
                 next_group_members.append(
-                    dict(portpair_id=pd['id'], weight=1))
+                    dict(portpair_id=pd['id'], weight=1,
+                         tap_enabled=tap_enabled))
         if fwd_path is False:
             next_group_members.reverse()
         return group_intid, next_group_members
@@ -325,62 +327,15 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         port_pair_groups = port_chain['port_pair_groups']
         sf_path_length = len(port_pair_groups)
 
-        # Detect cross-subnet transit
-        # Compare subnets for logical source ports
-        # and first PPG ingress ports
-        for fc in self._get_fcs_by_ids(port_chain['flow_classifiers']):
-            subnet1 = self._get_subnet_by_port(fc['logical_source_port'])
-            cidr1 = subnet1['cidr']
-            ppg = context._plugin.get_port_pair_group(context._plugin_context,
-                                                      port_pair_groups[0])
-            for pp_id1 in ppg['port_pairs']:
-                pp1 = context._plugin.get_port_pair(context._plugin_context,
-                                                    pp_id1)
-                filter1 = {}
-                if pp1.get('ingress', None):
-                    filter1 = dict(dict(ingress=pp1['ingress']), **filter1)
-                    pd1 = self.get_port_detail_by_filter(filter1)
-                    subnet2 = self._get_subnet_by_port(pd1['ingress'])
-                    cidr2 = subnet2['cidr']
-                    if cidr1 != cidr2:
-                        LOG.error('Cross-subnet chain not supported')
-                        raise exc.SfcDriverError(
-                            method='create_portchain_path')
-
-        # Compare subnets for PPG egress ports
-        # and next PPG ingress ports
-        for i in range(sf_path_length - 1):
-            ppg = context._plugin.get_port_pair_group(context._plugin_context,
-                                                      port_pair_groups[i])
-            next_ppg = context._plugin.get_port_pair_group(
-                context._plugin_context, port_pair_groups[i + 1])
-            for pp_id1 in ppg['port_pairs']:
-                pp1 = context._plugin.get_port_pair(context._plugin_context,
-                                                    pp_id1)
-                filter1 = {}
-                cidr3 = None
-                if pp1.get('egress', None):
-                    filter1 = dict(dict(egress=pp1['egress']), **filter1)
-                    pd1 = self.get_port_detail_by_filter(filter1)
-                    subnet1 = self._get_subnet_by_port(pd1['egress'])
-                    cidr3 = subnet1['cidr']
-
-                for pp_id2 in next_ppg['port_pairs']:
-                    pp2 = context._plugin.get_port_pair(
-                        context._plugin_context, pp_id2)
-                    filter2 = {}
-                    if pp2.get('ingress', None):
-                        filter2 = dict(dict(ingress=pp2['ingress']), **filter2)
-                        pd2 = self.get_port_detail_by_filter(filter2)
-                        subnet2 = self._get_subnet_by_port(pd2['ingress'])
-                        cidr4 = subnet2['cidr']
-                        if cidr3 != cidr4:
-                            LOG.error('Cross-subnet chain not supported')
-                            raise exc.SfcDriverError(
-                                method='create_portchain_path')
+        # Detect cross-subnet transit, returns ppg details
+        ppg_details_list = self._validate_chain(context,
+                                                port_chain,
+                                                port_pair_groups,
+                                                fwd_path)
 
         next_group_intid = None
         next_group_members = None
+        previous_node_id = None
         # get the init and last port_pair_group
         if fwd_path:
             next_group_intid, next_group_members = self._get_portgroup_members(
@@ -402,11 +357,13 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     'next_group_id': next_group_intid,
                     'next_hop': jsonutils.dumps(next_group_members),
                     'fwd_path': fwd_path,
-                    'ppg_n_tuple_mapping': None
+                    'ppg_n_tuple_mapping': None,
+                    'tap_enabled': False
                     }
         src_node = self.create_path_node(src_args)
         LOG.debug('create src node: %s', src_node)
         path_nodes.append(src_node)
+        previous_node_id = src_node['id']
 
         # Create a destination node object for port chain
         dst_args = {
@@ -419,11 +376,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             'next_group_id': None,
             'next_hop': None,
             'fwd_path': fwd_path,
-            'ppg_n_tuple_mapping': None
+            'ppg_n_tuple_mapping': None,
+            'tap_enabled': False
         }
         dst_node = self.create_path_node(dst_args)
         LOG.debug('create dst node: %s', dst_node)
-        path_nodes.append(dst_node)
 
         # need to pass project_id here
         self._add_flowclassifier_port_assoc(
@@ -494,10 +451,14 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 'fwd_path': fwd_path,
                 'ppg_n_tuple_mapping': (
                     None if not ppg_n_tuple_mapping else
-                    jsonutils.dumps(ppg_n_tuple_mapping))
+                    jsonutils.dumps(ppg_n_tuple_mapping)),
+                'tap_enabled': ppg_details_list[i]['tap_enabled'],
+                'previous_node_id': previous_node_id
             }
             sf_node = self.create_path_node(node_args)
             LOG.debug('chain path node: %s', sf_node)
+            previous_node_id = sf_node['id']
+
             # Create the assocation objects that combine the pathnode_id with
             # the ingress of the port_pairs in the current group
             # when port_group does not reach tail
@@ -513,6 +474,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             path_nodes = self._update_ppg_n_tuple_in_flow_rule(
                 path_nodes, fwd_path, sf_path_length)
 
+        dst_node = self.update_path_node(
+            dst_node['id'],
+            {'previous_node_id': previous_node_id})
+        path_nodes.append(dst_node)
+        path_nodes = self._update_sc_path_parameter(path_nodes)
         return path_nodes
 
     # Function to update adjacent node ppg_n_tuple_mapping values if have
@@ -620,11 +586,16 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 if pd['node_type'] == ovs_const.SRC_NODE:
                     src_nodes.append(pd)
                 pc_corr = port_chain['chain_parameters']['correlation']
+                updated_pd = self._update_tap_enabled_node(pd)
                 self._delete_path_node_flowrule(
-                    pd,
+                    updated_pd,
                     pc_corr,
                     port_chain['flow_classifiers']
                 )
+                self._build_tap_ingress_flow(pc_corr,
+                                             updated_pd,
+                                             pd['fwd_path'],
+                                             delete=True)
             for pd in pds:
                 self.delete_path_node(pd['id'])
 
@@ -659,6 +630,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             port = core_plugin.get_port(
                 self.admin_context, port_detail['ingress'])
             detail['net_uuid'] = port['network_id']
+            detail['tap_enabled'] = member['tap_enabled']
+            if member['tap_enabled']:
+                self._update_next_hop_details(flow_rule, port_detail, detail)
             node_next_hops.append(detail)
         flow_rule['next_hops'] = node_next_hops
         flow_rule.pop('next_hop')
@@ -818,11 +792,13 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                                     add_fc_ids=None, del_fc_ids=None):
         if node['portpair_details'] is None:
             return
-        for each in node['portpair_details']:
+        updated_node = self._update_tap_enabled_node(node)
+        for each in updated_node['portpair_details']:
             port = self.get_port_detail_by_filter(dict(id=each))
             if port:
                 self._update_path_node_port_flowrules(
-                    node, port, pc_corr, add_fc_ids, del_fc_ids)
+                    updated_node, port, pc_corr, add_fc_ids, del_fc_ids)
+        self._build_tap_ingress_flow(pc_corr, updated_node, node['fwd_path'])
 
     def _update_path_nodes(self, nodes, pc_corr,
                            add_fc_ids=None, del_fc_ids=None):
@@ -1042,8 +1018,12 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                               'pathnode_id': curr_node['id'],
                               'weight': 1, }
                 self.create_pathport_assoc(assco_args)
+                updated_curr_node = self._update_tap_enabled_node(curr_node)
                 self._update_path_node_port_flowrules(
-                    curr_node, ppd, pc_corr, pc['flow_classifiers'])
+                    updated_curr_node, ppd, pc_corr, pc['flow_classifiers'])
+                self._build_tap_ingress_flow(pc_corr=pc_corr,
+                                             node=updated_curr_node,
+                                             fwd_path=True)
 
                 if not rev_curr_node:
                     continue
@@ -1051,8 +1031,15 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                               'pathnode_id': rev_curr_node['id'],
                               'weight': 1, }
                 self.create_pathport_assoc(assco_args)
-                self._update_path_node_port_flowrules(
-                    rev_curr_node, ppd, pc_corr, pc['flow_classifiers'])
+                updated_rev_curr_node = self._update_tap_enabled_node(
+                    rev_curr_node)
+                self._update_path_node_port_flowrules(updated_rev_curr_node,
+                                                      ppd,
+                                                      pc_corr,
+                                                      pc['flow_classifiers'])
+                self._build_tap_ingress_flow(pc_corr=pc_corr,
+                                             node=updated_rev_curr_node,
+                                             fwd_path=False)
 
             # Delete the port-pair-details from the current node
             for pp_id in (
@@ -1065,22 +1052,26 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                               pp_id)
                     LOG.debug("Failed to update port-pair-group")
                     return
+                updated_curr_node = self._update_tap_enabled_node(curr_node)
                 self._delete_path_node_port_flowrule(
-                    curr_node,
+                    updated_curr_node,
                     ppd,
                     pc_corr,
                     pc['flow_classifiers'])
-                self.delete_pathport_assoc(curr_node['id'], ppd['id'])
+                self.delete_pathport_assoc(updated_curr_node['id'], ppd['id'])
 
                 if not rev_curr_node:
                     continue
 
+                updated_rev_curr_node = self._update_tap_enabled_node(
+                    rev_curr_node)
                 self._delete_path_node_port_flowrule(
-                    rev_curr_node,
+                    updated_rev_curr_node,
                     ppd,
                     pc_corr,
                     pc['flow_classifiers'])
-                self.delete_pathport_assoc(rev_curr_node['id'], ppd['id'])
+                self.delete_pathport_assoc(updated_rev_curr_node['id'],
+                                           ppd['id'])
 
     @log_helpers.log_method_call
     def _get_port_detail_info(self, port_id):
@@ -1143,6 +1134,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 self._get_port_detail_info(e_port))
 
         sfparams = port_pair.get('service_function_parameters')
+
         pp_corr = None
         if sfparams:
             pp_corr = sfparams.get('correlation')
@@ -1210,6 +1202,13 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 if egress_port['host_id'] != host:
                     egress_port.update(dict(host_id=host))
 
+            # Get ingress flow for Tap SF
+            if self._is_tap_ports(port_detail_list):
+                return self._get_tap_port_ingress_flow(context,
+                                                       sfc_plugin,
+                                                       port_chain_flowrules,
+                                                       port_detail_list)
+
             # this is a SF if there are both egress and ingress.
             for i, port in enumerate(port_detail_list):
                 nodes_assocs = port['path_nodes']
@@ -1234,6 +1233,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                             add_fc_ids=port_chain['flow_classifiers']
                         )
                     port_chain_flowrules.append(flow_rule)
+            self._get_egress_flowrule_if_next_hop_tap(sfc_plugin,
+                                                      context,
+                                                      port_chain_flowrules,
+                                                      port_detail_list)
 
             return port_chain_flowrules
 
@@ -1525,3 +1528,283 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     @log_helpers.log_method_call
     def delete_service_graph_postcommit(self, context):
         self._service_graph_linking_logic(context, False)
+
+    def _get_tap_port_ingress_flow(self, context, sfc_plugin,
+                                   port_chain_flowrules, port_detail_list):
+        for i, ports in enumerate(port_detail_list):
+            nodes_assocs = ports['path_nodes']
+            for assoc in nodes_assocs:
+                node = self.get_path_node(assoc['pathnode_id'])
+                updated_node = self._update_tap_enabled_node(node)
+                port_chain = sfc_plugin.get_port_chain(
+                    context,
+                    node['portchain_id'])
+                flowrules = self._build_tap_ingress_flow(
+                    port_chain['chain_parameters']['correlation'],
+                    updated_node,
+                    node['fwd_path'],
+                    configure=False)
+                port_chain_flowrules.extend(flowrules)
+        return port_chain_flowrules
+
+    def _get_egress_flowrule_if_next_hop_tap(self, sfc_plugin, context,
+                                             port_chain_flowrules,
+                                             port_detail_list):
+        # Get the flow for Tap egress port.
+        for i, ports in enumerate(port_detail_list):
+            nodes_assocs = ports['path_nodes']
+            for assoc in nodes_assocs:
+                node = self.get_path_node(assoc['pathnode_id'])
+                if not node['next_hop']:
+                    return
+                next_hops = jsonutils.loads(node['next_hop'])
+                for next_hop in next_hops:
+                    if not next_hop['tap_enabled']:
+                        return
+
+                    tap_pp = self.get_port_detail_by_filter(
+                        dict(id=next_hop['portpair_id']))
+                    for t_node in tap_pp['path_nodes']:
+                        tap_node = self.get_path_node(t_node['pathnode_id'])
+                        tap_node = self._update_tap_enabled_node(tap_node)
+                        if tap_node['fwd_path'] == node['fwd_path']:
+                            port_chain = sfc_plugin.get_port_chain(
+                                context,
+                                tap_node['portchain_id'])
+                            flowrule = self._build_portchain_flowrule_body(
+                                tap_node,
+                                ports,
+                                port_chain['chain_parameters']['correlation'],
+                                add_fc_ids=port_chain['flow_classifiers']
+                            )
+                            port_chain_flowrules.append(flowrule)
+
+    def _validate_chain(self, context, port_chain, port_pair_groups, fwd_path):
+        """Validate the cross-subnet restriction
+
+        :param context:
+        :param port_chain:
+        :param port_pair_groups:
+        :return:
+        """
+        sf_path_length = len(port_pair_groups)
+        ppgs = [context._plugin.get_port_pair_group(context._plugin_context,
+                ppg) for ppg in port_pair_groups]
+
+        # Detect cross-subnet transit
+        # Compare subnets for logical source ports
+        # and first PPG ingress ports
+        for fc in self._get_fcs_by_ids(port_chain['flow_classifiers']):
+            subnet1 = self._get_subnet_by_port(fc['logical_source_port'])
+            cidr1 = subnet1['cidr']
+            ppg = ppgs[0]
+            for pp_id1 in ppg['port_pairs']:
+                pp1 = context._plugin.get_port_pair(context._plugin_context,
+                                                    pp_id1)
+                filter1 = {}
+                if pp1.get('ingress', None):
+                    filter1 = dict(dict(ingress=pp1['ingress']), **filter1)
+                    pd1 = self.get_port_detail_by_filter(filter1)
+                    subnet2 = self._get_subnet_by_port(pd1['ingress'])
+                    cidr2 = subnet2['cidr']
+                    if cidr1 != cidr2:
+                        LOG.error('Cross-subnet chain not supported')
+                        raise exc.SfcDriverError(
+                            method='create_portchain_path')
+
+        # Compare subnets for PPG egress ports
+        # and next PPG ingress ports
+        for i in range(sf_path_length - 1):
+            ppg = ppgs[i]
+            next_ppg = ppgs[i + 1]
+            for pp_id1 in ppg['port_pairs']:
+                pp1 = context._plugin.get_port_pair(context._plugin_context,
+                                                    pp_id1)
+                filter1 = {}
+                cidr3 = None
+                if pp1.get('egress', None):
+                    filter1 = dict(dict(egress=pp1['egress']), **filter1)
+                    pd1 = self.get_port_detail_by_filter(filter1)
+                    subnet1 = self._get_subnet_by_port(pd1['egress'])
+                    cidr3 = subnet1['cidr']
+
+                for pp_id2 in next_ppg['port_pairs']:
+                    pp2 = context._plugin.get_port_pair(
+                        context._plugin_context, pp_id2)
+                    filter2 = {}
+                    if pp2.get('ingress', None):
+                        filter2 = dict(dict(ingress=pp2['ingress']), **filter2)
+                        pd2 = self.get_port_detail_by_filter(filter2)
+                        subnet2 = self._get_subnet_by_port(pd2['ingress'])
+                        cidr4 = subnet2['cidr']
+                        if cidr3 != cidr4:
+                            LOG.error('Cross-subnet chain not supported')
+                            raise exc.SfcDriverError(
+                                method='create_portchain_path')
+
+        ppgs = ppgs if fwd_path else list(reversed(ppgs))
+        return ppgs
+
+    def _update_tap_enabled_node(self, node):
+        if not node['tap_enabled'] or not node['previous_node_id']:
+            return node
+
+        prev_node = self.get_path_node(node['previous_node_id'])
+        node_copy = node.copy()
+        node_copy['prev_node'] = prev_node
+        node_copy['tap_node'] = node
+        node_copy['tap_pp_corr'] = self.get_port_detail(
+            node['portpair_details'][0])['correlation']
+        node_copy.update(id=prev_node['id'],
+                         nsi=prev_node['nsi'],
+                         nsp=prev_node['nsp'],
+                         portpair_details=prev_node['portpair_details'],
+                         node_type=prev_node['node_type'],
+                         skip_ingress_flow_config=True)  # Flags driver to
+        # skip ingress flow configuration.
+        return node_copy
+
+    def _build_tap_ingress_flow(self, pc_corr, node, fwd_path, delete=False,
+                                configure=True):
+
+        """Build add/delete ingress flows of Tap node.
+
+        :param pc_corr:
+        :param node:
+        :param fwd_path:
+        :param delete:
+        :param configure:
+        :return:
+        """
+        if not node['tap_enabled']:
+            return
+        flowrule_list = list()
+        # 'fwd_path' is always set to true. Call from this method to OVS agent
+        # is made to either create/delete ingress flows explicitly. In ref.
+        # sfc_driver.py - L134 swap ingress & egress flows if fwd_path set
+        # to False, which is not required for Tap SF's ingress flows.
+        flowrule = {'nsp': node['tap_node']['nsp'],
+                    'nsi': node['tap_node']['nsi'],
+                    'node_nsp': node['nsp'],
+                    'node_nsi': node['nsi'],
+                    'pc_corr': pc_corr,
+                    'pp_corr': node['tap_pp_corr'],
+                    'pp_corr_tap_nh': None,
+                    'id': node['id'],
+                    'fwd_path': True,
+                    'node_type': node['node_type'],
+                    'tap_nh_node_type': None,
+                    'portchain_id': node['portchain_id'],
+                    }
+
+        if node['tap_node']['next_hop']:
+            next_hop = jsonutils.loads(node['tap_node']['next_hop'])
+            nh_pp = self.get_port_detail(next_hop[0]['portpair_id'])
+            flowrule.update(pp_corr_tap_nh=nh_pp['correlation'],
+                            tap_nh_node_type=ovs_const.SF_NODE)
+
+        for each in node['prev_node']['portpair_details']:
+            port = self.get_port_detail_by_filter(dict(id=each))
+            if not port:
+                continue
+            if fwd_path:
+                flowrule.update(mac_address=port['mac_address'])
+            else:
+                flowrule.update(
+                    mac_address=(port['in_mac_address']
+                                 or port['mac_address']))
+
+            for pp_id in node['tap_node']['portpair_details']:
+                _port = self.get_port_detail_by_filter(dict(id=pp_id))
+                if _port:
+                    # when Tap is launched with single port
+                    ingress_port = _port['ingress'] if fwd_path else (
+                        _port['egress'] or _port['ingress'])
+                    flowrule.update(egress=None,
+                                    ingress=ingress_port,
+                                    host=_port['host_id'],
+                                    pp_corr=_port['correlation'],
+                                    tap_enabled=True)
+                    flowrule_list.append(flowrule.copy())
+
+        if configure:
+            self._update_tap_ingress_flow_rules(flowrule_list, delete)
+        else:
+            return flowrule_list
+
+    def _update_tap_ingress_flow_rules(self, flowrule_list, delete):
+        for flowrule in flowrule_list:
+            if not delete:
+                self.ovs_driver_rpc.ask_agent_to_update_flow_rules(
+                    self.admin_context,
+                    flowrule)
+            else:
+                self.ovs_driver_rpc.ask_agent_to_delete_flow_rules(
+                    self.admin_context,
+                    flowrule
+                )
+
+    def _is_tap_ports(self, port_detail_list):
+        for port in port_detail_list:
+            nodes_assocs = port['path_nodes']
+            for assoc in nodes_assocs:
+                node = self.get_path_node(assoc['pathnode_id'])
+                if node['tap_enabled']:
+                    return True
+        return False
+
+    def _update_sc_path_parameter(self, nodes):
+        # This method updates 'nsi' of nodes in service chain. 'nsi' is
+        # assigned to nodes in decreasing order. For eg., if the nodes are
+        # like: SRC_NODE -> TAP_NODE -> DEFAULT_NODE -> DST_NODE - 'nsi' for
+        # corresponding nodes will be - 255 -> 254 -> 253 -> 252 , where 254
+        # is of TAP_NODE. In this method, TAP_NODES 'nsi' are re-assigned
+        # from the DST_NODE onward, for eg. the new TAP_NODE 'nsi' would be
+        # 252 instead of 254, the resultant chain's 'nsi' - SRC_NODE (255) ->
+        # TAP_NODE (252) -> DEFAULT_NODE (254) -> DST_NODE (253) . This was
+        # done to simplify the OVS driver configuration, with the various
+        # combination of correlation parameters of port-pairs.
+        tap_sf_in_chain = False
+        def_nodes, tap_nodes = list(), list()
+        node_list = [None] * len(nodes)
+        for node in nodes:
+            node_list[0xff - node['nsi']] = node
+        for node in node_list:
+            if node['tap_enabled']:
+                tap_sf_in_chain = True
+                tap_nodes.append(node)
+            else:
+                def_nodes.append(node)
+        if not tap_sf_in_chain:
+            return nodes
+        else:
+            node_list = [def_nodes[0]]
+            for i, node in enumerate(def_nodes):
+                if i > 0:
+                    node_list.append(self.update_path_node(
+                        node['id'], dict(nsi=def_nodes[0]['nsi'] - i)))
+            tap_nsi = def_nodes[0]['nsi'] - len(def_nodes)
+            for node in tap_nodes:
+                node_list.append(self.update_path_node(node['id'],
+                                                       dict(nsi=tap_nsi)))
+                tap_nsi += 1
+            return node_list
+
+    def _update_next_hop_details(self, flow_rule, port_detail, detail):
+        # Update detail with next-hop node_type and the correlation of
+        # port-pair of next-hop
+        for node in port_detail['path_nodes']:
+            _node = self.get_path_node(node['pathnode_id'])
+            if flow_rule['fwd_path'] == _node['fwd_path']:
+                detail['nsi'], detail['nsp'] = _node['nsi'], _node['nsp']
+                if _node['next_hop']:
+                    next_hops = jsonutils.loads(_node['next_hop'])
+                    for next_hop in next_hops:
+                        pp = self.get_port_detail(next_hop['portpair_id'])
+                        detail['pp_corr_tap_nh'] = pp['correlation']
+                        for pp_node in pp['path_nodes']:
+                            pp_node_detail = self.get_path_node(
+                                pp_node['pathnode_id'])
+                            detail['tap_nh_node_type'] = pp_node_detail[
+                                'node_type']
+                            return

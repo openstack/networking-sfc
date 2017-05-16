@@ -169,6 +169,12 @@ class PathNode(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     fwd_path = sa.Column(sa.Boolean(),
                          nullable=False)
     ppg_n_tuple_mapping = sa.Column(sa.String(1024), nullable=True)
+    tap_enabled = sa.Column(sa.Boolean(),
+                            nullable=False,
+                            server_default=sa.sql.false())
+    previous_node_id = sa.Column(
+        sa.String(36),
+        sa.ForeignKey('sfc_path_nodes.id', ondelete='SET NULL'))
 
 
 class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
@@ -189,7 +195,9 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                                     for pair_detail in node['portpair_details']
                                     ],
                'fwd_path': node['fwd_path'],
-               'ppg_n_tuple_mapping': node['ppg_n_tuple_mapping']
+               'ppg_n_tuple_mapping': node['ppg_n_tuple_mapping'],
+               'tap_enabled': node['tap_enabled'],
+               'previous_node_id': node['previous_node_id']
                }
 
         return self._fields(res, fields)

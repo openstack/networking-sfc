@@ -175,6 +175,12 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.delete_group.start()
 
+        self.get_bridge_ports = mock.patch.object(
+            ovs_ext_lib.SfcOVSBridgeExt, "get_bridge_ports",
+            self.mock_get_bridge_ports
+        )
+        self.get_bridge_ports.start()
+
         self.sfc_driver = sfc_driver.SfcOVSAgentDriver()
         self.agent_api = ovs_ext_api.OVSAgentExtensionAPI(
             ovs_bridge.OVSAgentBridge('br-int'),
@@ -351,6 +357,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
 
     def mock_execute(self, cmd, *args, **kwargs):
         self.executed_cmds.append(' '.join(cmd))
+
+    def mock_get_bridge_ports(self):
+        return [77, 88]
 
     def tearDown(self):
         self.execute.stop()
@@ -3126,3 +3135,677 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.deleted_groups
         )
         self.assertEqual({}, self.group_mapping)
+
+    def _prepare_update_flow_rules_src_node_next_hops_tap_sf_add_fcs(
+            self, pc_corr, pp_corr_nh):
+        self.port_mapping = {
+            '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
+                'port_name': 'port1',
+                'ofport': 6,
+                'vif_mac': '00:01:02:03:05:07',
+            },
+            '29e38fb2-a643-43b1-baa8-a86596461cd5': {
+                'port_name': 'port2',
+                'ofport': 42,
+                'vif_mac': '00:01:02:03:06:08',
+            }
+        }
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
+                'nsi': 253,
+                'ingress': None,
+                'next_hops': [{
+                    'local_endpoint': '10.0.0.2',
+                    'ingress': '8768d2b3-746d-4868-ae0e-e81861c2b4e6',
+                    'weight': 1,
+                    'net_uuid': '8768d2b3-746d-4868-ae0e-e81861c2b4e7',
+                    'network_type': 'vxlan',
+                    'segment_id': 33,
+                    'gw_mac': '00:01:02:03:06:09',
+                    'cidr': '10.0.0.0/8',
+                    'in_mac_address': '12:34:56:78:cf:23',
+                    'pp_corr': pp_corr_nh,
+                    'tap_enabled': True,
+                    'nsi': 253,  # 'nsi' of TAP node
+                    'nsp': 256,
+                    'tap_nh_node_type': 'sf_node',
+                    'pp_corr_tap_nh': None
+                }],
+                'del_fcs': [],
+                'group_refcnt': 1,
+                'node_type': 'src_node',
+                'egress': '29e38fb2-a643-43b1-baa8-a86596461cd5',
+                'next_group_id': 1,
+                'nsp': 256,
+                'add_fcs': [{
+                    'source_port_range_min': 100,
+                    'destination_ip_prefix': u'10.200.0.0/16',
+                    'protocol': u'tcp',
+                    'l7_parameters': {},
+                    'source_port_range_max': 100,
+                    'source_ip_prefix': '10.100.0.0/16',
+                    'destination_port_range_min': 100,
+                    'ethertype': 'IPv4',
+                    'destination_port_range_max': 100,
+                }],
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True,
+                'pc_corr': pc_corr,
+                'pp_corr': None,
+                'segment_id': 33
+            },
+            status
+        )
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+
+    def test_update_flow_rules_src_node_next_hop_tap_sf_add_fcs(self):
+        self._prepare_update_flow_rules_src_node_next_hops_tap_sf_add_fcs(
+            'mpls',
+            None)
+        self.assertEqual(
+            [{
+                'actions': ('push_mpls:0x8847,set_mpls_label:65789,'
+                            'set_mpls_ttl:253,mod_vlan_vid:0,output:2'),
+                'in_port': 42,
+                'dl_src': '00:01:02:03:06:08',
+                'eth_type': 2048,
+                'priority': 0,
+                'table': 7
+            }, {
+                'actions': 'resubmit(,25)',
+                'dl_src': '00:01:02:03:06:08',
+                'eth_type': 34887,
+                'in_port': 1,
+                'mpls_label': 65789,
+                'priority': 30,
+                'table': 0
+            }, {
+                'actions': 'strip_vlan,load:0x21->NXM_NX_TUN_ID[],'
+                           'output:77,output:88',
+                'dl_src': '00:01:02:03:06:08',
+                'eth_type': 34887,
+                'in_port': 1,
+                'mpls_label': 65789,
+                'priority': 0,
+                'table': 25
+            }, {
+                'actions': 'group:1,resubmit(,7)',
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+
+            }],
+            self.added_flows
+        )
+
+    def _prepare_update_ingress_flow_tap_sf(self, pc_corr, pp_corr_nh):
+        self.port_mapping = {
+            '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
+                'port_name': 'port1',
+                'ofport': 6,
+                'vif_mac': '00:01:02:03:05:07',
+            }
+        }
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
+                'nsi': 253,
+                'ingress': '8768d2b3-746d-4868-ae0e-e81861c2b4e6',
+                'egress': None,
+                'mac_address': '00:01:02:03:05:07',
+                'node_type': 'sf_node',
+                'next_group_id': 1,
+                'nsp': 256,
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True,
+                'pc_corr': pc_corr,
+                'pp_corr': None,
+                'tap_enabled': True
+            },
+            status
+        )
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+
+    def test_update_ingress_flow_rule_tap_sf(self):
+        self._prepare_update_ingress_flow_tap_sf('mpls', None)
+        self.assertEqual(
+            [{
+                'actions': 'strip_vlan, pop_mpls:0x8847,output:6',
+                'dl_src': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'dl_vlan': 0,
+                'mpls_label': 65789,
+                'priority': 1,
+                'table': 10
+            }],
+            self.added_flows
+        )
+
+    def _prepare_delete_ingress_flow_tap_sf(self, pc_corr, pp_corr_nh):
+        self.port_mapping = {
+            '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
+                'port_name': 'port1',
+                'ofport': 6,
+                'vif_mac': '00:01:02:03:05:07',
+            }
+        }
+        status = []
+        self.sfc_driver.delete_flow_rule(
+            {
+                'nsi': 253,
+                'ingress': '8768d2b3-746d-4868-ae0e-e81861c2b4e6',
+                'egress': None,
+                'mac_address': '00:01:02:03:05:07',
+                'node_type': 'sf_node',
+                'next_group_id': 1,
+                'nsp': 256,
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True,
+                'pc_corr': pc_corr,
+                'pp_corr': None,
+                'tap_enabled': True
+            },
+            status
+        )
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+
+    def test_delete_ingress_flow_rule_tap_sf(self):
+        self._prepare_delete_ingress_flow_tap_sf('mpls', None)
+        self.assertEqual(
+            [{
+                'dl_src': '00:01:02:03:05:07',
+                'eth_type': 34887,
+                'mpls_label': 65789,
+                'table': 10
+            }],
+            self.deleted_flows
+        )
+
+    def _prepare_update_flow_rules_tap_node_next_hop_default_sf_add_fcs(
+            self, pc_corr, pp_corr_nh):
+        self.port_mapping = {
+            '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
+                'port_name': 'port1',
+                'ofport': 6,
+                'vif_mac': '00:01:02:03:05:07',
+            },
+            '29e38fb2-a643-43b1-baa8-a86596461cd5': {
+                'port_name': 'port2',
+                'ofport': 42,
+                'vif_mac': '00:01:02:03:06:08',
+            }
+        }
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
+                'nsi': 255,
+                'ingress': None,
+                'next_hops': [{
+                    'local_endpoint': '10.0.0.2',
+                    'ingress': '8768d2b3-746d-4868-ae0e-e81861c2b4e6',
+                    'weight': 1,
+                    'net_uuid': '8768d2b3-746d-4868-ae0e-e81861c2b4e7',
+                    'network_type': 'vxlan',
+                    'segment_id': 33,
+                    'gw_mac': '00:01:02:03:06:09',
+                    'cidr': '10.0.0.0/8',
+                    'in_mac_address': '12:34:56:78:cf:23',
+                    'pp_corr': pp_corr_nh,
+                }],
+                'del_fcs': [],
+                'group_refcnt': 0,
+                'node_type': 'src_node',
+                'egress': '29e38fb2-a643-43b1-baa8-a86596461cd5',
+                'next_group_id': 2,
+                'nsp': 256,
+                'add_fcs': [{
+                    'source_port_range_min': 100,
+                    'destination_ip_prefix': u'10.200.0.0/16',
+                    'protocol': u'tcp',
+                    'l7_parameters': {},
+                    'source_port_range_max': 100,
+                    'source_ip_prefix': '10.100.0.0/16',
+                    'destination_port_range_min': 100,
+                    'ethertype': 'IPv4',
+                    'destination_port_range_max': 100,
+                }],
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True,
+                'pc_corr': pc_corr,
+                'pp_corr': None,
+                'skip_ingress_flow_config': True,
+                'segment_id': 33,
+                'tap_enabled': True
+            },
+            status
+        )
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+
+    def test_update_flow_rules_tap_node_next_hop_default_sf_add_fcs(
+            self):
+        self._prepare_update_flow_rules_tap_node_next_hop_default_sf_add_fcs(
+            'mpls',
+            None
+        )
+        self.assertEqual([{
+            'actions': ('push_mpls:0x8847,set_mpls_label:65791,'
+                        'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
+            'dl_dst': '12:34:56:78:cf:23',
+            'eth_type': 2048,
+            'priority': 0,
+            'table': 5
+        }, {
+            'actions': 'group:2,resubmit(,7)',
+            'eth_type': 2048,
+            'in_port': 42,
+            'nw_dst': u'10.200.0.0/16',
+            'nw_proto': 6,
+            'nw_src': '10.100.0.0/16',
+            'priority': 30,
+            'table': 0,
+            'tp_dst': '0x64/0xffff',
+            'tp_src': '0x64/0xffff'
+        }],
+            self.added_flows
+        )
+
+        self.assertEqual(
+            {
+                2: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 2,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def test_update_flow_rules_tap_node_next_hop_default_sf_mpls_add_fcs(
+            self):
+        # SRC -> TAP -> DEFAULT_SF(MPLS) -> DST
+        self._prepare_update_flow_rules_tap_node_next_hop_default_sf_add_fcs(
+            'mpls',
+            'mpls'
+        )
+        self.assertEqual([{
+            'actions': 'mod_vlan_vid:0,,output:2',
+            'dl_dst': '12:34:56:78:cf:23',
+            'eth_type': 34887,
+            'priority': 0,
+            'table': 5
+        }, {
+            'actions': ('push_mpls:0x8847,set_mpls_label:65791,'
+                        'set_mpls_ttl:255,group:2,resubmit(,7)'),
+            'eth_type': 2048,
+            'in_port': 42,
+            'nw_dst': u'10.200.0.0/16',
+            'nw_proto': 6,
+            'nw_src': '10.100.0.0/16',
+            'priority': 30,
+            'table': 0,
+            'tp_dst': '0x64/0xffff',
+            'tp_src': '0x64/0xffff'
+        }],
+            self.added_flows
+        )
+
+        self.assertEqual(
+            {
+                2: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 2,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def _prep_flow_def_sf_nxt_hop_tap_node_nxt_hop_def_sf_mpls_add_fcs(
+            self, pc_corr, pp_corr_nh):
+        self.port_mapping = {
+            '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
+                'port_name': 'port1',
+                'ofport': 6,
+                'vif_mac': '00:01:02:03:05:07',
+            },
+            '29e38fb2-a643-43b1-baa8-a86596461cd5': {
+                'port_name': 'port2',
+                'ofport': 42,
+                'vif_mac': '00:01:02:03:06:08',
+            }
+        }
+        status = []
+        self.sfc_driver.update_flow_rules(
+            {
+                'nsi': 254,
+                'ingress': None,
+                'next_hops': [{
+                    'local_endpoint': '10.0.0.2',
+                    'ingress': '8768d2b3-746d-4868-ae0e-e81861c2b4e6',
+                    'weight': 1,
+                    'net_uuid': '8768d2b3-746d-4868-ae0e-e81861c2b4e7',
+                    'network_type': 'vxlan',
+                    'segment_id': 33,
+                    'gw_mac': '00:01:02:03:06:09',
+                    'cidr': '10.0.0.0/8',
+                    'in_mac_address': '12:34:56:78:cf:23',
+                    'pp_corr': pp_corr_nh,
+                }],
+                'del_fcs': [],
+                'group_refcnt': 0,
+                'node_type': 'src_node',
+                'egress': '29e38fb2-a643-43b1-baa8-a86596461cd5',
+                'next_group_id': 2,
+                'nsp': 256,
+                'add_fcs': [{
+                    'source_port_range_min': 100,
+                    'destination_ip_prefix': u'10.200.0.0/16',
+                    'protocol': u'tcp',
+                    'l7_parameters': {},
+                    'source_port_range_max': 100,
+                    'source_ip_prefix': '10.100.0.0/16',
+                    'destination_port_range_min': 100,
+                    'ethertype': 'IPv4',
+                    'destination_port_range_max': 100,
+                }],
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True,
+                'pc_corr': pc_corr,
+                'pp_corr': None,
+                'skip_ingress_flow_config': True,
+                'segment_id': 33,
+                'tap_enabled': True
+            },
+            status
+        )
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+
+    def test_update_flows_def_sf_nxt_hop_tap_node_nxt_hop_def_sf_mpls_add_fcs(
+            self):
+        # SRC -> DEFAULT_SF -> TAP -> DEFAULT_SF(MPLS) -> DST
+        self._prep_flow_def_sf_nxt_hop_tap_node_nxt_hop_def_sf_mpls_add_fcs(
+            'mpls',
+            'mpls'
+        )
+        self.assertEqual([{
+            'actions': 'mod_vlan_vid:0,,output:2',
+            'dl_dst': '12:34:56:78:cf:23',
+            'eth_type': 34887,
+            'priority': 0,
+            'table': 5
+        }, {
+            'actions': ('push_mpls:0x8847,set_mpls_label:65790,'
+                        'set_mpls_ttl:254,group:2,resubmit(,7)'),
+            'eth_type': 2048,
+            'in_port': 42,
+            'nw_dst': u'10.200.0.0/16',
+            'nw_proto': 6,
+            'nw_src': '10.100.0.0/16',
+            'priority': 30,
+            'table': 0,
+            'tp_dst': '0x64/0xffff',
+            'tp_src': '0x64/0xffff'
+        }],
+            self.added_flows
+        )
+
+        self.assertEqual(
+            {
+                2: {
+                    'buckets': (
+                        'bucket=weight=1, '
+                        'mod_dl_dst:12:34:56:78:cf:23, '
+                        'resubmit(,5)'
+                    ),
+                    'group_id': 2,
+                    'type': 'select'
+                }
+            },
+            self.group_mapping
+        )
+
+    def _prepare_delete_flow_rules_src_node_next_hops_tap_sf_del_fcs(
+            self, pc_corr, pp_corr_nh):
+        self.port_mapping = {
+            '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
+                'port_name': 'port1',
+                'ofport': 6,
+                'vif_mac': '00:01:02:03:05:07',
+            },
+            '29e38fb2-a643-43b1-baa8-a86596461cd5': {
+                'port_name': 'port2',
+                'ofport': 42,
+                'vif_mac': '00:01:02:03:06:08',
+            }
+        }
+        status = []
+        self.sfc_driver.delete_flow_rule(
+            {
+                'nsi': 255,
+                'ingress': None,
+                'next_hops': [{
+                    'local_endpoint': '10.0.0.2',
+                    'ingress': '8768d2b3-746d-4868-ae0e-e81861c2b4e6',
+                    'weight': 1,
+                    'net_uuid': '8768d2b3-746d-4868-ae0e-e81861c2b4e7',
+                    'network_type': 'vxlan',
+                    'segment_id': 33,
+                    'gw_mac': '00:01:02:03:06:09',
+                    'cidr': '10.0.0.0/8',
+                    'in_mac_address': '12:34:56:78:cf:23',
+                    'pp_corr': pp_corr_nh,
+                    'tap_enabled': True,
+                    'nsi': 253,
+                    'nsp': 256
+                }],
+                'add_fcs': [],
+                'group_refcnt': 1,
+                'node_type': 'src_node',
+                'egress': '29e38fb2-a643-43b1-baa8-a86596461cd5',
+                'next_group_id': 1,
+                'nsp': 256,
+                'del_fcs': [{
+                    'source_port_range_min': 100,
+                    'destination_ip_prefix': u'10.200.0.0/16',
+                    'protocol': u'tcp',
+                    'l7_parameters': {},
+                    'source_port_range_max': 100,
+                    'source_ip_prefix': '10.100.0.0/16',
+                    'destination_port_range_min': 100,
+                    'ethertype': 'IPv4',
+                    'destination_port_range_max': 100,
+                }],
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True,
+                'pc_corr': pc_corr,
+                'pp_corr': None,
+                'segment_id': 33
+            },
+            status
+        )
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+
+    def test_delete_flow_rules_src_node_next_hops_tap_sf_del_fcs(self):
+        self._prepare_delete_flow_rules_src_node_next_hops_tap_sf_del_fcs(
+            'mpls',
+            None)
+        self.assertEqual([
+            {
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff',
+                'strict': True
+            }, {
+                'dl_src': '00:01:02:03:06:08',
+                'table': 7
+            }, {
+                'dl_src': '00:01:02:03:06:08',
+                'eth_type': 34887,
+                'in_port': 1,
+                'mpls_label': 65789,
+                'table': 0
+            }, {
+                'dl_src': '00:01:02:03:06:08',
+                'eth_type': 34887,
+                'in_port': 1,
+                'mpls_label': 65789,
+                'table': 25
+            }],
+            self.deleted_flows
+        )
+
+    def _prepare_delete_flow_rules_tap_node_next_hop_default_sf_del_fcs(
+            self, pc_corr, pp_corr_nh):
+        self.port_mapping = {
+            '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
+                'port_name': 'port1',
+                'ofport': 6,
+                'vif_mac': '00:01:02:03:05:07',
+            },
+            '29e38fb2-a643-43b1-baa8-a86596461cd5': {
+                'port_name': 'port2',
+                'ofport': 42,
+                'vif_mac': '00:01:02:03:06:08',
+            }
+        }
+        status = []
+        self.sfc_driver.delete_flow_rule(
+            {
+                'nsi': 254,
+                'ingress': None,
+                'next_hops': [{
+                    'local_endpoint': '10.0.0.2',
+                    'ingress': '8768d2b3-746d-4868-ae0e-e81861c2b4e6',
+                    'weight': 1,
+                    'net_uuid': '8768d2b3-746d-4868-ae0e-e81861c2b4e7',
+                    'network_type': 'vxlan',
+                    'segment_id': 33,
+                    'gw_mac': '00:01:02:03:06:09',
+                    'cidr': '10.0.0.0/8',
+                    'in_mac_address': '12:34:56:78:cf:23',
+                    'pp_corr': pp_corr_nh,
+                }],
+                'add_fcs': [],
+                'group_refcnt': 0,
+                'node_type': 'src_node',
+                'egress': '29e38fb2-a643-43b1-baa8-a86596461cd5',
+                'next_group_id': 2,
+                'nsp': 256,
+                'del_fcs': [{
+                    'source_port_range_min': 100,
+                    'destination_ip_prefix': u'10.200.0.0/16',
+                    'protocol': u'tcp',
+                    'l7_parameters': {},
+                    'source_port_range_max': 100,
+                    'source_ip_prefix': '10.100.0.0/16',
+                    'destination_port_range_min': 100,
+                    'ethertype': 'IPv4',
+                    'destination_port_range_max': 100,
+                }],
+                'id': uuidutils.generate_uuid(),
+                'fwd_path': True,
+                'pc_corr': pc_corr,
+                'pp_corr': None,
+                'skip_ingress_flow_config': True,
+                'segment_id': 33,
+                'tap_enabled': True
+            },
+            status
+        )
+        self.assertEqual(
+            [],
+            self.executed_cmds
+        )
+
+    def test_delete_flow_rules_tap_node_next_hop_default_sf_del_fcs(self):
+        self._prepare_delete_flow_rules_tap_node_next_hop_default_sf_del_fcs(
+            'mpls',
+            None
+        )
+        self.assertEqual([
+            {
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'strict': True,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'dl_dst': '12:34:56:78:cf:23',
+                'table': 5
+            }],
+            self.deleted_flows)
+        self.assertEqual(
+            [2],
+            self.deleted_groups
+        )
+
+    def test_delete_flow_rules_tap_node_next_hop_default_sf_mpls_del_fcs(self):
+        self._prepare_delete_flow_rules_tap_node_next_hop_default_sf_del_fcs(
+            'mpls',
+            'mpls'
+        )
+        self.assertEqual([
+            {
+                'eth_type': 2048,
+                'in_port': 42,
+                'nw_dst': u'10.200.0.0/16',
+                'nw_proto': 6,
+                'nw_src': '10.100.0.0/16',
+                'priority': 30,
+                'strict': True,
+                'table': 0,
+                'tp_dst': '0x64/0xffff',
+                'tp_src': '0x64/0xffff'
+            }, {
+                'dl_dst': '12:34:56:78:cf:23',
+                'table': 5
+            }],
+            self.deleted_flows)
+        self.assertEqual(
+            [2],
+            self.deleted_groups
+        )

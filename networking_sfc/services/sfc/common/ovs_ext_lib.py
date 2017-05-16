@@ -86,6 +86,13 @@ class SfcOVSBridgeExt(object):
                                if ovs_lib.is_a_flow_line(item))
         return retval
 
+    def get_bridge_ports(self):
+        port_name_list = self.bridge.get_port_name_list()
+        of_portno_list = list()
+        for port_name in port_name_list:
+            of_portno_list.append(self.bridge.get_port_ofport(port_name))
+        return of_portno_list
+
 
 def _build_group_expr_str(group_dict, cmd):
     group_expr_arr = []
