@@ -29,8 +29,7 @@ class SfcAgentExtensionTestCase(base.BaseTestCase):
     def setUp(self):
         super(SfcAgentExtensionTestCase, self).setUp()
 
-        conn_patcher = mock.patch(
-            'neutron.agent.ovsdb.native.connection.Connection.start')
+        conn_patcher = mock.patch('neutron.agent.ovsdb.impl_idl._connection')
         conn_patcher.start()
         self.addCleanup(conn_patcher.stop)
 
