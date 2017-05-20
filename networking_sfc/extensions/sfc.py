@@ -30,6 +30,7 @@ from neutron.api.v2 import resource_helper
 
 from networking_sfc._i18n import _
 from networking_sfc import extensions as sfc_extensions
+from networking_sfc.extensions import flowclassifier as ext_fc
 
 
 cfg.CONF.import_opt('api_extensions_path', 'neutron.common.config')
@@ -38,16 +39,33 @@ neutron_ext.append_api_extensions_path(sfc_extensions.__path__)
 SFC_EXT = "sfc"
 SFC_PREFIX = "/sfc"
 
+# Default Chain Parameters
 DEFAULT_CHAIN_CORRELATION = 'mpls'
 DEFAULT_CHAIN_SYMMETRY = False
 DEFAULT_CHAIN_PARAMETERS = {'correlation': DEFAULT_CHAIN_CORRELATION,
                             'symmetric': DEFAULT_CHAIN_SYMMETRY}
+
+# Default SF Parameters
 DEFAULT_SF_PARAMETERS = {'correlation': None, 'weight': 1}
-DEFAULT_PPG_PARAMETERS = {'lb_fields': []}
+
+# Default and Supported PPG Parameters
+DEFAULT_PPG_LB_FIELDS = []
+DEFAULT_PPG_N_TUPLE = {'ingress_n_tuple': {}, 'egress_n_tuple': {}}
+DEFAULT_PPG_PARAMETERS = {'lb_fields': DEFAULT_PPG_LB_FIELDS,
+                          'ppg_n_tuple_mapping': DEFAULT_PPG_N_TUPLE}
 SUPPORTED_LB_FIELDS = [
     "eth_src", "eth_dst", "ip_src", "ip_dst",
     "tcp_src", "tcp_dst", "udp_src", "udp_dst"
 ]
+SUPPORTED_PPG_TUPLE_MAPPING = {
+    'source_ip_prefix': None,
+    'destination_ip_prefix': None,
+    'source_port_range_min': None,
+    'source_port_range_max': None,
+    'destination_port_range_min': None,
+    'destination_port_range_max': None,
+}
+
 MAX_CHAIN_ID = 65535
 
 
@@ -65,6 +83,36 @@ def validate_list_of_allowed_values(data, allowed_values=None):
 
 lib_validators.validators['type:list_of_allowed_values'] = \
     validate_list_of_allowed_values
+
+
+# DEFAULT RESOURCE_ATTRIBUTE_MAP for ingress_n_tuple and egress_n_tuple in
+# ppg_n_tuple_mapping validate dict
+ppg_n_tuple_validact_dict = {
+    'source_ip_prefix': {
+        'default': None,
+        'validate': {'type:subnet_or_none': None}
+    },
+    'destination_ip_prefix': {
+        'default': None,
+        'validate': {'type:subnet_or_none': None}
+    },
+    'source_port_range_min': {
+        'default': None,
+        'convert_to': ext_fc.normalize_port_value
+    },
+    'source_port_range_max': {
+        'default': None,
+        'convert_to': ext_fc.normalize_port_value
+    },
+    'destination_port_range_min': {
+        'default': None,
+        'convert_to': ext_fc.normalize_port_value
+    },
+    'destination_port_range_max': {
+        'default': None,
+        'convert_to': ext_fc.normalize_port_value
+    }
+}
 
 
 # Port Chain Exceptions
@@ -136,6 +184,14 @@ class PortPairInUse(neutron_exc.InUse):
     message = _("Port Pair %(id)s in use.")
 
 
+class PPGParametersInvalidNTupleMappingParameter(neutron_exc.InvalidInput):
+    message = _(
+        "Invalid Port Pair Group N-Tuple Mapping parameters: "
+        "%%(error_message)s. Supported PPG classifier N-Tuple Mapping "
+        "parameters are %(supported_parameters)s."
+    ) % {'supported_parameters': SUPPORTED_PPG_TUPLE_MAPPING}
+
+
 def normalize_port_pair_groups(port_pair_groups):
     port_pair_groups = lib_converters.convert_to_list(port_pair_groups)
     if not port_pair_groups:
@@ -158,7 +214,19 @@ def normalize_sf_parameters(parameters):
 
 
 def normalize_ppg_parameters(parameters):
-    return parameters if parameters else DEFAULT_PPG_PARAMETERS
+    if not parameters:
+        return DEFAULT_PPG_PARAMETERS
+    if 'lb_fields' not in parameters:
+        parameters['lb_fields'] = DEFAULT_PPG_LB_FIELDS
+    if 'ppg_n_tuple_mapping' not in parameters:
+        parameters['ppg_n_tuple_mapping'] = DEFAULT_PPG_N_TUPLE
+    if 'ppg_n_tuple_mapping' in parameters:
+        for key, value in parameters['ppg_n_tuple_mapping'].items():
+            for n_key in value:
+                if n_key not in SUPPORTED_PPG_TUPLE_MAPPING:
+                    raise PPGParametersInvalidNTupleMappingParameter(
+                        error_message='Unknow key %s.' % n_key)
+    return parameters
 
 
 RESOURCE_ATTRIBUTE_MAP = {
@@ -313,6 +381,27 @@ RESOURCE_ATTRIBUTE_MAP = {
                     'lb_fields': {
                         'default': DEFAULT_PPG_PARAMETERS['lb_fields'],
                         'type:list_of_allowed_values': SUPPORTED_LB_FIELDS
+                    },
+                    'ppg_n_tuple_mapping': {
+                        'default': DEFAULT_PPG_PARAMETERS[
+                            'ppg_n_tuple_mapping'],
+                        'validate': {
+                            'type:dict': {
+                                'ingress_n_tuple': {
+                                    'default': {},
+                                    'validate': {
+                                        'type:dict': ppg_n_tuple_validact_dict
+                                    }
+                                },
+                                'egress_n_tuple': {
+                                    'default': {},
+                                    'validate': {
+                                        'type:dict': ppg_n_tuple_validact_dict
+                                    }
+                                }
+                            }
+                        },
+                        'convert_to': lib_converters.convert_none_to_empty_dict
                     }
                 }
             },

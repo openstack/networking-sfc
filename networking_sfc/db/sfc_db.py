@@ -39,6 +39,7 @@ LOG = logging.getLogger(__name__)
 
 UUID_LEN = 36
 PARAM_LEN = 255
+VAR_MAX_LEN = 1024
 
 
 class ChainParameter(model_base.BASEV2):
@@ -67,7 +68,7 @@ class PortPairGroupParam(model_base.BASEV2):
     """Represents a port pair group parameter."""
     __tablename__ = 'sfc_port_pair_group_params'
     keyword = sa.Column(sa.String(PARAM_LEN), primary_key=True)
-    value = sa.Column(sa.String(PARAM_LEN))
+    value = sa.Column(sa.String(VAR_MAX_LEN))
     pair_group_id = sa.Column(
         sa.String(UUID_LEN),
         sa.ForeignKey('sfc_port_pair_groups.id', ondelete='CASCADE'),

@@ -169,6 +169,7 @@ class PathNode(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     next_hop = sa.Column(sa.String(512))
     fwd_path = sa.Column(sa.Boolean(),
                          nullable=False)
+    ppg_n_tuple_mapping = sa.Column(sa.String(1024), nullable=True)
 
 
 class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
@@ -188,7 +189,8 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                'portpair_details': [pair_detail['portpair_id']
                                     for pair_detail in node['portpair_details']
                                     ],
-               'fwd_path': node['fwd_path']
+               'fwd_path': node['fwd_path'],
+               'ppg_n_tuple_mapping': node['ppg_n_tuple_mapping']
                }
 
         return self._fields(res, fields)

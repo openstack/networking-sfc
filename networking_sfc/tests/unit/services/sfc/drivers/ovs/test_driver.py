@@ -671,6 +671,142 @@ class OVSSfcDriverTestCase(
                                 update_flow_rules[flow2]['node_type'],
                                 'sf_node')
 
+    def test_create_port_chain_with_fc_ppg_n_tuple_mapping(self):
+        with self.port(
+            name='port1',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as src_port, self.port(
+            name='ingress',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress, self.port(
+            name='egress',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as egress:
+            self.host_endpoint_mapping = {
+                'test': '10.0.0.1',
+            }
+            with self.flow_classifier(flow_classifier={
+                'source_port_range_min': 100,
+                'source_port_range_max': 200,
+                'destination_port_range_min': 300,
+                'destination_port_range_max': 400,
+                'ethertype': 'IPv4',
+                'source_ip_prefix': '10.100.0.0/16',
+                'destination_ip_prefix': '10.200.0.0/16',
+                'l7_parameters': {},
+                'protocol': 'tcp',
+                'logical_source_port': src_port['port']['id']
+            }) as fc:
+                with self.port_pair(port_pair={
+                    'ingress': ingress['port']['id'],
+                    'egress': egress['port']['id']
+                }) as pp:
+                    pp_context = sfc_ctx.PortPairContext(
+                        self.sfc_plugin, self.ctx,
+                        pp['port_pair']
+                    )
+                    self.driver.create_port_pair(pp_context)
+                    with self.port_pair_group(port_pair_group={
+                        'port_pairs': [pp['port_pair']['id']],
+                        'port_pair_group_parameters': {
+                            'ppg_n_tuple_mapping': {
+                                'ingress_n_tuple': {},
+                                'egress_n_tuple': {
+                                    'source_ip_prefix': '10.300.0.10/16'}
+                            }
+                        }
+                    }) as pg:
+                        pg_context = sfc_ctx.PortPairGroupContext(
+                            self.sfc_plugin, self.ctx,
+                            pg['port_pair_group']
+                        )
+                        self.driver.create_port_pair_group(pg_context)
+                        with self.port_chain(port_chain={
+                            'name': 'test1',
+                            'port_pair_groups': [pg['port_pair_group']['id']],
+                            'flow_classifiers': [fc['flow_classifier']['id']]
+                        }) as pc:
+                            pc_context = sfc_ctx.PortChainContext(
+                                self.sfc_plugin, self.ctx,
+                                pc['port_chain']
+                            )
+                            self.driver.create_port_chain(pc_context)
+                            self.wait()
+                            update_flow_rules = self.map_flow_rules(
+                                self.rpc_calls['update_flow_rules'])
+                            flow1 = self.build_ingress_egress(
+                                None, src_port['port']['id'])
+                            flow2 = self.build_ingress_egress(
+                                ingress['port']['id'],
+                                egress['port']['id']
+                            )
+                            self.assertEqual(
+                                set(update_flow_rules.keys()),
+                                {flow1, flow2})
+                            add_fcs = update_flow_rules[flow1]['add_fcs']
+                            self.assertEqual(len(add_fcs), 1)
+                            self.assertDictContainsSubset({
+                                'destination_ip_prefix': '10.200.0.0/16',
+                                'destination_port_range_max': 400,
+                                'destination_port_range_min': 300,
+                                'ethertype': 'IPv4',
+                                'l7_parameters': {},
+                                'protocol': 'tcp',
+                                'source_ip_prefix': '10.100.0.0/16',
+                                'source_port_range_max': 200,
+                                'source_port_range_min': 100
+                            }, add_fcs[0])
+                            next_hops = self.next_hops_info(
+                                update_flow_rules[flow1].get('next_hops'))
+                            self.assertEqual(
+                                next_hops,
+                                {ingress['port']['mac_address']: '10.0.0.1'})
+                            self.assertIsNotNone(
+                                update_flow_rules[flow1]['next_group_id']
+                            )
+                            self.assertEqual(
+                                update_flow_rules[flow1]['node_type'],
+                                'src_node')
+                            add_fcs = update_flow_rules[flow2]['add_fcs']
+                            self.assertEqual(len(add_fcs), 1)
+                            self.assertDictContainsSubset({
+                                'destination_ip_prefix': '10.200.0.0/16',
+                                'destination_port_range_max': 400,
+                                'destination_port_range_min': 300,
+                                'ethertype': 'IPv4',
+                                'l7_parameters': {},
+                                'protocol': 'tcp',
+                                'source_ip_prefix': '10.300.0.10/16',
+                                'source_port_range_max': 200,
+                                'source_port_range_min': 100
+                            }, add_fcs[0])
+                            next_hops = self.next_hops_info(
+                                update_flow_rules[flow2].get('next_hops'))
+                            self.assertEqual(
+                                next_hops,
+                                {})
+                            self.assertIsNone(
+                                update_flow_rules[flow2]['next_group_id']
+                            )
+                            self.assertEqual(
+                                update_flow_rules[flow2]['node_type'],
+                                'sf_node')
+
     def test_create_port_chain_multi_port_groups_port_pairs(self):
         with self.port(
             name='port1',
@@ -5325,4 +5461,199 @@ class OVSSfcDriverTestCase(
                             )
                             self.assertEqual(
                                 update_flow_rules[flow6]['node_type'],
+                                'sf_node')
+
+    def test_create_port_chain_fcs_port_pairs_ppg_n_tuple_symmetric(self):
+        with self.port(
+            name='port1',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as src_port, self.port(
+            name='ingress',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as ingress, self.port(
+            name='egress',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as egress, self.port(
+            name='port2',
+            device_owner='compute',
+            device_id='test',
+            arg_list=(
+                portbindings.HOST_ID,
+            ),
+            **{portbindings.HOST_ID: 'test'}
+        ) as dst_port:
+            self.host_endpoint_mapping = {
+                'test': '10.0.0.1',
+            }
+            with self.flow_classifier(flow_classifier={
+                'source_port_range_min': 100,
+                'source_port_range_max': 200,
+                'destination_port_range_min': 300,
+                'destination_port_range_max': 400,
+                'ethertype': 'IPv4',
+                'source_ip_prefix': '10.100.0.0/16',
+                'destination_ip_prefix': '10.200.0.0/16',
+                'l7_parameters': {},
+                'protocol': 'tcp',
+                'logical_source_port': src_port['port']['id'],
+                'logical_destination_port': dst_port['port']['id']
+            }) as fc:
+                with self.port_pair(port_pair={
+                    'ingress': ingress['port']['id'],
+                    'egress': egress['port']['id']
+                }) as pp:
+                    pp_context = sfc_ctx.PortPairContext(
+                        self.sfc_plugin, self.ctx,
+                        pp['port_pair']
+                    )
+                    self.driver.create_port_pair(pp_context)
+                    with self.port_pair_group(port_pair_group={
+                        'port_pairs': [pp['port_pair']['id']],
+                        'port_pair_group_parameters': {
+                            'ppg_n_tuple_mapping': {
+                                'ingress_n_tuple': {
+                                    'source_ip_prefix': '10.100.0.0/16'},
+                                'egress_n_tuple': {
+                                    'source_ip_prefix': '10.300.0.0/16'}
+                            }
+                        }
+                    }) as pg:
+                        pg_context = sfc_ctx.PortPairGroupContext(
+                            self.sfc_plugin, self.ctx,
+                            pg['port_pair_group']
+                        )
+                        self.driver.create_port_pair_group(pg_context)
+                        with self.port_chain(port_chain={
+                            'name': 'test1',
+                            'port_pair_groups': [pg['port_pair_group']['id']],
+                            'flow_classifiers': [fc['flow_classifier']['id']],
+                            'chain_parameters': {'symmetric': True}
+                        }) as pc:
+                            pc_context = sfc_ctx.PortChainContext(
+                                self.sfc_plugin, self.ctx,
+                                pc['port_chain']
+                            )
+                            self.driver.create_port_chain(pc_context)
+                            self.wait()
+                            update_flow_rules = self.map_flow_rules(
+                                self.rpc_calls['update_flow_rules'])
+                            flow1 = self.build_ingress_egress(
+                                None, src_port['port']['id'])
+                            flow2 = self.build_ingress_egress(
+                                ingress['port']['id'],
+                                egress['port']['id'])
+                            flow3 = self.build_ingress_egress(
+                                None, dst_port['port']['id'])
+                            flow4 = self.build_ingress_egress(
+                                ingress['port']['id'],
+                                egress['port']['id'])
+                            self.assertEqual(
+                                set(update_flow_rules.keys()),
+                                {flow1, flow2, flow3, flow4})
+                            add_fcs = update_flow_rules[flow1]['add_fcs']
+                            self.assertEqual(len(add_fcs), 1)
+                            self.assertDictContainsSubset({
+                                'destination_ip_prefix': '10.200.0.0/16',
+                                'destination_port_range_max': 400,
+                                'destination_port_range_min': 300,
+                                'ethertype': 'IPv4',
+                                'l7_parameters': {},
+                                'protocol': 'tcp',
+                                'source_ip_prefix': '10.100.0.0/16',
+                                'source_port_range_max': 200,
+                                'source_port_range_min': 100
+                            }, add_fcs[0])
+                            next_hops = self.next_hops_info(
+                                update_flow_rules[flow1].get('next_hops'))
+                            self.assertEqual(
+                                next_hops,
+                                {ingress['port']['mac_address']: '10.0.0.1'})
+                            self.assertIsNotNone(
+                                update_flow_rules[flow1]['next_group_id'])
+                            self.assertEqual(
+                                update_flow_rules[flow1]['node_type'],
+                                'src_node')
+                            add_fcs = update_flow_rules[flow2]['add_fcs']
+                            self.assertEqual(len(add_fcs), 2)
+                            self.assertDictContainsSubset({
+                                'destination_ip_prefix': '10.200.0.0/16',
+                                'destination_port_range_max': 400,
+                                'destination_port_range_min': 300,
+                                'ethertype': 'IPv4',
+                                'l7_parameters': {},
+                                'protocol': 'tcp',
+                                'source_ip_prefix': '10.300.0.0/16',
+                                'source_port_range_max': 200,
+                                'source_port_range_min': 100
+                            }, add_fcs[0])
+                            next_hops = self.next_hops_info(
+                                update_flow_rules[flow2].get('next_hops'))
+                            self.assertEqual(
+                                next_hops,
+                                {})
+                            self.assertIsNone(
+                                update_flow_rules[flow2]['next_group_id'])
+                            self.assertEqual(
+                                update_flow_rules[flow2]['node_type'],
+                                'sf_node')
+                            add_fcs = update_flow_rules[flow3]['add_fcs']
+                            self.assertEqual(len(add_fcs), 1)
+                            self.assertDictContainsSubset({
+                                'destination_ip_prefix': '10.200.0.0/16',
+                                'destination_port_range_max': 400,
+                                'destination_port_range_min': 300,
+                                'ethertype': 'IPv4',
+                                'l7_parameters': {},
+                                'protocol': 'tcp',
+                                'source_ip_prefix': '10.300.0.0/16',
+                                'source_port_range_max': 200,
+                                'source_port_range_min': 100
+                            }, add_fcs[0])
+                            next_hops = self.next_hops_info(
+                                update_flow_rules[flow3].get('next_hops'))
+                            self.assertEqual(
+                                next_hops,
+                                {ingress['port']['mac_address']: '10.0.0.1'})
+                            self.assertIsNotNone(
+                                update_flow_rules[flow3]['next_group_id'])
+                            self.assertEqual(
+                                update_flow_rules[flow3]['node_type'],
+                                'src_node')
+                            add_fcs = update_flow_rules[flow4]['add_fcs']
+                            self.assertEqual(len(add_fcs), 2)
+                            self.assertDictContainsSubset({
+                                'destination_ip_prefix': '10.200.0.0/16',
+                                'destination_port_range_max': 400,
+                                'destination_port_range_min': 300,
+                                'ethertype': 'IPv4',
+                                'l7_parameters': {},
+                                'protocol': 'tcp',
+                                'source_ip_prefix': '10.300.0.0/16',
+                                'source_port_range_max': 200,
+                                'source_port_range_min': 100
+                            }, add_fcs[0])
+                            next_hops = self.next_hops_info(
+                                update_flow_rules[flow4].get('next_hops'))
+                            self.assertEqual(
+                                next_hops,
+                                {})
+                            self.assertIsNone(
+                                update_flow_rules[flow4]['next_group_id'])
+                            self.assertEqual(
+                                update_flow_rules[flow4]['node_type'],
                                 'sf_node')
