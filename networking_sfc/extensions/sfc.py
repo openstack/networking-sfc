@@ -115,7 +115,6 @@ ppg_n_tuple_validact_dict = {
 }
 
 
-# Port Chain Exceptions
 class PortChainNotFound(neutron_exc.NotFound):
     message = _("Port Chain %(id)s not found.")
 
@@ -136,6 +135,11 @@ class PortChainChainIdInConflict(neutron_exc.InvalidInput):
 
 class PortPairGroupNotSpecified(neutron_exc.InvalidInput):
     message = _("Port Pair Group is not specified in Port Chain.")
+
+
+class InconsistentCorrelations(neutron_exc.InvalidInput):
+    message = _("Port Pair Group attempted creation included Port Pairs "
+                "with inconsistent correlation types.")
 
 
 class InvalidPortPairGroups(neutron_exc.InUse):

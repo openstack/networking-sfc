@@ -699,7 +699,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         if node_info['node_type'] != ovs_const.SRC_NODE:
             flow_rule['pp_corr'] = port_info.get('correlation', None)
         else:
-            # there's no correlation yet for src nodes
+            # there's no correlation for src nodes
             flow_rule['pp_corr'] = None
         flow_rule.pop('correlation')  # correlation becomes simply pp_corr
 

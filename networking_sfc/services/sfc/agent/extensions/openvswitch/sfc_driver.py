@@ -351,26 +351,9 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             buckets = []
             vlan = self._get_vlan_by_port(flowrule['egress'])
 
-            # to avoid heterogeneous next hops (i.e. next hops with different
-            # correlation capabilities), where one could support an
-            # SFC Encapsulation protocol but not the other, this "pre-check"
-            # cycle is executed to determine whether traffic should be
-            # encapsulated in ACROSS_SUBNET table (as networking-sfc always
-            # did, or in table 0 to prevent loss of chain encapsulation/id).
-            # a better long-term solution for this is to add correlation to
-            # port-pair-group and validate whether all included port-pairs
-            # are consistent with the group regarding the correlation defined.
-            all_pps_correlated = True
             for item in next_hops:
+                # all next hops share same pp_corr, enforced by higher layers
                 pp_corr_nh = item.get('pp_corr', None)
-                if pp_corr_nh != pc_corr:
-                    all_pps_correlated = False
-                    break
-            for item in next_hops:
-                if not all_pps_correlated:
-                    pp_corr_nh = None
-                else:
-                    pp_corr_nh = item.get('pp_corr', None)
                 if flowrule['fwd_path']:
                     bucket = (
                         'bucket=weight=%d, mod_dl_dst:%s, resubmit(,%d)' % (
@@ -390,7 +373,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 # the classic encapsulation of packets in ACROSS_SUBNET_TABLE
                 # is kept unchanged for the same scenarios, i.e. when the next
                 # hops don't support encapsulation and neither the current one.
-                if not pp_corr and not all_pps_correlated:
+                if not pp_corr and pp_corr_nh is None:
                     if pc_corr == 'mpls':
                         push_encap = self._build_push_mpls(flowrule['nsp'],
                                                            flowrule['nsi'])
@@ -451,7 +434,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             enc_actions = ""
             # we only encapsulate on table 0 if we know the next hops will
             # support that encapsulation but the current hop doesn't already.
-            if not pp_corr and all_pps_correlated:
+            if not pp_corr and pp_corr_nh:
                 if pc_corr == 'mpls':
                     enc_actions = self._build_push_mpls(flowrule['nsp'],
                                                         flowrule['nsi'])

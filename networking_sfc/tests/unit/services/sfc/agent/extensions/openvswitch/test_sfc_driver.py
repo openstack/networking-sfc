@@ -1671,88 +1671,6 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             'mpls'
         )
 
-    def _prepare_update_flow_rules_sf_node_many_hops_not_all_mpls(self,
-                                                                  pp_corr):
-        self.port_mapping = {
-            '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
-                'port_name': 'port1',
-                'ofport': 6,
-                'vif_mac': '00:01:02:03:05:07',
-            },
-            '1234d2b3-746d-4868-ae0e-e81861c25678': {
-                'port_name': 'port3',
-                'ofport': 9,
-                'vif_mac': '00:01:02:0a:0b:0c',
-            },
-            '29e38fb2-a643-43b1-baa8-a86596461cd5': {
-                'port_name': 'port2',
-                'ofport': 42,
-                'vif_mac': '00:01:02:03:06:08',
-            },
-            '6331a00d-779b-462b-b0e4-6a65aa3164ef': {
-                'port_name': 'port1',
-                'ofport': 6,
-                'vif_mac': '00:01:02:03:05:07',
-            },
-
-        }
-        status = []
-        self.sfc_driver.update_flow_rules(
-            {
-                'nsi': 255,
-                'ingress': '6331a00d-779b-462b-b0e4-6a65aa3164ef',
-                'next_hops': [{
-                    'local_endpoint': '10.0.0.1',
-                    'ingress': '8768d2b3-746d-4868-ae0e-e81861c2b4e6',
-                    'weight': 1,
-                    'net_uuid': '8768d2b3-746d-4868-ae0e-e81861c2b4e7',
-                    'network_type': 'vxlan',
-                    'segment_id': 33,
-                    'gw_mac': '00:01:02:03:06:09',
-                    'cidr': '10.0.0.0/8',
-                    'in_mac_address': '12:34:56:78:cf:23',
-                    'pp_corr': 'mpls'
-                }, {
-                    'local_endpoint': '10.0.0.1',
-                    'ingress': '1234d2b3-746d-4868-ae0e-e81861c25678',
-                    'weight': 1,
-                    'net_uuid': '1234d2b3-746d-4868-ae0e-e81861c25678',
-                    'network_type': 'vxlan',
-                    'segment_id': 33,
-                    'gw_mac': '00:01:02:03:06:09',
-                    'cidr': '10.0.0.0/8',
-                    'in_mac_address': '12:34:56:78:ab:cd',
-                    'pp_corr': None
-                }],
-                'del_fcs': [],
-                'group_refcnt': 1,
-                'node_type': 'sf_node',
-                'egress': '29e38fb2-a643-43b1-baa8-a86596461cd5',
-                'next_group_id': 1,
-                'nsp': 256,
-                'add_fcs': [{
-                    'source_port_range_min': 100,
-                    'destination_ip_prefix': u'10.200.0.0/16',
-                    'protocol': u'tcp',
-                    'l7_parameters': {},
-                    'source_port_range_max': 100,
-                    'source_ip_prefix': '10.100.0.0/16',
-                    'destination_port_range_min': 100,
-                    'ethertype': 'IPv4',
-                    'destination_port_range_max': 100,
-                }],
-                'pc_corr': 'mpls',
-                'pp_corr': pp_corr,
-                'id': uuidutils.generate_uuid(),
-                'fwd_path': True
-            },
-            status
-        )
-        self.assertEqual(
-            [],
-            self.executed_cmds
-        )
-
     def _prepare_update_flow_rules_sf_node_many_hops_all_mpls(self, pp_corr):
         self.port_mapping = {
             '8768d2b3-746d-4868-ae0e-e81861c2b4e6': {
@@ -1886,72 +1804,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             self.group_mapping
         )
 
-    def test_update_flow_rules_sf_node_many_hops_not_all_mpls_no_proxy(self):
-        self._prepare_update_flow_rules_sf_node_many_hops_not_all_mpls('mpls')
-        self._assert_update_flow_rules_sf_node_many_hops_no_proxy()
-
     def test_update_flow_rules_sf_node_many_hops_all_mpls_no_proxy(self):
         self._prepare_update_flow_rules_sf_node_many_hops_all_mpls('mpls')
         self._assert_update_flow_rules_sf_node_many_hops_no_proxy()
-
-    def test_update_flow_rules_sf_node_many_hops_not_all_mpls(self):
-        self._prepare_update_flow_rules_sf_node_many_hops_not_all_mpls(None)
-        self.assertEqual(
-            [{
-                'actions': (
-                    'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': (
-                    'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
-                    'mod_vlan_vid:0,,resubmit(,10)'),
-                'dl_dst': '12:34:56:78:ab:cd',
-                'dl_type': 2048,
-                'priority': 0,
-                'table': 5
-            }, {
-                'actions': 'group:1',
-                'dl_type': 2048,
-                'in_port': 42,
-                'nw_dst': u'10.200.0.0/16',
-                'nw_proto': 6,
-                'nw_src': '10.100.0.0/16',
-                'priority': 30,
-                'table': 0,
-                'tp_dst': '0x64/0xffff',
-                'tp_src': '0x64/0xffff'
-            }, {
-                'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
-                'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
-                'dl_vlan': 0,
-                'mpls_label': 65792,
-                'priority': 1,
-                'table': 10
-            }],
-            self.added_flows
-        )
-        self.assertEqual(
-            {
-                1: {
-                    'buckets': (
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:cf:23, '
-                        'resubmit(,5),'
-                        'bucket=weight=1, '
-                        'mod_dl_dst:12:34:56:78:ab:cd, '
-                        'resubmit(,5)'
-                    ),
-                    'group_id': 1,
-                    'type': 'select'
-                }
-            },
-            self.group_mapping
-        )
 
     def test_update_flow_rules_sf_node_many_hops_all_mpls(self):
         self._prepare_update_flow_rules_sf_node_many_hops_all_mpls(None)

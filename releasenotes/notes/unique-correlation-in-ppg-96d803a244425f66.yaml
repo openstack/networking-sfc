@@ -1,0 +1,19 @@
+---
+upgrade:
+  - |
+    When upgrading from Ocata (v4), existing Port Chains that have been
+    deployed using Port Pair Groups that combine Port Pairs of different
+    correlation types (within the same Port Pair Group) will render differently
+    when using the OVS Driver. Whereas before all the Port Pairs would have
+    their correlation ignored if at least one of them had ``correlation=None``,
+    now the OVS driver will render each differently. Recreation of each Port
+    Pair Group (that have inconsistent Port Pairs' correlations) is
+    recommended - and only Port Pairs sharing the same correlation type
+    will now be supported.
+fixes:
+  - |
+    When creating Port Pair Groups, validation of each Port Pair's
+    correlation type will now occur. Every Port Pair needs to share the same
+    correlation type when they get attached to a specific Port Pair Group.
+    This guarantees homogeneity in the composition of a Port Pair Group and
+    clarifies the definition and feature set of each hop of a chain.
