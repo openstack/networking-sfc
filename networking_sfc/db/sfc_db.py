@@ -543,6 +543,25 @@ class SfcDbPlugin(
 
         return self._fields(res, fields)
 
+    def _validate_pps_in_ppg(self, portpairs_list, id=None):
+        first_check = True
+        correlation = None
+        for portpair in portpairs_list:
+            sfparams = portpair.service_function_parameters
+            pp_corr = sfparams['correlation']
+            if first_check:
+                first_check = False
+                correlation = pp_corr.value
+            if pp_corr.value != correlation:
+                # don't include PPs of different correlations
+                raise ext_sfc.InconsistentCorrelations()
+            if (
+                portpair.portpairgroup_id and
+                portpair.portpairgroup_id != id
+            ):
+                # don't include PPs included by other PPGs
+                raise ext_sfc.PortPairInUse(id=portpair.id)
+
     @log_helpers.log_method_call
     def create_port_pair_group(self, context, port_pair_group):
         """Create a port pair group."""
@@ -552,9 +571,7 @@ class SfcDbPlugin(
         with db_api.context_manager.writer.using(context):
             portpairs_list = [self._get_port_pair(context, pp_id)
                               for pp_id in pg['port_pairs']]
-            for portpair in portpairs_list:
-                if portpair.portpairgroup_id:
-                    raise ext_sfc.PortPairInUse(id=portpair.id)
+            self._validate_pps_in_ppg(portpairs_list)
             port_pair_group_parameters = {
                 key: PortPairGroupParam(
                     keyword=key, value=jsonutils.dumps(val))
@@ -627,13 +644,7 @@ class SfcDbPlugin(
         with db_api.context_manager.writer.using(context):
             portpairs_list = [self._get_port_pair(context, pp_id)
                               for pp_id in new_pg.get('port_pairs', [])]
-            for portpair in portpairs_list:
-                if (
-                    portpair.portpairgroup_id and
-                    portpair.portpairgroup_id != id
-                ):
-                    raise ext_sfc.PortPairInUse(id=portpair.id)
-
+            self._validate_pps_in_ppg(portpairs_list, id)
             old_pg = self._get_port_pair_group(context, id)
             for k, v in new_pg.items():
                 if k == 'port_pairs':

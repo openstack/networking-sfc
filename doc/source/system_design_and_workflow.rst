@@ -320,26 +320,10 @@ By default, port-chains always have their correlation set to MPLS:
 ``chain_parameters: {correlation: 'mpls'}``
 
 A port-chain can have port-pair-groups with MPLS-correlated port-pairs or
-port-pairs with no correlation. The SFC OVS driver and agents are smart enough
-to only apply SFC Proxies to the hops that require so.
-
-There is a minor quirk with the MPLS correlation in port-pairs when using the
-OVS driver, which influences the usage (more information at the Implementation
-section below): If a port-pair-group's port-pairs don't share the same
-correlation value, then all of those port-pairs will be treated as having
-no correlation support whatsoever. So, when creating port-pair-groups,
-you must guarantee that all of their port-pairs will have the MPLS correlation
-assigned, otherwise it will be the same as having all port-pairs with
-no correlation assigned.
-
-The reason for this quirk lies in the fact that port-pair-groups should provide
-a set of homogeneous port-pairs in the sense that they all have the same
-capabilities when it comes to SFC Encapsulation. If any fail to have support
-for such, the resulting behaviour of the built-in load-balancer in OVS would be
-inconsistent and unexpected, where some packets would get encapsulated while
-others wouldn't. A better solution for this would be an API change to prevent
-heterogeneous port-pairs in port-pair-groups, or simply move the correlation
-attribute to port-pair-group.
+port-pairs with no correlation. However, each port-pair-group can only group
+port-pairs that share the same correlation type (to process each hop and expose
+their feature set in a consistent and predictable way). The SFC OVS driver and
+agent are smart enough to only apply SFC Proxies to the hops that require so.
 
 
 Implementation
@@ -361,8 +345,8 @@ such as Open vSwitch. Through the OVS SFC driver and agent, the vswitches
 on the multiple nodes where networking-sfc is deployed will be configured
 with the set of flows that allow classification, encapsulation, decapsulation
 and forwarding of MPLS tagged or untagged packets. Applying the IETF SFC view
-to this, Open vSwitch switches thus implement both logical elements
-of Classifier and Service Function Forwarder (SFF) [1].
+to this, Open vSwitch switches thus implement the logical elements
+of Classifier, Service Function Forwarder (SFF) and SFC Proxy (stateless) [1].
 
 In networking-sfc, the OVS driver talks to the agents on the multiple compute
 nodes by sending "flow rule" messages to them across the RPC channels.
@@ -371,6 +355,10 @@ In flow rules, correlation parameters of both port-chains and port-pairs are
 specified using the ``pc_corr`` and ``pp_corr`` flow rule keys, respectively.
 Moreover, a ``pp_corr`` key is also specified in each of the hops of the
 ``next_hops`` flow rule key.
+
+Remember: a port-pair-group contains port-pairs that all share the same
+correlation type, so the comparison between ``pc_corr`` and each of the
+``pp_corr`` of the next hops will yield the same result.
 
 ``pc_corr`` is the correlation mechanism (SFC Encapsulation) to be used for
 the entire  port-chain. The values may be ``None``, ``'mpls'``, or ``'nsh'``
@@ -382,7 +370,7 @@ values may be ``'None'``, ``'mpls'``, or ``'nsh'`` (when supported).
 The backend driver compares ``pc_corr`` and ``pp_corr`` to determine if SFC
 Proxy is needed for a SF that is not capable of processing the
 SFC Encapsulation mechanism. For example, if ``pc_corr`` is
-``'mpls'`` and ``pp_corr`` is ``None``, the SFC Proxy is needed.
+``'mpls'`` and ``pp_corr`` is ``None``, then SFC Proxy is needed.
 
 The following is an example of an sf_node flow
 rule (taken from one of the SFC OVS agent's unit tests)::
@@ -509,13 +497,6 @@ effectively implementing an SFC Proxy and running networking-sfc's
 When preparing the packet to go to the next hop, a new MPLS header needs to be
 inserted, which is done at the ``ACROSS_SUBNET_TABLE``, after a destination
 port-pair has been chosen with the help of the Groups Table.
-
-
-Note that no scenario with next_hops having different hops with different
-pp_corr values was specified. The reason for this lies in the fact that the
-port-pairs shouldn't be heterogeneous with regards to their correlation
-support, as mentioned earlier in the Usage section. Supporting such
-variability would make management and analysis of scenario 3 more complicated.
 
 
 References

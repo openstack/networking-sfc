@@ -1339,6 +1339,55 @@ class SfcDbPluginTestCase(
                     ]
                 })
 
+    def test_create_port_pair_group_consistent_correlations(self):
+        with self.port(
+            name='port1',
+            device_id='default'
+        ) as src_port, self.port(
+            name='port2',
+            device_id='default'
+        ) as dst_port:
+            with self.port_pair(port_pair={
+                'ingress': src_port['port']['id'],
+                'egress': dst_port['port']['id'],
+                'service_function_parameters': {'correlation': 'mpls'}
+            }) as pp1, self.port_pair(port_pair={
+                'ingress': dst_port['port']['id'],
+                'egress': src_port['port']['id'],
+                'service_function_parameters': {'correlation': 'mpls'}
+            }) as pp2:
+                self._test_create_port_pair_group({
+                    'port_pairs': [
+                        pp1['port_pair']['id'],
+                        pp2['port_pair']['id']
+                    ]
+                })
+
+    def test_create_port_pair_group_inconsistent_correlations(self):
+        with self.port(
+            name='port1',
+            device_id='default'
+        ) as src_port, self.port(
+            name='port2',
+            device_id='default'
+        ) as dst_port:
+            with self.port_pair(port_pair={
+                'ingress': src_port['port']['id'],
+                'egress': dst_port['port']['id'],
+                'service_function_parameters': {'correlation': 'mpls'}
+            }) as pp1, self.port_pair(port_pair={
+                'ingress': dst_port['port']['id'],
+                'egress': src_port['port']['id'],
+                'service_function_parameters': {'correlation': None}
+            }) as pp2:
+                self._create_port_pair_group(
+                    self.fmt,
+                    {'port_pairs': [
+                        pp1['port_pair']['id'],
+                        pp2['port_pair']['id']
+                    ]},
+                    expected_res_status=400)
+
     def test_create_port_pair_group_with_nouuid_port_pair_id(self):
         self._create_port_pair_group(
             self.fmt, {'port_pairs': ['unknown']},
@@ -1465,6 +1514,83 @@ class SfcDbPluginTestCase(
                         self.fmt,
                         req.get_response(self.ext_api)
                     )
+                    expected = pg['port_pair_group']
+                    expected.update(updates)
+                    for k, v in expected.items():
+                        self.assertEqual(res['port_pair_group'][k], v)
+                    req = self.new_show_request(
+                        'port_pair_groups', pg['port_pair_group']['id']
+                    )
+                    res = self.deserialize(
+                        self.fmt, req.get_response(self.ext_api)
+                    )
+                    for k, v in expected.items():
+                        self.assertEqual(res['port_pair_group'][k], v)
+
+    def test_update_port_pair_group_consistency_checks(self):
+        with self.port(
+            name='port1',
+            device_id='default'
+        ) as port1, self.port(
+            name='port2',
+            device_id='default'
+        ) as port2, self.port(
+            name='port3',
+            device_id='default'
+        ) as port3, self.port(
+            name='port4',
+            device_id='default'
+        ) as port4:
+            with self.port_pair(port_pair={
+                'ingress': port1['port']['id'],
+                'egress': port2['port']['id'],
+                'service_function_parameters': {'correlation': 'mpls'}
+            }) as pp1, self.port_pair(port_pair={
+                'ingress': port2['port']['id'],
+                'egress': port3['port']['id'],
+                'service_function_parameters': {'correlation': 'mpls'}
+            }) as pp2, self.port_pair(port_pair={
+                'ingress': port3['port']['id'],
+                'egress': port4['port']['id'],
+                'service_function_parameters': {'correlation': None}
+            }) as pp3, self.port_pair(port_pair={
+                'ingress': port4['port']['id'],
+                'egress': port1['port']['id'],
+                'service_function_parameters': {'correlation': 'mpls'}
+            }) as pp4:
+                with self.port_pair_group(port_pair_group={
+                    'name': 'test1',
+                    'description': 'desc1',
+                    'port_pairs': [pp1['port_pair']['id'],
+                                   pp2['port_pair']['id']]
+                }) as pg:
+                    updates = {
+                        'name': 'test2',
+                        'description': 'desc2',
+                        'port_pairs': [pp1['port_pair']['id'],
+                                       pp2['port_pair']['id'],
+                                       pp3['port_pair']['id']]
+                    }
+                    req = self.new_update_request(
+                        'port_pair_groups', {'port_pair_group': updates},
+                        pg['port_pair_group']['id']
+                    )
+                    resp = req.get_response(self.ext_api)
+                    self.assertEqual(400, resp.status_int)
+
+                    updates = {
+                        'name': 'test3',
+                        'description': 'desc3',
+                        'port_pairs': [pp1['port_pair']['id'],
+                                       pp2['port_pair']['id'],
+                                       pp4['port_pair']['id']]
+                    }
+                    req = self.new_update_request(
+                        'port_pair_groups', {'port_pair_group': updates},
+                        pg['port_pair_group']['id']
+                    )
+                    resp = req.get_response(self.ext_api)
+                    res = self.deserialize(self.fmt, resp)
                     expected = pg['port_pair_group']
                     expected.update(updates)
                     for k, v in expected.items():
