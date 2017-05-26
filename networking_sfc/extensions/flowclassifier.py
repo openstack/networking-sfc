@@ -17,6 +17,7 @@ from abc import abstractmethod
 
 import six
 
+from neutron_lib.api import attributes as attr
 from neutron_lib.api import converters
 from neutron_lib.api import extensions
 from neutron_lib import constants as const
@@ -26,7 +27,6 @@ from neutron_lib.services import base as service_base
 from oslo_config import cfg
 
 from neutron.api import extensions as neutron_ext
-from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
 
 from networking_sfc._i18n import _
@@ -41,6 +41,7 @@ fc_supported_protocols = [const.PROTO_NAME_TCP,
                           const.PROTO_NAME_UDP, const.PROTO_NAME_ICMP]
 fc_supported_ethertypes = ['IPv4', 'IPv6']
 SUPPORTED_L7_PARAMETERS = {}
+_l7_param_attrs = attr.AttributeInfo(SUPPORTED_L7_PARAMETERS)
 
 
 # Flow Classifier Exceptions
@@ -152,10 +153,9 @@ def normalize_l7parameters(parameters):
             raise FlowClassifierInvalidL7Parameter(
                 error_message='Unknown key %s.' % key)
     try:
-        attr.fill_default_value(
-            SUPPORTED_L7_PARAMETERS, parameters)
-        attr.convert_value(
-            SUPPORTED_L7_PARAMETERS, parameters)
+        _l7_param_attrs.fill_post_defaults(parameters)
+        attr.populate_project_info(SUPPORTED_L7_PARAMETERS)
+        _l7_param_attrs.convert_values(parameters)
     except ValueError as error:
         raise FlowClassifierInvalidL7Parameter(error_message=str(error))
     return parameters
