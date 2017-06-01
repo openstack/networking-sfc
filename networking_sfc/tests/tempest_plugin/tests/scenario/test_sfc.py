@@ -822,7 +822,7 @@ class TestSfc(base.SfcScenarioTest):
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21bc')
     @test.services('compute', 'network')
-    def test_update_port_chain_replace_port_pair_groups_flow_classifers(self):
+    def test_update_port_chain_replace_port_pair_groups_flow_classifiers(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
         ) = self._setup_server(self.net1)

@@ -157,7 +157,7 @@ class FakeFlowClassifier(object):
             'source_port_range_min': '10',
             'project_id': uuidutils.generate_uuid(),
             'l7_parameters': '{}',
-            'no_flow_classiifier': 'True'
+            'no_flow_classifier': 'True'
         }
 
         flow_classifier_attrs.update(attrs)

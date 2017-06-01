@@ -1826,7 +1826,7 @@ class SfcDbPluginTestCase(
                 expected_res_status=400
             )
 
-    def test_create_port_pair_with_unkown_egress(self):
+    def test_create_port_pair_with_unknown_egress(self):
         with self.port(
             name='port1',
             device_id='default'
