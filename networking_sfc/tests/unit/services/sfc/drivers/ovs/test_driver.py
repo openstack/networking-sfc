@@ -171,7 +171,8 @@ class OVSSfcDriverTestCase(
         for flow_rule in flow_rules:
             ingress = flow_rule['ingress'] or ''
             egress = flow_rule['egress'] or ''
-            key = self.build_ingress_egress(ingress, egress)
+            key = self.build_ingress_egress(
+                flow_rule['portchain_id'], ingress, egress)
             if key in flow_rule_dict:
                 flow_rule_by_key = flow_rule_dict[key]
                 for flow_key, flow_value in flow_rule.items():
@@ -188,8 +189,8 @@ class OVSSfcDriverTestCase(
                 flow_rule_dict[key] = flow_rule
         return flow_rule_dict
 
-    def build_ingress_egress(self, ingress, egress):
-        return '%s:%s' % (ingress or '', egress or '')
+    def build_ingress_egress(self, pc_id, ingress, egress):
+        return '%s:%s:%s' % (pc_id[:8] or '', ingress or '', egress or '')
 
     def next_hops_info(self, next_hops):
         info = {}
@@ -201,13 +202,6 @@ class OVSSfcDriverTestCase(
             else:
                 info[next_hop['in_mac_address']] = next_hop['local_endpoint']
         return info
-
-    def build_ingress_egress_list(self, ingress_gress_list):
-        ingress_egress_list = []
-        for ingress, egress in ingress_gress_list:
-            ingress_egress_list.append(
-                self.build_ingress_egress(ingress, egress))
-        return ingress_egress_list
 
     def test_create_port_chain(self):
         with self.port_pair_group(port_pair_group={
@@ -281,6 +275,7 @@ class OVSSfcDriverTestCase(
                         update_flow_rules = self.map_flow_rules(
                             self.rpc_calls['update_flow_rules'])
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             pp['port_pair']['ingress'],
                             pp['port_pair']['egress'])
                         self.assertEqual(
@@ -377,9 +372,11 @@ class OVSSfcDriverTestCase(
                                 self.rpc_calls['update_flow_rules'])
                             # flow1 - src_node
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port['port']['id'])
                             # flow2 - sf_node
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id']
                             )
@@ -511,7 +508,7 @@ class OVSSfcDriverTestCase(
                         update_flow_rules = self.map_flow_rules(
                             self.rpc_calls['update_flow_rules'])
                         flow1 = self.build_ingress_egress(
-                            None,
+                            pc['port_chain']['id'], None,
                             fc['flow_classifier']['logical_source_port'])
                         self.assertEqual(
                             set(update_flow_rules.keys()),
@@ -614,8 +611,10 @@ class OVSSfcDriverTestCase(
                             update_flow_rules = self.map_flow_rules(
                                 self.rpc_calls['update_flow_rules'])
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id']
                             )
@@ -750,8 +749,10 @@ class OVSSfcDriverTestCase(
                             update_flow_rules = self.map_flow_rules(
                                 self.rpc_calls['update_flow_rules'])
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id']
                             )
@@ -936,14 +937,18 @@ class OVSSfcDriverTestCase(
                             update_flow_rules = self.map_flow_rules(
                                 self.rpc_calls['update_flow_rules'])
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress1['port']['id'],
                                 egress1['port']['id'])
                             flow3 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress2['port']['id'],
                                 egress2['port']['id'])
                             flow4 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress3['port']['id'],
                                 egress3['port']['id'])
                             self.assertEqual(
@@ -1169,14 +1174,18 @@ class OVSSfcDriverTestCase(
                             update_flow_rules = self.map_flow_rules(
                                 self.rpc_calls['update_flow_rules'])
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress1['port']['id'],
                                 egress1['port']['id'])
                             flow3 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress2['port']['id'],
                                 egress2['port']['id'])
                             flow4 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress3['port']['id'],
                                 egress3['port']['id'])
                             self.assertEqual(
@@ -1436,17 +1445,22 @@ class OVSSfcDriverTestCase(
                             update_flow_rules = self.map_flow_rules(
                                 self.rpc_calls['update_flow_rules'])
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress1['port']['id'],
                                 egress1['port']['id'])
                             flow3 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress2['port']['id'],
                                 egress2['port']['id'])
                             flow4 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress3['port']['id'],
                                 egress3['port']['id'])
                             flow5 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress4['port']['id'],
                                 egress4['port']['id'])
                             self.assertEqual(
@@ -1656,10 +1670,13 @@ class OVSSfcDriverTestCase(
                             update_flow_rules = self.map_flow_rules(
                                 self.rpc_calls['update_flow_rules'])
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port1['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port2['port']['id'])
                             flow3 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id'])
                             self.assertEqual(
@@ -1830,6 +1847,7 @@ class OVSSfcDriverTestCase(
                         delete_flow_rules = self.map_flow_rules(
                             self.rpc_calls['delete_flow_rules'])
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             pp['port_pair']['ingress'],
                             pp['port_pair']['egress'])
                         self.assertEqual(
@@ -1894,6 +1912,7 @@ class OVSSfcDriverTestCase(
                         delete_flow_rules = self.map_flow_rules(
                             self.rpc_calls['delete_flow_rules'])
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None,
                             src_port['port']['id'])
                         self.assertEqual(
@@ -1994,10 +2013,12 @@ class OVSSfcDriverTestCase(
                             delete_flow_rules = self.map_flow_rules(
                                 self.rpc_calls['delete_flow_rules'])
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None,
                                 src_port['port']['id']
                             )
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id']
                             )
@@ -2159,8 +2180,10 @@ class OVSSfcDriverTestCase(
                         update_flow_rules = self.map_flow_rules(
                             self.rpc_calls['update_flow_rules'])
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None, src_port['port']['id'])
                         flow2 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(update_flow_rules.keys()),
@@ -2329,8 +2352,10 @@ class OVSSfcDriverTestCase(
                         update_flow_rules = self.map_flow_rules(
                             self.rpc_calls['update_flow_rules'])
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None, src_port['port']['id'])
                         flow2 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
@@ -2523,10 +2548,13 @@ class OVSSfcDriverTestCase(
                         update_flow_rules = self.map_flow_rules(
                             self.rpc_calls['update_flow_rules'])
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None, src_port['port']['id'])
                         flow2 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             ingress1['port']['id'], egress1['port']['id'])
                         flow3 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
@@ -2725,10 +2753,13 @@ class OVSSfcDriverTestCase(
                         update_flow_rules = self.map_flow_rules(
                             self.rpc_calls['update_flow_rules'])
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None, src_port1['port']['id'])
                         flow2 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None, src_port2['port']['id'])
                         flow3 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             ingress['port']['id'], egress['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
@@ -2954,10 +2985,13 @@ class OVSSfcDriverTestCase(
                         update_flow_rules = self.map_flow_rules(
                             self.rpc_calls['update_flow_rules'])
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None, src_port['port']['id'])
                         flow2 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             ingress1['port']['id'], egress1['port']['id'])
                         flow3 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
@@ -3206,10 +3240,13 @@ class OVSSfcDriverTestCase(
                         update_flow_rules = self.map_flow_rules(
                             self.rpc_calls['update_flow_rules'])
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None, src_port['port']['id'])
                         flow2 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             ingress1['port']['id'], egress1['port']['id'])
                         flow3 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
@@ -3455,10 +3492,13 @@ class OVSSfcDriverTestCase(
                         update_flow_rules = self.map_flow_rules(
                             self.rpc_calls['update_flow_rules'])
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None, src_port['port']['id'])
                         flow2 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             ingress1['port']['id'], egress1['port']['id'])
                         flow3 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             ingress2['port']['id'], egress2['port']['id'])
                         self.assertEqual(
                             set(delete_flow_rules.keys()),
@@ -3626,6 +3666,7 @@ class OVSSfcDriverTestCase(
                             flow_rules, *(flow_rules_by_portid.values())
                         )
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             pp['port_pair']['ingress'],
                             pp['port_pair']['egress'])
                         self.assertEqual(
@@ -3691,6 +3732,7 @@ class OVSSfcDriverTestCase(
                             flow_rules, *(flow_rules_by_portid.values())
                         )
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None, src_port['port']['id'])
                         self.assertEqual(
                             set(flow_rules.keys()),
@@ -3805,10 +3847,12 @@ class OVSSfcDriverTestCase(
                                 flow_rules, *(flow_rules_by_portid.values())
                             )
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None,
                                 src_port['port']['id']
                             )
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id']
                             )
@@ -4020,15 +4064,19 @@ class OVSSfcDriverTestCase(
                                 flow_rules, *(flow_rules_by_portid.values())
                             )
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None,
                                 src_port['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress1['port']['id'],
                                 egress1['port']['id'])
                             flow3 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress2['port']['id'],
                                 egress2['port']['id'])
                             flow4 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress3['port']['id'],
                                 egress3['port']['id'])
                             self.assertEqual(
@@ -4270,15 +4318,19 @@ class OVSSfcDriverTestCase(
                                 flow_rules, *(flow_rules_by_portid.values())
                             )
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None,
                                 src_port['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress1['port']['id'],
                                 egress1['port']['id'])
                             flow3 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress2['port']['id'],
                                 egress2['port']['id'])
                             flow4 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress3['port']['id'],
                                 egress3['port']['id'])
                             self.assertEqual(
@@ -4472,12 +4524,15 @@ class OVSSfcDriverTestCase(
                                 flow_rules, *(flow_rules_by_portid.values())
                             )
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None,
                                 src_port1['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None,
                                 src_port2['port']['id'])
                             flow3 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id'])
                             self.assertEqual(
@@ -4917,9 +4972,11 @@ class OVSSfcDriverTestCase(
                         update_flow_rules = self.map_flow_rules(
                             self.rpc_calls['update_flow_rules'])
                         flow1 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None,
                             fc['flow_classifier']['logical_source_port'])
                         flow2 = self.build_ingress_egress(
+                            pc['port_chain']['id'],
                             None,
                             fc['flow_classifier']['logical_destination_port'])
                         self.assertEqual(
@@ -5060,13 +5117,17 @@ class OVSSfcDriverTestCase(
                             update_flow_rules = self.map_flow_rules(
                                 self.rpc_calls['update_flow_rules'])
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id'])
                             flow3 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, dst_port['port']['id'])
                             flow4 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id'])
                             self.assertEqual(
@@ -5264,17 +5325,23 @@ class OVSSfcDriverTestCase(
                             update_flow_rules = self.map_flow_rules(
                                 self.rpc_calls['update_flow_rules'])
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port1['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port2['port']['id'])
                             flow3 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id'])
                             flow4 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, dst_port1['port']['id'])
                             flow5 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, dst_port2['port']['id'])
                             flow6 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id'])
                             self.assertEqual(
@@ -5553,13 +5620,17 @@ class OVSSfcDriverTestCase(
                             update_flow_rules = self.map_flow_rules(
                                 self.rpc_calls['update_flow_rules'])
                             flow1 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, src_port['port']['id'])
                             flow2 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id'])
                             flow3 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 None, dst_port['port']['id'])
                             flow4 = self.build_ingress_egress(
+                                pc['port_chain']['id'],
                                 ingress['port']['id'],
                                 egress['port']['id'])
                             self.assertEqual(

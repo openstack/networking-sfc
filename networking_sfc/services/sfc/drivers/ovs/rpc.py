@@ -56,22 +56,22 @@ class SfcAgentRpcClient(object):
         target = oslo_messaging.Target(topic=topic, version='1.0')
         self.client = n_rpc.get_client(target)
 
-    def ask_agent_to_update_flow_rules(self, context, flows):
+    def ask_agent_to_update_flow_rules(self, context, flow_rule):
         LOG.debug('Ask agent on the specific host to update flows ')
-        LOG.debug('flows: %s', flows)
-        host = flows.get('host')
+        LOG.debug('flow_rule: %s', flow_rule)
+        host = flow_rule.get('host')
         cctxt = self.client.prepare(
             topic=topics.get_topic_name(
                 self.topic, sfc_topics.PORTFLOW, topics.UPDATE),
             server=host)
-        cctxt.cast(context, 'update_flow_rules', flowrule_entries=flows)
+        cctxt.cast(context, 'update_flow_rules', flowrule_entries=flow_rule)
 
-    def ask_agent_to_delete_flow_rules(self, context, flows):
+    def ask_agent_to_delete_flow_rules(self, context, flow_rule):
         LOG.debug('Ask agent on the specific host to delete flows ')
-        LOG.debug('flows: %s', flows)
-        host = flows.get('host')
+        LOG.debug('flow_rule: %s', flow_rule)
+        host = flow_rule.get('host')
         cctxt = self.client.prepare(
             topic=topics.get_topic_name(
                 self.topic, sfc_topics.PORTFLOW, topics.DELETE),
             server=host)
-        cctxt.cast(context, 'delete_flow_rules', flowrule_entries=flows)
+        cctxt.cast(context, 'delete_flow_rules', flowrule_entries=flow_rule)

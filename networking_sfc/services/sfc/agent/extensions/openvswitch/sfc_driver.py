@@ -465,7 +465,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     end_of_chain_actions = ("pop_mpls:0x%04x,%s" % (
                                             constants.ETH_TYPE_IP,
                                             end_of_chain_actions))
-            # to uninstall the new removed flow classifiers
+            # to uninstall the removed flow classifiers
             self._setup_local_switch_flows_on_int_br(
                 flowrule,
                 flowrule['del_fcs'],
