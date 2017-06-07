@@ -105,6 +105,43 @@ node as shown below.
                        .............
 
 
+Workflow & OVS working details for Tap SF
+-----------------------------------------
+
+Tap SFs are deployed to monitor/analyze traffic of a network segment. These
+SFs receive copy of the packet coming out from egress port of default SFs or
+any logical ports (source/destination) of a service chain.
+
+Steps for Tap Port Pair and Port Pair Group creation:
+
+1. Create Port
+    neutron port-create --name p1 net1
+
+2. Create Port Pair
+    neutron port-pair-create tap_pp --ingress p1 --egress p1
+
+3. Create Port Pair Group
+    neutron port-pair-group-create tap_ppg --port-pair tap_pp
+    --tap-enabled=True
+
+Apart from sending packet to next-hop SF, the egress port-chain flow in
+Local Switching Table sends a copy of packet to TAP_CLASSIFIER_TABLE using
+RESUBMIT action, which does further processing on the Tap destined packet.
+
+Following tables are introduced to process Tap destined traffic:
+
+1. TAP_CLASSIFIER_TABLE (Table 7) - This table classifies traffic based on
+source mac of SF egress port or any logical port and the IP header (MPLS or
+IP). VLAN tagging and MPLS encapsulation is done on the packet to send to Tap
+SF. Based on the location of Tap SF, if on same compute node, action is to
+resubmit to INGRESS_TABLE. If located on another compute node, action is to
+output packet to tunnel patch port.
+
+2. TAP_TUNNEL_OUTPUT_TABLE (Table 25) - This table belongs to tunnel bridge or
+'br-tun'. This table contains the flows which floods Tap SF destined packets
+to the tunnel ports.
+
+
 Alternatives
 ------------
 
@@ -113,7 +150,7 @@ None
 Data model impact
 -----------------
 
-Add "tap-enabled" to the Port Pair Group port-pair-group-parameter attribute.
+Add "tap-enabled" to the Port Pair Group parameter.
 The "tap-enabled" field is set to "true" to enable the tap feature.
 The "tap-enabled" field is set to "false" to disable the tap feature.
 
@@ -161,6 +198,7 @@ Assignee(s)
 * Cathy Zhang (cathy.h.zhang@huawei.com)
 * Louis Fourie (louis.fourie@huawei.com)
 * Farhad Sunavala (farhad.sunavala@huawei.com)
+* Vikash Kumar (vikash.kumar@oneconvergence.com)
 
 Work Items
 ----------
