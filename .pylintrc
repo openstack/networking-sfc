@@ -2,7 +2,6 @@
 [MASTER]
 # Add <file or directory> to the black list. It should be a base name, not a
 # path. You may set this option multiple times.
-#
 ignore=.git,tests
 
 [MESSAGES CONTROL]
@@ -16,19 +15,11 @@ disable=
  locally-disabled,
 # "E" Error for important programming issues (likely bugs)
  access-member-before-definition,
- bad-super-call,
- maybe-no-member,
  no-member,
  no-method-argument,
  no-self-argument,
- not-callable,
- no-value-for-parameter,
- super-on-old-class,
- too-few-format-args,
 # "W" Warnings for stylistic problems or minor programming issues
  abstract-method,
- anomalous-backslash-in-string,
- anomalous-unicode-escape-in-string,
  arguments-differ,
  attribute-defined-outside-init,
  bad-builtin,
@@ -36,26 +27,20 @@ disable=
  broad-except,
  dangerous-default-value,
  deprecated-lambda,
- duplicate-key,
  expression-not-assigned,
  fixme,
  global-statement,
- global-variable-not-assigned,
- logging-not-lazy,
  no-init,
  non-parent-init-called,
- pointless-string-statement,
+ not-callable,
  protected-access,
  redefined-builtin,
  redefined-outer-name,
- redefine-in-handler,
  signature-differs,
  star-args,
  super-init-not-called,
- unnecessary-lambda,
- unnecessary-pass,
+ super-on-old-class,
  unpacking-non-sequence,
- unreachable,
  unused-argument,
  unused-import,
  unused-variable,
@@ -63,7 +48,6 @@ disable=
  bad-continuation,
  invalid-name,
  missing-docstring,
- old-style-class,
  superfluous-parens,
 # "R" Refactor recommendations
  abstract-class-little-used,
@@ -90,7 +74,7 @@ variable-rgx=[a-z_][a-z0-9_]{0,30}$
 argument-rgx=[a-z_][a-z0-9_]{1,30}$
 
 # Method names should be at least 3 characters long
-# and be lowecased with underscores
+# and be lowercased with underscores
 method-rgx=([a-z_][a-z0-9_]{2,}|setUp|tearDown)$
 
 # Module names matching neutron-* are ok (files in bin/)

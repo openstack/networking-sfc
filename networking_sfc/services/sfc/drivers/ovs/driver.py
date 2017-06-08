@@ -1078,6 +1078,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 self._delete_path_node_port_flowrule(
                     rev_curr_node,
                     ppd,
+                    pc_corr,
                     pc['flow_classifiers'])
                 self.delete_pathport_assoc(rev_curr_node['id'], ppd['id'])
 
