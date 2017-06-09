@@ -58,8 +58,7 @@ def include_object(object_, name, type_, reflected, compare_to):
         # skip indexes created by SQLAlchemy autoincrement=True
         # on composite PK integer columns
         return False
-    else:
-        return True
+    return True
 
 
 def run_migrations_offline():
