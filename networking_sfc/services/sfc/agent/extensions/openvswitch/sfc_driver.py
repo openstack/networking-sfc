@@ -213,7 +213,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 flow_classifier['destination_port_range_min'],
                 flow_classifier['destination_port_range_max'])
 
-        if "IPv4" == flow_classifier['ethertype']:
+        if flow_classifier['ethertype'] == "IPv4":
             dl_type = constants.ETH_TYPE_IP
             if n_consts.PROTO_NAME_TCP == flow_classifier['protocol']:
                 nw_proto = n_consts.PROTO_NUM_TCP
@@ -223,7 +223,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 nw_proto = n_consts.PROTO_NUM_ICMP
             else:
                 nw_proto = None
-        elif "IPv6" == flow_classifier['ethertype']:
+        elif flow_classifier['ethertype'] == "IPv6":
             LOG.error("Current portchain agent doesn't support IPv6")
         else:
             LOG.error("invalid protocol input")
@@ -235,7 +235,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         flow_infos = []
         nw_src, nw_dst, tp_src, tp_dst = ((None, ) * 4)
 
-        if "IPv4" != flow_classifier['ethertype']:
+        if flow_classifier['ethertype'] != "IPv4":
             LOG.error("Current portchain agent only supports IPv4")
             return flow_infos
 

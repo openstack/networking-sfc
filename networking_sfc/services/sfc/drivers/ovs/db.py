@@ -98,8 +98,7 @@ class IDAllocation(object):
             type_=type_, uuid=uuid).first()
         if query_obj:
             return query_obj.intid
-        else:
-            return None
+        return None
 
     @log_helpers.log_method_call
     def release_intid(self, type_, intid):

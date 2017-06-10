@@ -77,7 +77,7 @@ def find_sfc_resource(client, resource, name_or_id):
         if len(rec_chk) > 1:
             raise exceptions.NeutronClientNoUniqueMatch(resource=resource,
                                                         name=name_or_id)
-        elif len(rec_chk) == 0:
+        elif not rec_chk:
             not_found_message = (_("Unable to find %(resource)s with name "
                                    "or id '%(name_or_id)s'") %
                                  {'resource': resource,
