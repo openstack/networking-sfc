@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Introduced new API resource, Service Graphs. Based on IETF
+    SFC Encapsulation, this construct allows Port Chains to be linked
+    together, forming dependencies between them (beyond simple flow
+    classification). This is also known as Reclassification and Branching.

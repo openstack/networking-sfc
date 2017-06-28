@@ -1,0 +1,25 @@
+{
+   "service_graph":{
+      "id":"15e82a5c-c907-4c8c-9501-3e9268178bf8",
+      "name":"new-name",
+      "description":"and new description, the port_chains dictionary can't be updated",
+      "tenant_id":"0b18a09b22ef49a5be0bf51d68ed1962",
+      "project_id":"0b18a09b22ef49a5be0bf51d68ed1962",
+      "port_chains":{
+         "19b1965e-f528-4a81-bb05-64b18815fcfc":[
+            "3a478b3b-6012-47c6-9c34-6adaffc51b32"
+         ],
+         "07d0bf74-4293-4e4a-b66f-561ba30bcf76":[
+            "3a478b3b-6012-47c6-9c34-6adaffc51b32"
+         ],
+         "74e01d2b-3dbc-4de8-9969-d4b95d710103":[
+            "41e04664-59fb-4f1c-a063-6cfa39ed9ae7",
+            "71b514f6-498b-4ae8-ba4e-dff434ad6c1a"
+         ],
+         "41e04664-59fb-4f1c-a063-6cfa39ed9ae7":[
+            "07d0bf74-4293-4e4a-b66f-561ba30bcf76",
+            "19b1965e-f528-4a81-bb05-64b18815fcfc"
+         ]
+      }
+   }
+}
