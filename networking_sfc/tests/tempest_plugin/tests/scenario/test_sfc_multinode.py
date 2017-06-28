@@ -35,14 +35,14 @@ class TestSfcMultinode(test_sfc.TestSfc):
     # @classmethod
     # def setup_credentials(cls):
     #     super(TestSfcMultinode, cls).setup_credentials()
-    #     cls.manager = cls.admin_manager
+    #     cls.os_primary = cls.admin_manager
     #     cls.os = cls.os_adm
 
     @classmethod
     def setup_clients(cls):
         super(TestSfcMultinode, cls).setup_clients()
         # Use admin client by default
-        # cls.manager = cls.admin_manager
+        # cls.os_primary = cls.admin_manager
         # this is needed so that we can use the availability_zone:host
         # scheduler hint, which is admin_only by default
         # cls.servers_client = cls.admin_manager.servers_client
@@ -67,7 +67,7 @@ class TestSfcMultinode(test_sfc.TestSfc):
 
     def setUp(self):
         super(TestSfcMultinode, self).setUp()
-        host_client = self.manager.hosts_client
+        host_client = self.os_primary.hosts_client
         hosts = host_client.list_hosts()['hosts']
         hosts = [x for x in hosts if x['service'] == 'compute']
 
