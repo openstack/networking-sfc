@@ -59,6 +59,7 @@ Networking-SFC Internals
    sfc_ovn_driver
    ovs_symmetric_port_chain
    sfc_port_chain_tap
+   sfc_non_transparent_sf
 
 Indices and tables
 ------------------
