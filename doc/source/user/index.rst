@@ -13,7 +13,6 @@
       License for the specific language governing permissions and limitations
       under the License.
 
-
       Convention for heading levels in Neutron devref:
       =======  Heading 0 (reserved for the title in a document)
       -------  Heading 1
@@ -22,8 +21,12 @@
       '''''''  Heading 4
       (Avoid deeper levels because they do not render well.)
 
+===================================
+Using the Service Function Chaining
+===================================
 
-============
-Contribution
-============
-.. include:: ../../CONTRIBUTING.rst
+.. toctree::
+   :maxdepth: 2
+
+   usage
+   command_extensions
