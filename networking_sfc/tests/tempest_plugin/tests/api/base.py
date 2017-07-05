@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
 import socket
 
+import netaddr
 from tempest.api.network import base
 from tempest.lib.common.utils import data_utils
 from tempest.lib import exceptions as lib_exc

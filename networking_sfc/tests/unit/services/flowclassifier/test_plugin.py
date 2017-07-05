@@ -13,6 +13,7 @@
 #    under the License.
 
 import copy
+
 import mock
 
 from networking_sfc.services.flowclassifier.common import context as fc_ctx

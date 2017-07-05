@@ -13,11 +13,8 @@
 #    under the License.
 
 import contextlib
+
 import mock
-from oslo_utils import uuidutils
-
-from neutron_lib import constants as nl_const
-
 from neutron.agent import securitygroups_rpc as sg_rpc
 from neutron.api import extensions as api_ext
 from neutron.api.rpc.agentnotifiers import dhcp_rpc_agent_api as dhcp_rpc_log
@@ -37,6 +34,8 @@ from neutron.plugins.ml2 import managers as ml2_manager
 from neutron.plugins.ml2 import plugin as ml2_plugin
 from neutron import quota as quota_log
 from neutron.scheduler import dhcp_agent_scheduler as dhcp_agent_log
+from neutron_lib import constants as nl_const
+from oslo_utils import uuidutils
 
 from neutron.tests import base as n_base
 from neutron.tests.unit.db import test_db_base_plugin_v2 as test_db_plugin
