@@ -13,6 +13,7 @@
 #    under the License.
 
 import copy
+
 import mock
 
 from networking_sfc.services.sfc.common import context as sfc_ctx

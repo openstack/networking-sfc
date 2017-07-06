@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import testscenarios
 import time
 
 from tempest.common import waiters
@@ -20,6 +19,7 @@ from tempest import config
 from tempest.lib.common.utils import test_utils
 from tempest.lib import decorators
 from tempest import test
+import testscenarios
 
 from networking_sfc.tests.tempest_plugin.tests.scenario import base
 

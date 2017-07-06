@@ -13,20 +13,18 @@
 #    under the License.
 
 import copy
+
 import mock
-from webob import exc
-import webtest
-
-from neutron_lib import constants as const
-from oslo_utils import uuidutils
-
 from neutron.api.v2 import resource as api_res_log
 from neutron.common import config
 from neutron import manager
 from neutron.notifiers import nova as nova_log
-
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
 from neutron.tests.unit.extensions import base as test_api_v2_extension
+from neutron_lib import constants as const
+from oslo_utils import uuidutils
+from webob import exc
+import webtest
 
 from networking_sfc.extensions import flowclassifier as fc_ext
 

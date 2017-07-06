@@ -14,17 +14,16 @@
 
 import contextlib
 import logging
-import mock
-import webob.exc
 
+import mock
+from neutron.api import extensions as api_ext
+from neutron.common import config
+import neutron.extensions as nextensions
 from neutron_lib import constants as lib_const
 from oslo_config import cfg
 from oslo_utils import importutils
 from oslo_utils import uuidutils
-
-from neutron.api import extensions as api_ext
-from neutron.common import config
-import neutron.extensions as nextensions
+import webob.exc
 
 from networking_sfc.db import flowclassifier_db as fdb
 from networking_sfc import extensions
