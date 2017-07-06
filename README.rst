@@ -43,6 +43,7 @@ evolve based on that feedback.
 
 * Free software: Apache license
 * Source: http://git.openstack.org/cgit/openstack/networking-sfc
+* Documentation: https://docs.openstack.org/networking-sfc/latest
 * Overview: https://launchpad.net/networking-sfc
 * Bugs: http://bugs.launchpad.net/networking-sfc
 * Blueprints: https://blueprints.launchpad.net/networking-sfc
