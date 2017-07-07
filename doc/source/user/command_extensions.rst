@@ -36,7 +36,7 @@ List of New Neutron CLI Commands:
 ---------------------------------
 Below listed command lines are introduced for realizing service function chaining.
 
-::
+.. code-block:: none
 
     flow-classifier-create   Create a flow-classifier.
     flow-classifier-delete   Delete a given flow-classifier.

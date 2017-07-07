@@ -23,31 +23,6 @@
       (Avoid deeper levels because they do not render well.)
 
 
-Installation
-============
-
-If possible, you should rely on packages provided by your Linux and/or
-OpenStack distribution:
-
-    * For Fedora or CentOS, you can install the ``python-networking-sfc`` RPM
-      package provided by the RDO project.
-
-If you use ``pip``, follow these steps to install networking-sfc:
-
-    * `identify the version of the networking-sfc package
-      <http://git.openstack.org/cgit/openstack/releases/plain/deliverables/_independent/networking-sfc.yaml>`_
-      that matches your OpenStack version:
-
-      * Ocata: latest 4.0.x version
-      * Newton: latest 3.0.x version
-      * Mitaka: latest 2.0.x version
-
-    * indicate pip to (a) install precisely this version and (b) take into
-      account OpenStack upper constraints on package versions for dependencies
-      (example for Ocata)::
-
-        pip install -c https://git.openstack.org/cgit/openstack/requirements/plain/upper-constraints.txt?h=stable/ocata networking-sfc==4.0.0
-
 Configuration
 =============
 

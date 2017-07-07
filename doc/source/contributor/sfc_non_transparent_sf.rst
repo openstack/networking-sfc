@@ -23,11 +23,11 @@ require an SFC Proxy to re-classify a packet that is returned from the egress
 port of the SF. The SFC Proxy uses the N-tuple values of a packet header to
 re-classify a packet. The packet N-tuple consists of the following:
 
- * Source IP address
- * Destination IP address
- * Source TCP/UDP port
- * Destination TCP/UDP port
- * IP Protocol
+* Source IP address
+* Destination IP address
+* Source TCP/UDP port
+* Destination TCP/UDP port
+* IP Protocol
 
 However, if the SF is non-transparent (it modifies a part of the N-tuple of
 a packet), then re-classification cannot be done correctly.

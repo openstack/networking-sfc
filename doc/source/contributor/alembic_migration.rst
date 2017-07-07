@@ -27,13 +27,12 @@ Alembic-migration
 Using alembic-migration, required data modeling for networking-sfc is defined and
 applied to the database. Refer to `Neutron alembic migration process <http://docs.openstack.org/developer/neutron/devref/alembic_migrations.html>`_ for further details.
 
-Important operations:
----------------------
+The important operations are listed below.
 
-Checking migration:
-~~~~~~~~~~~~~~~~~~~
+Checking migration
+------------------
 
-::
+.. code-block:: console
 
     neutron-db-manage --subproject networking-sfc check_migration
       Running branches for networking-sfc ...
@@ -43,10 +42,10 @@ Checking migration:
 
       OK
 
-Checking branch information:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checking branch information
+---------------------------
 
-::
+.. code-block:: console
 
     neutron-db-manage --subproject networking-sfc branches
       Running branches for networking-sfc ...
@@ -56,10 +55,10 @@ Checking branch information:
 
       OK
 
-Checking migration history:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checking migration history
+--------------------------
 
-::
+.. code-block:: console
 
     neutron-db-manage --subproject networking-sfc history
       Running history for networking-sfc ...
@@ -69,10 +68,10 @@ Checking migration history:
     start_networking_sfc -> 48072cb59133 (contract) (head), Initial Liberty no-op script.
     <base> -> start_networking_sfc (branchpoint), start networking-sfc chain
 
-Applying changes:
-~~~~~~~~~~~~~~~~~
+Applying changes
+----------------
 
-::
+.. code-block:: console
 
     neutron-db-manage --subproject networking-sfc upgrade head
     INFO  [alembic.runtime.migration] Context impl MySQLImpl.
@@ -87,10 +86,10 @@ Applying changes:
     INFO  [alembic.runtime.migration] Running upgrade 9768e6a66c9 -> 5a475fc853e6, Defining OVS data-model
       OK
 
-Checking current version:
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Checking current version
+------------------------
 
-::
+.. code-block:: console
 
     neutron-db-manage --subproject networking-sfc current
       Running current for networking-sfc ...
