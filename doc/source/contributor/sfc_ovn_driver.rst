@@ -20,11 +20,10 @@ the appropriate tables in the OVN northbound database (an ovsdb database).
 Problem Description
 ===================
 
-`Neutron SFC (networking-sfc) <http://docs.openstack.org/developer/networking-sfc>`_
-allows various drivers to be used. Currently,
-there exist drivers for OVS, ONOS and ODL infrastructures. Service chaining
-is being added to OVN and a driver is required to interface between
-networking-sfc and the OVN infrastructure.
+networking-sfc allows various drivers to be used. Currently, drivers exist for
+OVS, ONOS and ODL infrastructures. Service chaining is being added to OVN and a
+driver is required to interface between networking-sfc and the OVN
+infrastructure.
 
 Proposed Changes
 ================

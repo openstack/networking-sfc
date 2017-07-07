@@ -25,7 +25,7 @@ Alembic-migration
 =================
 
 Using alembic-migration, required data modeling for networking-sfc is defined and
-applied to the database. Refer to `Neutron alembic migration process <http://docs.openstack.org/developer/neutron/devref/alembic_migrations.html>`_ for further details.
+applied to the database. Refer to `Neutron alembic migration process <http://docs.openstack.org/neutron/latest/contributor/alembic_migrations.html>`_ for further details.
 
 The important operations are listed below.
 
