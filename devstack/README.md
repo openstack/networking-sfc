@@ -28,4 +28,4 @@ For example
     enable_plugin networking-sfc git://git.openstack.org/openstack/networking-sfc master
 
 For more information, see the "Externally Hosted Plugins" section of
-http://docs.openstack.org/developer/devstack/plugins.html.
+https://docs.openstack.org/devstack/latest/plugins.html .
