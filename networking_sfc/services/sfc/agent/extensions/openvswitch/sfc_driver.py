@@ -168,7 +168,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         self.br_int.install_drop(table_id=INGRESS_TABLE)
 
     def _parse_flow_classifier(self, flow_classifier):
-        dl_type, nw_proto, source_port_masks, destination_port_masks = (
+        eth_type, nw_proto, source_port_masks, destination_port_masks = (
             (None, ) * 4)
 
         if (not flow_classifier['source_port_range_min'] and
@@ -206,7 +206,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 flow_classifier['destination_port_range_max'])
 
         if flow_classifier['ethertype'] == "IPv4":
-            dl_type = constants.ETH_TYPE_IP
+            eth_type = constants.ETH_TYPE_IP
             if n_consts.PROTO_NAME_TCP == flow_classifier['protocol']:
                 nw_proto = n_consts.PROTO_NUM_TCP
             elif n_consts.PROTO_NAME_UDP == flow_classifier['protocol']:
@@ -220,7 +220,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         else:
             LOG.error("invalid protocol input")
 
-        return (dl_type, nw_proto,
+        return (eth_type, nw_proto,
                 source_port_masks,
                 destination_port_masks)
 
@@ -233,7 +233,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             return flow_infos
 
         # parse and transfer flow info to match field info
-        dl_type, nw_proto, source_port_masks, destination_port_masks = (
+        eth_type, nw_proto, source_port_masks, destination_port_masks = (
             self._parse_flow_classifier(flow_classifier))
 
         if flowrule['fwd_path']:
@@ -264,7 +264,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     else:
                         tp_dst = '%s' % source_port
                         tp_src = '%s' % destination_port
-                    flow_info = {'dl_type': dl_type,
+                    flow_info = {'eth_type': eth_type,
                                  'nw_src': nw_src,
                                  'nw_dst': nw_dst,
                                  'tp_src': tp_src,
@@ -397,23 +397,23 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     subnet_actions = 'output:%s' % self.patch_tun_ofport
                 subnet_actions_list.append(subnet_actions)
 
-                dl_type = constants.ETH_TYPE_IP
+                eth_type = constants.ETH_TYPE_IP
                 if pp_corr == 'mpls' or pp_corr_nh == 'mpls':
-                    dl_type = constants.ETH_TYPE_MPLS
+                    eth_type = constants.ETH_TYPE_MPLS
 
                 if flowrule['fwd_path']:
                     self.br_int.add_flow(
                         table=ACROSS_SUBNET_TABLE,
                         priority=0,
                         dl_dst=item['in_mac_address'],
-                        dl_type=dl_type,
+                        eth_type=eth_type,
                         actions="%s" % ','.join(subnet_actions_list))
                 else:
                     self.br_int.add_flow(
                         table=ACROSS_SUBNET_TABLE,
                         priority=0,
                         dl_dst=item['mac_address'],
-                        dl_type=dl_type,
+                        eth_type=eth_type,
                         actions="%s" % ','.join(subnet_actions_list))
 
             group_content = self.br_int.dump_group_for_id(group_id)
@@ -529,7 +529,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             self.br_int.add_flow(**match_field)
 
     def _build_classification_match_sfc_mpls(self, flowrule, match_info):
-        match_info['dl_type'] = constants.ETH_TYPE_MPLS
+        match_info['eth_type'] = constants.ETH_TYPE_MPLS
         match_info['mpls_label'] = flowrule['nsp'] << 8 | flowrule['nsi']
         return match_info
 
@@ -549,7 +549,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
 
     def _build_ingress_match_field_sfc_mpls(self, flowrule, vif_port, vlan):
         match_field = self._build_ingress_common_match_field(vif_port, vlan)
-        match_field['dl_type'] = constants.ETH_TYPE_MPLS
+        match_field['eth_type'] = constants.ETH_TYPE_MPLS
         match_field['mpls_label'] = flowrule['nsp'] << 8 | flowrule['nsi'] + 1
         return match_field
 
@@ -571,7 +571,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
     def _delete_flows_mpls(self, flowrule, vif_port):
         self.br_int.delete_flows(
             table=INGRESS_TABLE,
-            dl_type=constants.ETH_TYPE_MPLS,
+            eth_type=constants.ETH_TYPE_MPLS,
             dl_dst=vif_port.vif_mac,
             mpls_label=flowrule['nsp'] << 8 | flowrule['nsi'] + 1
         )

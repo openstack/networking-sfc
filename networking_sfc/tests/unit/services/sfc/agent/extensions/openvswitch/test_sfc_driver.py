@@ -424,7 +424,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             [{
                 'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65791,
                 'priority': 1,
@@ -447,7 +447,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             [{
                 'actions': 'strip_vlan, output:6',
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65791,
                 'priority': 1,
@@ -561,7 +561,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'actions': 'normal',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -575,7 +575,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.assertEqual(
             [{
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -602,7 +602,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'actions': 'normal',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -616,7 +616,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.assertEqual(
             [{
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -704,7 +704,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'actions': 'normal',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -716,7 +716,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, pop_mpls:0x0800,output:42',
                 'dl_dst': '00:01:02:03:06:08',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65792,
                 'priority': 1,
@@ -726,7 +726,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.assertEqual(
             [{
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -751,7 +751,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'actions': 'pop_mpls:0x0800,normal',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'in_port': 42,
                 'mpls_label': 65791,
                 'priority': 30,
@@ -759,7 +759,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, output:42',
                 'dl_dst': '00:01:02:03:06:08',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65792,
                 'priority': 1,
@@ -769,7 +769,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.assertEqual(
             [{
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'in_port': 42,
                 'mpls_label': 65791,
                 'priority': 30,
@@ -853,12 +853,12 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'push_mpls:0x8847,set_mpls_label:65791,'
                     'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'group:1',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -893,13 +893,13 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'push_mpls:0x8847,set_mpls_label:65791,'
                            'set_mpls_ttl:255,group:1',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -995,12 +995,12 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'push_mpls:0x8847,set_mpls_label:65791,'
                     'set_mpls_ttl:255,mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'group:1',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -1035,13 +1035,13 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'push_mpls:0x8847,set_mpls_label:65791,'
                            'set_mpls_ttl:255,group:1',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -1146,12 +1146,12 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'push_mpls:0x8847,set_mpls_label:65791,'
                     'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'group:1',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -1163,7 +1163,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65792,
                 'priority': 1,
@@ -1195,13 +1195,13 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'push_mpls:0x8847,set_mpls_label:65791,'
                            'set_mpls_ttl:255,group:1',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -1213,7 +1213,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65792,
                 'priority': 1,
@@ -1296,7 +1296,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 self.assertEqual(
                     [{
                         'actions': 'normal',
-                        'dl_type': 2048,
+                        'eth_type': 2048,
                         'in_port': 42,
                         'nw_dst': u'10.200.0.0/16',
                         'nw_proto': 6,
@@ -1310,7 +1310,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 )
                 self.assertEqual(
                     [{
-                        'dl_type': 2048,
+                        'eth_type': 2048,
                         'in_port': 42,
                         'nw_dst': u'10.200.0.0/16',
                         'nw_proto': 6,
@@ -1371,7 +1371,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 self.assertEqual(
                     [{
                         'actions': 'normal',
-                        'dl_type': 2048,
+                        'eth_type': 2048,
                         'in_port': 32,
                         'nw_dst': u'10.100.0.0/16',
                         'nw_proto': 6,
@@ -1385,7 +1385,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 )
                 self.assertEqual(
                     [{
-                        'dl_type': 2048,
+                        'eth_type': 2048,
                         'in_port': 32,
                         'nw_dst': u'10.100.0.0/16',
                         'nw_proto': 6,
@@ -1412,12 +1412,12 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'group:1',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'in_port': 42,
                 'mpls_label': 65791,
                 'priority': 30,
@@ -1425,7 +1425,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, output:6',
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65792,
                 'priority': 1,
@@ -1529,12 +1529,12 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'group:1',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -1546,7 +1546,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65792,
                 'priority': 1,
@@ -1577,13 +1577,13 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'push_mpls:0x8847,set_mpls_label:65791,'
                            'set_mpls_ttl:255,group:1',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -1595,7 +1595,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65792,
                 'priority': 1,
@@ -1627,12 +1627,12 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'group:1',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'in_port': 42,
                 'mpls_label': 65791,
                 'priority': 30,
@@ -1640,7 +1640,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, output:6',
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65792,
                 'priority': 1,
@@ -1754,14 +1754,14 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
                            'set_mpls_ttl:252,group:1',
                 'reg0': 61640,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -1789,7 +1789,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'in_port': 42,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -1814,14 +1814,14 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
                            'set_mpls_ttl:252,group:1',
                 'in_port': 42,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -1849,7 +1849,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'reg0': 61640,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -1937,7 +1937,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             [{
                 'actions': 'load:0xf0c8->NXM_NX_REG0[],'
                            'pop_mpls:0x0800,resubmit(,0)',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'in_port': 42,
                 'mpls_label': 61640,
                 'priority': 30,
@@ -1945,7 +1945,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, output:42',
                 'dl_dst': '00:01:02:03:06:08',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 61641,
                 'priority': 1,
@@ -1959,7 +1959,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.assertEqual(
             [{
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'in_port': 42,
                 'mpls_label': 61640,
                 'priority': 30,
@@ -1982,7 +1982,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'actions': 'pop_mpls:0x0800,normal',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'in_port': 42,
                 'mpls_label': 61640,
                 'priority': 30,
@@ -1990,7 +1990,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, output:42',
                 'dl_dst': '00:01:02:03:06:08',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 61641,
                 'priority': 1,
@@ -2004,7 +2004,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         )
         self.assertEqual(
             [{
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'in_port': 42,
                 'mpls_label': 61640,
                 'priority': 30,
@@ -2027,14 +2027,14 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
                            'set_mpls_ttl:252,group:1',
                 'reg0': 61640,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -2062,7 +2062,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'in_port': 42,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -2088,14 +2088,14 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
                            'set_mpls_ttl:252,group:1',
                 'in_port': 42,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -2123,7 +2123,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'reg0': 61640,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -2224,14 +2224,14 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
                            'set_mpls_ttl:252,group:1',
                 'reg0': 61640,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -2243,7 +2243,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
                            'set_mpls_ttl:252,group:1',
                 'reg0': 64100,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -2271,7 +2271,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'in_port': 42,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -2296,14 +2296,14 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'push_mpls:0x8847,set_mpls_label:64252,'
                            'set_mpls_ttl:252,group:1',
                 'in_port': 42,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -2331,7 +2331,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'reg0': 61640,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -2342,7 +2342,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'strict': True
             }, {
                 'reg0': 64100,
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
                 'nw_src': '10.100.0.0/16',
@@ -2446,19 +2446,19 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:ab:cd',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'group:1',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'in_port': 42,
                 'mpls_label': 65791,
                 'priority': 30,
@@ -2466,7 +2466,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, output:6',
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65792,
                 'priority': 1,
@@ -2503,20 +2503,20 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': (
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:ab:cd',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
                 'actions': 'push_mpls:0x8847,set_mpls_label:65791,'
                            'set_mpls_ttl:255,group:1',
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -2528,7 +2528,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
             }, {
                 'actions': 'strip_vlan, pop_mpls:0x0800,output:6',
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'dl_vlan': 0,
                 'mpls_label': 65792,
                 'priority': 1,
@@ -2598,7 +2598,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'mpls_label': 65791,
                 'table': 10
             }],
@@ -2614,7 +2614,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'mpls_label': 65791,
                 'table': 10
             }],
@@ -2736,7 +2736,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_delete_flow_rules_sf_node_del_fcs('mpls', None)
         self.assertEqual(
             [{
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -2748,7 +2748,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'strict': True,
             }, {
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'mpls_label': 65791,
                 'table': 10
             }],
@@ -2763,7 +2763,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self._prepare_delete_flow_rules_sf_node_del_fcs('mpls', 'mpls')
         self.assertEqual(
             [{
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'in_port': 42,
                 'mpls_label': 65790,
                 'priority': 30,
@@ -2771,7 +2771,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'strict': True,
             }, {
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'mpls_label': 65791,
                 'table': 10
             }],
@@ -2836,7 +2836,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                                                          pp_corr)
         self.assertEqual(
             [{
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -2931,7 +2931,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                                                                    pp_corr_nh)
         self.assertEqual(
             [{
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -3036,7 +3036,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                                                                   pp_corr_nh)
         self.assertEqual(
             [{
-                'dl_type': 2048,
+                'eth_type': 2048,
                 'in_port': 42,
                 'nw_dst': u'10.200.0.0/16',
                 'nw_proto': 6,
@@ -3051,7 +3051,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'mpls_label': 65792,
                 'table': 10
             }],
@@ -3075,7 +3075,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                                                                   pp_corr_nh)
         self.assertEqual(
             [{
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'mpls_label': 65791,
                 'in_port': 42,
                 'priority': 30,
@@ -3086,7 +3086,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'dl_dst': '00:01:02:03:05:07',
-                'dl_type': 34887,
+                'eth_type': 34887,
                 'mpls_label': 65792,
                 'table': 10
             }],
