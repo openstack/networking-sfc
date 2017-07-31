@@ -53,13 +53,15 @@ class CLITestV20PortChainExtensionJSON(test_cli20.CLITestV20Base):
         return port_chain
 
     def test_ext_cmd_loaded(self):
-        shell.NeutronShell('2.0')
+        neutron_shell = shell.NeutronShell('2.0')
         ext_cmd = {'port-chain-list': pc.PortChainList,
                    'port-chain-create': pc.PortChainCreate,
                    'port-chain-update': pc.PortChainUpdate,
                    'port-chain-delete': pc.PortChainDelete,
                    'port-chain-show': pc.PortChainShow}
-        self.assertDictContainsSubset(ext_cmd, shell.COMMANDS['2.0'])
+        for cmd_name, cmd_class in ext_cmd.items():
+            found = neutron_shell.command_manager.find_command([cmd_name])
+            self.assertEqual(cmd_class, found[0])
 
     def test_create_port_chain_with_mandatory_param(self):
         """Create port_chain: myname."""

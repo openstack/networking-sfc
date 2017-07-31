@@ -49,13 +49,15 @@ class CLITestV20FCExtensionJSON(test_cli20.CLITestV20Base):
         return flow_classifier
 
     def test_ext_cmd_loaded(self):
-        shell.NeutronShell('2.0')
+        neutron_shell = shell.NeutronShell('2.0')
         ext_cmd = {'flow-classifier-list': fc.FlowClassifierList,
                    'flow-classifier-create': fc.FlowClassifierCreate,
                    'flow-classifier-update': fc.FlowClassifierUpdate,
                    'flow-classifier-delete': fc.FlowClassifierDelete,
                    'flow-classifier-show': fc.FlowClassifierShow}
-        self.assertDictContainsSubset(ext_cmd, shell.COMMANDS['2.0'])
+        for cmd_name, cmd_class in ext_cmd.items():
+            found = neutron_shell.command_manager.find_command([cmd_name])
+            self.assertEqual(cmd_class, found[0])
 
     def test_create_flow_classifier_with_mandatory_params(self):
         """create flow-classifier: flow1."""

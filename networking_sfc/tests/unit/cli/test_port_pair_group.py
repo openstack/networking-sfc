@@ -51,13 +51,15 @@ class CLITestV20PortGroupExtensionJSON(test_cli20.CLITestV20Base):
         return port_pair_group
 
     def test_ext_cmd_loaded(self):
-        shell.NeutronShell('2.0')
+        neutron_shell = shell.NeutronShell('2.0')
         ext_cmd = {'port-pair-group-list': pg.PortPairGroupList,
                    'port-pair-group-create': pg.PortPairGroupCreate,
                    'port-pair-group-update': pg.PortPairGroupUpdate,
                    'port-pair-group-delete': pg.PortPairGroupDelete,
                    'port-pair-group-show': pg.PortPairGroupShow}
-        self.assertDictContainsSubset(ext_cmd, shell.COMMANDS['2.0'])
+        for cmd_name, cmd_class in ext_cmd.items():
+            found = neutron_shell.command_manager.find_command([cmd_name])
+            self.assertEqual(cmd_class, found[0])
 
     def test_create_port_pair_group_with_mandatory_args(self):
         """Create port_pair_group: myname."""
