@@ -33,6 +33,7 @@ Contents
 
    install/index
    user/index
+   configuration/index
 
 .. toctree::
    :maxdepth: 3
