@@ -24,7 +24,7 @@ class FlowClassifierClientMixin(object):
     @classmethod
     def resource_setup(cls):
         super(FlowClassifierClientMixin, cls).resource_setup()
-        manager = cls.admin_manager
+        manager = cls.os_admin
         cls.flowclassifier_client = (
             flowclassifier_client.FlowClassifierClient(
                 manager.auth_provider,

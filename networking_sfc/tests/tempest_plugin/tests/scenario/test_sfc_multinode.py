@@ -35,32 +35,32 @@ class TestSfcMultinode(test_sfc.TestSfc):
     # @classmethod
     # def setup_credentials(cls):
     #     super(TestSfcMultinode, cls).setup_credentials()
-    #     cls.os_primary = cls.admin_manager
+    #     cls.os_primary = cls.os_admin
     #     cls.os = cls.os_adm
 
     @classmethod
     def setup_clients(cls):
         super(TestSfcMultinode, cls).setup_clients()
         # Use admin client by default
-        # cls.os_primary = cls.admin_manager
+        # cls.os_primary = cls.os_admin
         # this is needed so that we can use the availability_zone:host
         # scheduler hint, which is admin_only by default
-        # cls.servers_client = cls.admin_manager.servers_client
+        # cls.servers_client = cls.os_admin.servers_client
         # super(TestSfcMultinode, cls).resource_setup()
 
     def _setup_security_group(self):
         self.security_group = self._create_security_group(
             security_group_rules_client=(
-                self.admin_manager.security_group_rules_client
+                self.os_admin.security_group_rules_client
             ),
-            security_groups_client=self.admin_manager.security_groups_client
+            security_groups_client=self.os_admin.security_groups_client
         )
         self._create_security_group_rule(
             self.security_group,
             security_group_rules_client=(
-                self.admin_manager.security_group_rules_client
+                self.os_admin.security_group_rules_client
             ),
-            security_groups_client=self.admin_manager.security_groups_client,
+            security_groups_client=self.os_admin.security_groups_client,
             protocol=None,
             direction='ingress'
         )
@@ -94,7 +94,7 @@ class TestSfcMultinode(test_sfc.TestSfc):
             availability_zone='%(zone)s:%(host_name)s' % host,
             networks=[{'uuid': network['id']}],
             wait_until='ACTIVE',
-            clients=self.admin_manager,
+            clients=self.os_admin,
             **kwargs)
         waiters.wait_for_server_status(self.servers_client,
                                        server['id'], 'ACTIVE')
