@@ -14,17 +14,16 @@
 
 import time
 
-from tempest.common import waiters
+from oslo_log import log
 from tempest import config
 from tempest.lib.common.utils import test_utils
 from tempest.lib import decorators
 from tempest import test
-import testscenarios
 
 from networking_sfc.tests.tempest_plugin.tests.scenario import base
 
 CONF = config.CONF
-load_tests = testscenarios.load_tests_apply_scenarios
+LOG = log.getLogger(__name__)
 
 
 class TestSfc(base.SfcScenarioTest):
@@ -57,6 +56,15 @@ class TestSfc(base.SfcScenarioTest):
 
     def setUp(self):
         super(TestSfc, self).setUp()
+
+        self.multi_node = CONF.compute.min_compute_nodes > 1
+        if self.multi_node:
+            LOG.info("Running test on multi node")
+        else:
+            LOG.info("Running test on single node")
+        # Save servers UUIDs
+        self.servers = []
+
         self.ssh_user = CONF.validation.image_ssh_user
         self.keypair = self.create_keypair()
         self._setup_security_group()
@@ -82,9 +90,9 @@ class TestSfc(base.SfcScenarioTest):
             self._get_server_port_id_and_ip4(server))
         return floating_ip, port_id, fixed_ip
 
-    def _create_floating_ip(self, server):
+    def _create_floating_ip(self, server, client=None):
         floating_ip = self.create_floating_ip(
-            server)
+            server, client=client)
         self.check_floating_ip_status(floating_ip, 'ACTIVE')
         floating_ip_addr = floating_ip['floating_ip_address']
         self.check_public_network_connectivity(
@@ -1167,18 +1175,33 @@ class TestSfc(base.SfcScenarioTest):
 
     def _create_server(self, network):
         kwargs = {}
-        if self.keypair is not None:
-            kwargs['key_name'] = self.keypair['name']
-        if self.security_group is not None:
-            kwargs['security_groups'] = [{'name': self.security_group['name']}]
-        server = self.create_server(
+        if self.multi_node:
+            kwargs["scheduler_hints"] = {'different_host': self.servers}
+
+        inst = self.create_server(
             networks=[{'uuid': network['id']}],
+            key_name=self.keypair['name'],
+            security_groups=[{'name': self.security_group['name']}],
             wait_until='ACTIVE',
             **kwargs)
-        waiters.wait_for_server_status(self.servers_client,
-                                       server['id'], 'ACTIVE')
+
+        adm_get_server = self.os_admin.servers_client.show_server
+        server = adm_get_server(inst['id'])['server']
+
         self._check_tenant_network_connectivity(
             server, self.ssh_user, self.keypair['private_key'])
+
+        # Check server is on different node
+        if self.multi_node:
+            new_host = server["OS-EXT-SRV-ATTR:host"]
+            host_list = [adm_get_server(s)["server"]["OS-EXT-SRV-ATTR:host"]
+                         for s in self.servers]
+            self.assertNotIn(new_host, host_list,
+                             message="Failed to create servers on different "
+                                     "Compute nodes.")
+
+            self.servers.append(server["id"])
+
         return server
 
     def _add_router_interface(self, router_id, port_id):
