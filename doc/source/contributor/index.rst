@@ -34,7 +34,7 @@ Finally, the developer guide includes information about testing infrastructure.
 Programming HowTos and Tutorials
 --------------------------------
 .. toctree::
-   :maxdepth: 1 
+   :maxdepth: 1
 
    contribution
    alembic_migration
@@ -51,3 +51,4 @@ Networking-SFC Internals
    ovs_symmetric_port_chain
    sfc_port_chain_tap
    sfc_non_transparent_sf
+   ietf_sfc_encapsulation

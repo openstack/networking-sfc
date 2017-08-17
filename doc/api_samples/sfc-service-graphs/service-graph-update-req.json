@@ -1,0 +1,6 @@
+{
+   "service_graph":{
+      "name":"new-name",
+      "description":"and new description, the port_chains dictionary can't be updated"
+   }
+}
