@@ -20,10 +20,10 @@ from neutron.api import extensions as api_ext
 from neutron.api.rpc.agentnotifiers import dhcp_rpc_agent_api as dhcp_rpc_log
 from neutron.api.v2 import resource as api_res_log
 from neutron.common import config as cfg
+from neutron.conf.plugins.ml2 import config
 from neutron.extensions import vlantransparent as vlan_log
 from neutron import manager
 from neutron.notifiers import nova as nova_log
-from neutron.plugins.ml2 import config
 from neutron.plugins.ml2 import db as ml2_db
 from neutron.plugins.ml2.drivers import type_flat
 from neutron.plugins.ml2.drivers import type_local
