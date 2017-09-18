@@ -141,34 +141,34 @@ Boot service VMs and attach ports
 ---------------------------------
 Create Neutron ports on network net1::
 
-   neutron port-create --name p1 net1
-   neutron port-create --name p2 net1
-   neutron port-create --name p3 net1
-   neutron port-create --name p4 net1
-   neutron port-create --name p5 net1
-   neutron port-create --name p6 net1
+   openstack sfc port create --name p1 net1
+   openstack sfc port create --name p2 net1
+   openstack sfc port create --name p3 net1
+   openstack sfc port create --name p4 net1
+   openstack sfc port create --name p5 net1
+   openstack sfc port create --name p6 net1
 
 Boot VM1 from Nova with ports p1 and p2 using two --nic options::
 
- nova boot --image xxx --nic port-id=p1-id --nic port-id=p2-id vm1 --flavor <image-flavour>
+ openstack server create --image xxx --nic port-id=p1-id --nic port-id=p2-id vm1 --flavor <image-flavour>
 
 Boot VM2 from Nova with ports p3 and p4 using two --nic options::
 
- nova boot --image yyy --nic port-id=p3-id --nic port-id=p4-id vm2 --flavor <image-flavour>
+ openstack server create --image yyy --nic port-id=p3-id --nic port-id=p4-id vm2 --flavor <image-flavour>
 
 Boot VM3 from Nova with ports p5 and p6 using two --nic options::
 
- nova boot --image zzz --nic port-id=p5-id --nic port-id=p6-id vm3 --flavor <image-flavour>
+ openstack server create --image zzz --nic port-id=p5-id --nic port-id=p6-id vm3 --flavor <image-flavour>
 
 Alternatively, the user can create each VM with one VNIC and then
 attach another Neutron port to the VM::
 
- nova boot --image xxx --nic port-id=p1-id vm1
- nova interface-attach --port-id p2-id vm1
- nova boot --image yyy --nic port-id=p3-id vm2
- nova interface-attach --port-id p4-id vm2
- nova boot --image zzz --nic port-id=p5-id vm3
- nova interface-attach --port-id p6-id vm3
+ openstack server create --image xxx --nic port-id=p1-id vm1
+ openstack server add port vm1 p2-id
+ openstack server create --image yyy --nic port-id=p3-id vm2
+ openstack server add port vm2 p4-id
+ openstack server create --image zzz --nic port-id=p5-id vm3
+ openstack server add port vm3 p6-id
 
 Once the Neutron ports p1 - p6 exist, the Port Chain is created using
 the steps described below.
@@ -180,7 +180,7 @@ Create flow-classifier FC1 that matches on source IP address 22.1.20.1
 direction) with TCP connection, source port 23 and destination port
 100::
 
- neutron flow-classifier-create \
+ openstack sfc flow classifier create \
   --ethertype IPv4 \
   --source-ip-prefix 22.1.20.1/32 \
   --destination-ip-prefix 172.4.5.6/32 \
@@ -188,20 +188,25 @@ direction) with TCP connection, source port 23 and destination port
   --source-port 23:23 \
   --destination-port 100:100 FC1
 
+.. note::
+
+   When using the (default) OVS driver, the ``--logical-source-port``
+   parameter is also required
+
 Create Port Pair
 ----------------
 Create port-pair PP1 with ports p1 and p2, port-pair PP2 with
 ports p3 and p4, port-pair PP3 with ports P5 and P6::
 
- neutron port-pair-create \
+ openstack sfc port pair create \
         --ingress=p1 \
         --egress=p2 PP1
 
- neutron port-pair-create \
+ openstack sfc port pair create \
         --ingress=p3 \
         --egress=p4 PP2
 
- neutron port-pair-create \
+ openstack sfc port pair create \
         --ingress=p5 \
         --egress=p6 PP3
 
@@ -210,9 +215,9 @@ Create Port Group
 Create port-pair-group PG1 with port-pair PP1 and PP2, and
 port-pair-group PG2 with port-pair PP3::
 
- neutron port-pair-group-create \
+ openstack sfc port pair group create \
         --port-pair PP1 --port-pair PP2 PG1 \
- neutron port-pair-group-create \
+ openstack sfc port pair group create \
         --port-pair PP3 PG2
 
 Create Port Chain
@@ -221,7 +226,7 @@ Create Port Chain
 Create port-chain PC1 with port-group PG1 and PG2, and flow
 classifier FC1::
 
- neutron port-chain-create \
+ openstack sfc port chain create \
         --port-pair-group PG1 --port-pair-group PG2 --flow-classifier FC1 PC1
 
 This will result in the Port chain driver being invoked to create the

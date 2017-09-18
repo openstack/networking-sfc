@@ -115,13 +115,13 @@ any logical ports (source/destination) of a service chain.
 Steps for Tap Port Pair and Port Pair Group creation:
 
 1. Create Port
-    neutron port-create --name p1 net1
+    openstack sfc port create --name p1 net1
 
 2. Create Port Pair
-    neutron port-pair-create tap_pp --ingress p1 --egress p1
+    openstack sfc port pair create tap_pp --ingress p1 --egress p1
 
 3. Create Port Pair Group
-    neutron port-pair-group-create tap_ppg --port-pair tap_pp
+    openstack sfc port pair group create tap_ppg --port-pair tap_pp
     --tap-enabled=True
 
 Apart from sending packet to next-hop SF, the egress port-chain flow in
