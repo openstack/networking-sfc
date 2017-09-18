@@ -17,11 +17,11 @@ import copy
 import mock
 
 from neutron.api.v2 import resource as api_res_log
-from neutron.common import config as cfg
 from neutron import manager
 from neutron.notifiers import nova as nova_log
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
 from neutron.tests.unit.extensions import base as test_api_v2_extension
+from oslo_config import cfg
 from oslo_utils import uuidutils
 from webob import exc
 import webtest

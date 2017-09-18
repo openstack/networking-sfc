@@ -19,8 +19,6 @@ from neutron.agent import securitygroups_rpc as sg_rpc
 from neutron.api import extensions as api_ext
 from neutron.api.rpc.agentnotifiers import dhcp_rpc_agent_api as dhcp_rpc_log
 from neutron.api.v2 import resource as api_res_log
-from neutron.common import config as cfg
-from neutron.conf.plugins.ml2 import config
 from neutron.extensions import vlantransparent as vlan_log
 from neutron import manager
 from neutron.notifiers import nova as nova_log
@@ -35,6 +33,7 @@ from neutron.plugins.ml2 import plugin as ml2_plugin
 from neutron import quota as quota_log
 from neutron.scheduler import dhcp_agent_scheduler as dhcp_agent_log
 from neutron_lib import constants as nl_const
+from oslo_config import cfg
 from oslo_utils import uuidutils
 
 from neutron.tests import base as n_base
@@ -51,11 +50,10 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
         if not plugin:
             plugin = 'neutron.plugins.ml2.plugin.Ml2Plugin'
-        config.cfg.CONF.set_override('tenant_network_types', ['vxlan'],
-                                     group='ml2')
-        config.cfg.CONF.set_override(
+        cfg.CONF.set_override('tenant_network_types', ['vxlan'], group='ml2')
+        cfg.CONF.set_override(
             'vni_ranges', ['1:1000'], group='ml2_type_vxlan')
-        config.cfg.CONF.set_override(
+        cfg.CONF.set_override(
             'mechanism_drivers', ['openvswitch'], group='ml2')
         super(NeutronDbPluginV2TestCase, self).setUp(
             ext_mgr=ext_mgr,
