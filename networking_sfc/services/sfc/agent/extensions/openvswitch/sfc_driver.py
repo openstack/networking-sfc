@@ -63,13 +63,6 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
     +-------------------------------+---------------+--------------------+
     """
 
-    REQUIRED_PROTOCOLS = [
-        ovs_consts.OPENFLOW10,
-        ovs_consts.OPENFLOW11,
-        ovs_consts.OPENFLOW12,
-        ovs_consts.OPENFLOW13,
-    ]
-
     def __init__(self):
         super(SfcOVSAgentDriver, self).__init__()
         self.agent_api = None
@@ -85,7 +78,6 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
     def initialize(self):
         self.br_int = ovs_ext_lib.SfcOVSBridgeExt(
             self.agent_api.request_int_br())
-        self.br_int.set_protocols(SfcOVSAgentDriver.REQUIRED_PROTOCOLS)
 
         self.local_ip = cfg.CONF.OVS.local_ip
         self.patch_tun_ofport = self.br_int.get_port_ofport(

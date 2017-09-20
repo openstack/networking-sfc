@@ -16,7 +16,6 @@ from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
     as ovs_consts
 from neutron_lib import exceptions
 from oslo_log import log as logging
-import six
 
 from networking_sfc._i18n import _
 
@@ -45,32 +44,13 @@ def get_port_mask(min_port, max_port):
     return masks
 
 
-def decorate_run_ofctl(f, sfc_ovs_bridge):
-    @six.wraps(f)
-    def run_ofctl(cmd, args, process_input=None):
-        return f(cmd, ["-O " + sfc_ovs_bridge.of_version] + args,
-                 process_input)
-
-    return run_ofctl
-
-
 class SfcOVSBridgeExt(object):
 
     def __init__(self, ovs_bridge):
         self.bridge = ovs_bridge
-        # OpenFlow 1.1 for groups
-        self.of_version = ovs_consts.OPENFLOW11
 
-        # this is so that our own run_ofctl is used when we call e.g. add_flows
-        # (proxying is not enough, because the proxied bridge would still call
-        # its own run_ofctl):
-        ovs_bridge.run_ofctl = decorate_run_ofctl(
-            ovs_bridge.run_ofctl,
-            self)
-
-    def set_protocols(self, protocols):
-        self.of_version = protocols[-1]
-        self.bridge.set_protocols(protocols)
+        # OpenFlow 1.1 is needed to manipulate groups
+        self.bridge.use_at_least_protocol(ovs_consts.OPENFLOW11)
 
     # proxy most methods to self.bridge
     def __getattr__(self, name):
