@@ -16,12 +16,12 @@ import copy
 
 import mock
 from neutron.api.v2 import resource as api_res_log
-from neutron.common import config
 from neutron import manager
 from neutron.notifiers import nova as nova_log
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
 from neutron.tests.unit.extensions import base as test_api_v2_extension
 from neutron_lib import constants as const
+from oslo_config import cfg
 from oslo_utils import uuidutils
 from webob import exc
 import webtest
@@ -54,7 +54,7 @@ class FlowClassifierExtensionTestCase(
         )
 
     def _mock_unnecessary_logging(self):
-        mock_log_cfg_p = mock.patch.object(config, 'LOG')
+        mock_log_cfg_p = mock.patch.object(cfg, 'LOG')
         self.mock_log_cfg = mock_log_cfg_p.start()
 
         mock_log_manager_p = mock.patch.object(manager, 'LOG')
