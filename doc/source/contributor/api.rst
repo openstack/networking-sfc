@@ -94,7 +94,7 @@ If there is more than one service function instance of a specific type
 available to meet the user's service requirement, their Neutron ports are
 included in the port chain as a sub-list. For example, if {p3, p4}, {p7, p8}
 are the port-pairs of two FW instances, they
-both may be included in a port chain for load distribution as shown below.
+both may be included in a port chain for load distribution as shown below::
 
   [{'p1': 'p2'}, [{'p3': 'p4'},{'p7': 'p8'}], {'p5': 'p6'}]
 
@@ -110,21 +110,22 @@ a port chain since multiple different types of flows can request the same servic
 treatment path.
 
 CLI Commands
+~~~~~~~~~~~~
 
 Syntax::
 
- neutron port-pair-create [-h]
+ openstack sfc port pair create [-h]
          [--description <description>]
          --ingress <port-id>
          --egress <port-id>
          [--service-function-parameters <parameter>] PORT-PAIR-NAME
 
- neutron port-pair-group-create [-h]
+ openstack sfc port pair group create [-h]
          [--description <description>]
-         --port-pairs <port-pair-id>
+         --port-pair <port-pair-id>
          [--port-pair-group-parameters <parameter>] PORT-PAIR-GROUP-NAME
 
- neutron flow-classifier-create [-h]
+ openstack sfc flow classifier create [-h]
          [--description <description>]
          [--protocol <protocol>]
          [--ethertype <Ethertype>]
@@ -136,66 +137,74 @@ Syntax::
          [--logical-destination-port <Neutron destination port>]
          [--l7-parameters <L7 parameter>] FLOW-CLASSIFIER-NAME
 
- neutron port-chain-create [-h]
+ openstack sfc port chain create [-h]
          [--description <description>]
           --port-pair-group <port-pair-group-id>
          [--flow-classifier <classifier-id>]
          [--chain-parameters <chain-parameter>] PORT-CHAIN-NAME
 
-1. neutron port-chain-create
-The port-chain-create returns the ID of the Port Chain.
+openstack sfc port chain create
+-------------------------------
 
-Each "port-pair-group" option specifies a type of SF. If a chain consists of a sequence
+The ``sfc port chain create`` command returns the ID of the Port Chain.
+
+Each ``--port-pair-group`` option specifies a type of SF. If a chain consists of a sequence
 of different types of SFs, then the chain will have multiple "port-pair-group"s.
 There must be at least one "port-pair-group" in the Port Chain.
 
-The "flow-classifier" option may be repeated to associate multiple flow classifiers
+The ``-flow-classifier`` option may be repeated to associate multiple flow classifiers
 with a port chain, with each classifier identifying a flow. If the flow-classifier is not
 specified, then no traffic will be steered through the chain.
 
 One chain parameter option is currently defined. More parameter options can be added
 in future extensions to accommodate new requirements.
-The "correlation" parameter is used to specify the type of chain correlation mechanism.
+The ``correlation`` parameter is used to specify the type of chain correlation mechanism.
 This parameter allows different correlation mechanisms to be selected.
 This will be set to "mpls" for now to be consistent with current OVS capability.
 If this parameter is not specified, it will default to "mpls".
 
-The port-chain-create command returns the ID of a Port chain.
+The ``sfc port chain create`` command returns the ID of a Port chain.
 
 A port chain can be created, read, updated and deleted, and when a chain is
 created/read/updated/deleted, the options that are involved would be based on
 the CRUD in the "Port Chain" resource table below.
 
-2. neutron port-pair-group-create
+openstack sfc port pair group create
+------------------------------------
+
 Inside each "port-pair-group", there could be one or more port-pairs.
 Multiple port-pairs may be included in a "port-pair-group" to allow the specification of
 a set of functionally equivalent SFs that can be be used for load distribution,
-i.e., the "port-pair" option may be repeated for multiple port-pairs of
+i.e., the ``--port-pair`` option may be repeated for multiple port-pairs of
 functionally equivalent SFs.
 
-The port-pair-group-create command returns the ID of a Port Pair group.
+The ``sfc port pair group create`` command returns the ID of a Port Pair group.
 
-3. neutron port-pair-create
+openstack sfc port pair create
+------------------------------
+
 A Port Pair represents a service function instance. The ingress port and the
 egress port of the service function may be specified.  If a service function
 has one bidirectional port, the ingress port has the same value as the egress port.
-The "service-function-parameter" option allows the passing of SF specific parameter
+The ``--service-function-parameters`` option allows the passing of SF specific parameter
 information to the data path. These include:
 
- * The "correlation" parameter is used to specify the type of chain correlation
-   mechanism supported by a specific SF. This is needed by the data plane
-   switch to determine how to associate a packet with a chain. This will be set
-   to "none" for now since there is no correlation mechanism supported by the
-   SF. In the future, it can be extended to include "mpls", "nsh", etc.. If
-   this parameter is not specified, it will default to "none".
+* The ``correlation`` parameter is used to specify the type of chain correlation
+  mechanism supported by a specific SF. This is needed by the data plane
+  switch to determine how to associate a packet with a chain. This will be set
+  to "none" for now since there is no correlation mechanism supported by the
+  SF. In the future, it can be extended to include "mpls", "nsh", etc.. If
+  this parameter is not specified, it will default to "none".
 
- * The "weight" parameter is used to specify the weight for each SF for
-   load distribution in a port pair group. This represents a percentage of the
-   traffic to be sent to each SF.
+* The ``weight`` parameter is used to specify the weight for each SF for
+  load distribution in a port pair group. This represents a percentage of the
+  traffic to be sent to each SF.
 
-The port-pair-create command returns the ID of a Port Pair.
+The ``sfc port pair create`` command returns the ID of a Port Pair.
 
-4. neutron flow-classifier-create
+openstack sfc flow classifier create
+------------------------------------
+
 A combination of the "source" options defines the source of the flow.
 A combination of the "destination" options defines the destination of the flow.
 The l7_parameter is a place-holder that may be used to support flow classification
@@ -203,11 +212,11 @@ using L7 fields, such as URL. If an option is not specified, it will default to 
 except for ethertype which defaults to 'IPv4', for logical-source-port and
 logical-destination-port which defaults to none.
 
-The flow-classifier-create command returns the ID of a flow classifier.
+The ``sfc flow classifier create`` command returns the ID of a flow classifier.
 
 
 Data Model Impact
------------------
+~~~~~~~~~~~~~~~~~
 
 Data model::
 
@@ -227,7 +236,7 @@ New objects:
 
 Port Chain
   * id - Port chain ID.
-  * tenant_id - Tenant ID.
+  * project_id - Tenant ID.
   * name - Readable name.
   * description - Readable description.
   * port_pair_groups - List of port-pair-group IDs.
@@ -237,7 +246,7 @@ Port Chain
 
 Port Pair Group
   * id - Port pair group ID.
-  * tenant_id - Tenant ID.
+  * project_id - Tenant ID.
   * name - Readable name.
   * description - Readable description.
   * port_pairs - List of service function (Neutron) port-pairs.
@@ -245,7 +254,7 @@ Port Pair Group
 
 Port Pair
   * id - Port pair ID.
-  * tenant_id - Tenant ID.
+  * project_id - Tenant ID.
   * name - Readable name.
   * description - Readable description.
   * ingress - Ingress port.
@@ -254,7 +263,7 @@ Port Pair
 
 Flow Classifier
   * id - Flow classifier ID.
-  * tenant_id - Tenant ID.
+  * project_id - Tenant ID.
   * name - Readable name.
   * description - Readable description.
   * ethertype - Ethertype ('IPv4'/'IPv6').
@@ -270,7 +279,7 @@ Flow Classifier
   * l7_parameters - Dictionary of L7 parameters.
 
 REST API
---------
+~~~~~~~~
 
 Port Chain Operations:
 
@@ -337,7 +346,7 @@ Flow Classifier Operations:
 +------------+-------------------------------+------------------------------------------------+
 
 REST API Impact
----------------
+~~~~~~~~~~~~~~~
 
 The following new resources will be created as a result of the API handling.
 
@@ -349,7 +358,7 @@ Port Chain resource:
 +================+==========+========+=========+====+=========================+
 |id              |uuid      |RO, all |generated|R   |Port Chain ID.           |
 +----------------+----------+--------+---------+----+-------------------------+
-|tenant_id       |uuid      |RO, all |from auth|CR  |Tenant ID.               |
+|project_id      |uuid      |RO, all |from auth|CR  |Tenant ID.               |
 |                |          |        |token    |    |                         |
 +----------------+----------+--------+---------+----+-------------------------+
 |name            |string    |RW, all |''       |CRU |Port Chain name.         |
@@ -379,7 +388,7 @@ Port Pair Group resource:
 +================+==========+========+=========+====+=========================+
 |id              |uuid      |RO, all |generated|R   |Port pair group ID.      |
 +----------------+----------+--------+---------+----+-------------------------+
-|tenant_id       |uuid      |RO, all |from auth|CR  |Tenant ID.               |
+|project_id      |uuid      |RO, all |from auth|CR  |Tenant ID.               |
 |                |          |        |token    |    |                         |
 +----------------+----------+--------+---------+----+-------------------------+
 |name            |string    |RW, all |''       |CRU |Port pair group name.    |
@@ -401,7 +410,7 @@ Port Pair resource:
 +===========================+========+=========+=========+====+======================+
 |id                         |uuid    |RO, all  |generated|R   |Port pair ID.         |
 +---------------------------+--------+---------+---------+----+----------------------+
-|tenant_id                  |uuid    |RO, all  |from auth|CR  |Tenant ID.            |
+|project_id                 |uuid    |RO, all  |from auth|CR  |Tenant ID.            |
 |                           |        |         |token    |    |                      |
 +---------------------------+--------+---------+---------+----+----------------------+
 |name                       |string  |RW, all  |''       |CRU |Port pair name.       |
@@ -425,7 +434,7 @@ Flow Classifier resource:
 +==========================+========+=========+=========+====+=======================+
 |id                        |uuid    |RO, all  |generated|R   |Flow-classifier ID.    |
 +--------------------------+--------+---------+---------+----+-----------------------+
-|tenant_id                 |uuid    |RO, all  |from auth|CR  |Tenant ID.             |
+|project_id                |uuid    |RO, all  |from auth|CR  |Tenant ID.             |
 |                          |        |         |token    |    |                       |
 +--------------------------+--------+---------+---------+----+-----------------------+
 |name                      |string  |RW, all  |''       |CRU |Flow-classifier name.  |
@@ -467,7 +476,7 @@ Flow Classifier resource:
 Json Port-pair create request example::
 
  {"port_pair": {"name": "SF1",
-        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "project_id": "d382007aa9904763a801f68ecf065cf5",
         "description": "Firewall SF instance",
         "ingress": "dace4513-24fc-4fae-af4b-321c5e2eb3d1",
         "egress": "aef3478a-4a56-2a6e-cd3a-9dee4e2ec345",
@@ -475,7 +484,7 @@ Json Port-pair create request example::
  }
 
  {"port_pair":  {"name": "SF2",
-        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "project_id": "d382007aa9904763a801f68ecf065cf5",
         "description": "Loadbalancer SF instance",
         "ingress": "797f899e-73d4-11e5-b392-2c27d72acb4c",
         "egress": "797f899e-73d4-11e5-b392-2c27d72acb4c",
@@ -485,7 +494,7 @@ Json Port-pair create request example::
 Json Port-pair create response example::
 
  {"port_pair": {"name": "SF1",
-        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "project_id": "d382007aa9904763a801f68ecf065cf5",
         "description": "Firewall SF instance",
         "ingress": "dace4513-24fc-4fae-af4b-321c5e2eb3d1",
         "egress": "aef3478a-4a56-2a6e-cd3a-9dee4e2ec345",
@@ -494,7 +503,7 @@ Json Port-pair create response example::
   }
 
  {"port_pair":  {"name": "SF2",
-        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "project_id": "d382007aa9904763a801f68ecf065cf5",
         "description": "Loadbalancer SF instance",
         "ingress": "797f899e-73d4-11e5-b392-2c27d72acb4c",
         "egress": "797f899e-73d4-11e5-b392-2c27d72acb4c",
@@ -505,7 +514,7 @@ Json Port-pair create response example::
 Json Port Pair Group create request example::
 
  {"port_pair_group": {"name": "Firewall_PortPairGroup",
-        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "project_id": "d382007aa9904763a801f68ecf065cf5",
         "description": "Grouping Firewall SF instances",
         "port_pairs": [
             "78dcd363-fc23-aeb6-f44b-56dc5e2fb3ae"
@@ -517,7 +526,7 @@ Json Port Pair Group create request example::
   }
 
  {"port_pair_group": {"name": "Loadbalancer_PortPairGroup",
-        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "project_id": "d382007aa9904763a801f68ecf065cf5",
         "description": "Grouping Loadbalancer SF instances",
         "port_pairs": [
             "d11e9190-73d4-11e5-b392-2c27d72acb4c"
@@ -531,7 +540,7 @@ Json Port Pair Group create request example::
 Json Port Pair Group create response example::
 
  {"port_pair_group": {"name": "Firewall_PortPairGroup",
-        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "project_id": "d382007aa9904763a801f68ecf065cf5",
         "description": "Grouping Firewall SF instances",
         "port_pairs": [
             "78dcd363-fc23-aeb6-f44b-56dc5e2fb3ae
@@ -544,7 +553,7 @@ Json Port Pair Group create response example::
  }
 
  {"port_pair_group":  {"name": "Loadbalancer_PortPairGroup",
-        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "project_id": "d382007aa9904763a801f68ecf065cf5",
         "description": "Grouping Loadbalancer SF instances",
         "port_pairs": [
             "d11e9190-73d4-11e5-b392-2c27d72acb4c"
@@ -559,7 +568,7 @@ Json Port Pair Group create response example::
 Json Flow Classifier create request example::
 
  {"flow_classifier": {"name": "FC1",
-        "tenant_id": "1814726e2d22407b8ca76db5e567dcf1",
+        "project_id": "1814726e2d22407b8ca76db5e567dcf1",
         "description": "Flow rule for classifying TCP traffic",
         "protocol": "TCP",
         "source_port_range_min": 22, "source_port_range_max": 4000,
@@ -569,7 +578,7 @@ Json Flow Classifier create request example::
  }
 
  {"flow_classifier": {"name": "FC2",
-        "tenant_id": "1814726e2d22407b8ca76db5e567dcf1",
+        "project_id": "1814726e2d22407b8ca76db5e567dcf1",
         "description": "Flow rule for classifying UDP traffic",
         "protocol": "UDP",
         "source_port_range_min": 22, "source_port_range_max": 22,
@@ -581,7 +590,7 @@ Json Flow Classifier create request example::
 Json Flow Classifier create response example::
 
  {"flow_classifier": {"name": "FC1",
-        "tenant_id": "1814726e2d22407b8ca76db5e567dcf1",
+        "project_id": "1814726e2d22407b8ca76db5e567dcf1",
         "description": "Flow rule for classifying TCP traffic",
         "protocol": "TCP",
         "source_port_range_min": 22, "source_port_range_max": 4000,
@@ -592,7 +601,7 @@ Json Flow Classifier create response example::
  }
 
  {"flow_classifier": {"name": "FC2",
-        "tenant_id": "1814726e2d22407b8ca76db5e567dcf1",
+        "project_id": "1814726e2d22407b8ca76db5e567dcf1",
         "description": "Flow rule for classifying UDP traffic",
         "protocol": "UDP",
         "source_port_range_min": 22, "source_port_range_max": 22,
@@ -605,7 +614,7 @@ Json Flow Classifier create response example::
 Json Port Chain create request example::
 
  {"port_chain": {"name": "PC1",
-        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "project_id": "d382007aa9904763a801f68ecf065cf5",
         "description": "Steering TCP and UDP traffic first to Firewall and then to Loadbalancer",
         "flow_classifiers": [
             "4a334cd4-fe9c-4fae-af4b-321c5e2eb051",
@@ -622,7 +631,7 @@ Json Port Chain create request example::
 Json Port Chain create response example::
 
  {"port_chain": {"name": "PC1",
-        "tenant_id": "d382007aa9904763a801f68ecf065cf5",
+        "project_id": "d382007aa9904763a801f68ecf065cf5",
         "description": "Steering TCP and UDP traffic first to Firewall and then to Loadbalancer",
         "flow_classifiers": [
             "4a334cd4-fe9c-4fae-af4b-321c5e2eb051",
@@ -642,7 +651,7 @@ Implementation
 ==============
 
 Assignee(s)
------------
+~~~~~~~~~~~
 Authors of the Specification and Primary contributors:
  * Cathy Zhang (cathy.h.zhang@huawei.com)
  * Louis Fourie (louis.fourie@huawei.com)
