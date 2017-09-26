@@ -1,5 +1,5 @@
 # Copyright 2017 Futurewei. All rights reserved.
-# Copyright 2017 Intel Corporation. All rights reserved.
+# Copyright 2017 Intel Corporation.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1280,3 +1280,27 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         flow_rule['group_refcnt'] = group_refcnt
 
         return group_refcnt
+
+    @log_helpers.log_method_call
+    def create_service_graph_precommit(self, context):
+        pass
+
+    @log_helpers.log_method_call
+    def create_service_graph_postcommit(self, context):
+        pass
+
+    @log_helpers.log_method_call
+    def update_service_graph_precommit(self, context):
+        pass
+
+    @log_helpers.log_method_call
+    def update_service_graph_postcommit(self, context):
+        pass
+
+    @log_helpers.log_method_call
+    def delete_service_graph_precommit(self, context):
+        pass
+
+    @log_helpers.log_method_call
+    def delete_service_graph_postcommit(self, context):
+        pass

@@ -1,4 +1,5 @@
 # Copyright 2016 Futurewei. All rights reserved.
+# Copyright 2017 Intel Corporation.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -58,6 +59,17 @@ class SfcClientMixin(object):
                 **manager.default_params
             )
         )
+        cls.sfcgraph_client = (
+            sfc_client.ServiceGraphClient(
+                manager.auth_provider,
+                CONF.network.catalog_type,
+                CONF.network.region or CONF.identity.region,
+                endpoint_type=CONF.network.endpoint_type,
+                build_interval=CONF.network.build_interval,
+                build_timeout=CONF.network.build_timeout,
+                **manager.default_params
+            )
+        )
 
     @classmethod
     def create_port_chain(cls, **kwargs):
@@ -79,3 +91,10 @@ class SfcClientMixin(object):
             **kwargs)
         pp = body['port_pair']
         return pp
+
+    @classmethod
+    def create_service_graph(cls, **kwargs):
+        body = cls.sfcgraph_client.create_service_graph(
+            **kwargs)
+        pc = body['service_graph']
+        return pc

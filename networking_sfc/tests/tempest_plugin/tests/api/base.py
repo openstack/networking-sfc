@@ -1,4 +1,5 @@
 # Copyright 2016 Futurewei. All rights reserved.
+# Copyright 2017 Intel Corporation.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -174,3 +175,20 @@ class BaseSfcTest(
         body = self.portchain_client.list_port_chains()
         pc_list = body['port_chains']
         self.assertNotIn(pc_id, [n['id'] for n in pc_list])
+
+    def _try_create_service_graph(self, **kwargs):
+        graph = self.create_service_graph(
+            **kwargs)
+        self.addCleanup(self._try_delete_service_graph, graph['id'])
+        return graph
+
+    def _try_delete_service_graph(self, graph_id):
+        # delete Service Graph, if it exists
+        try:
+            self.sfcgraph_client.delete_service_graph(graph_id)
+        # if Service Graph is not found, this means it was deleted
+        except lib_exc.NotFound:
+            pass
+        body = self.sfcgraph_client.list_service_graphs()
+        graph_list = body['service_graphs']
+        self.assertNotIn(graph_id, [n['id'] for n in graph_list])

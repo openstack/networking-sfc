@@ -13,6 +13,7 @@
 import itertools
 
 from networking_sfc.extensions import flowclassifier
+from networking_sfc.extensions import servicegraph
 from networking_sfc.extensions import sfc
 from networking_sfc.services.flowclassifier.common import config as fc_config
 from networking_sfc.services.sfc.common import config as sfc_config
@@ -23,7 +24,8 @@ def list_quota_opts():
         ('quotas',
          itertools.chain(
              flowclassifier.flow_classifier_quota_opts,
-             sfc.sfc_quota_opts)
+             sfc.sfc_quota_opts,
+             servicegraph.service_graph_quota_opts)
          ),
     ]
 

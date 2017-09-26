@@ -1,4 +1,5 @@
 # Copyright 2015 Futurewei.  All rights reserved.
+# Copyright 2017 Intel Corporation.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -32,6 +33,7 @@ from neutron_lib.db import model_base
 
 from networking_sfc.db import flowclassifier_db as fc_db
 from networking_sfc.extensions import flowclassifier as ext_fc
+from networking_sfc.extensions import servicegraph as ext_sg
 from networking_sfc.extensions import sfc as ext_sfc
 
 
@@ -182,9 +184,38 @@ class PortChain(model_base.BASEV2, model_base.HasId, model_base.HasProject):
         cascade='all, delete-orphan')
 
 
+class GraphChainAssoc(model_base.BASEV2):
+    """Relation table between Service Graphs and src+dst Port Chains."""
+    __tablename__ = 'sfc_service_graph_chain_associations'
+    service_graph_id = sa.Column(
+        sa.String(UUID_LEN),
+        sa.ForeignKey('sfc_service_graphs.id', ondelete='CASCADE'),
+        primary_key=True, nullable=False)
+    src_chain = sa.Column(
+        sa.String(UUID_LEN),
+        sa.ForeignKey('sfc_port_chains.id', ondelete='RESTRICT'),
+        primary_key=True, nullable=False)
+    dst_chain = sa.Column(
+        sa.String(UUID_LEN),
+        sa.ForeignKey('sfc_port_chains.id', ondelete='RESTRICT'),
+        primary_key=True, nullable=False)
+
+
+class ServiceGraph(model_base.BASEV2, model_base.HasId, model_base.HasProject):
+    """Represents a Neutron Service Function Chain Graph."""
+    __tablename__ = 'sfc_service_graphs'
+    name = sa.Column(sa.String(db_const.NAME_FIELD_SIZE))
+    description = sa.Column(sa.String(db_const.DESCRIPTION_FIELD_SIZE))
+    graph_chain_associations = orm.relationship(
+        GraphChainAssoc,
+        backref='service_graph',
+        cascade='all, delete-orphan')
+
+
 class SfcDbPlugin(
     ext_sfc.SfcPluginBase,
-    common_db_mixin.CommonDbMixin
+    common_db_mixin.CommonDbMixin,
+    ext_sg.ServiceGraphPluginBase
 ):
     """Mixin class to add port chain to db_plugin_base_v2."""
 
@@ -348,7 +379,6 @@ class SfcDbPlugin(
     def get_port_chains(self, context, filters=None, fields=None,
                         sorts=None, limit=None,
                         marker=None, page_reverse=False, default_sg=False):
-
         marker_obj = self._get_marker_obj(context, 'port_chain', limit, marker)
         return self._get_collection(context,
                                     PortChain,
@@ -668,3 +698,30 @@ class SfcDbPlugin(
                 context.session.delete(pg)
         except ext_sfc.PortPairGroupNotFound:
             LOG.info("Deleting a non-existing port pair group.")
+
+    @log_helpers.log_method_call
+    def create_service_graph(self, context, service_graph):
+        """Create a Service Graph."""
+        pass
+
+    @log_helpers.log_method_call
+    def get_service_graphs(self, context, filters=None,
+                           fields=None, sorts=None, limit=None,
+                           marker=None, page_reverse=False):
+        """Get Service Graphs."""
+        pass
+
+    @log_helpers.log_method_call
+    def get_service_graph(self, context, id, fields=None):
+        """Get a Service Graph."""
+        pass
+
+    @log_helpers.log_method_call
+    def update_service_graph(self, context, id, service_graph):
+        """Update a Service Graph."""
+        pass
+
+    @log_helpers.log_method_call
+    def delete_service_graph(self, context, id):
+        """Delete a Service Graph."""
+        pass
