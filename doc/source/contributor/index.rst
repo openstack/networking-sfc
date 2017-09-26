@@ -52,3 +52,4 @@ Networking-SFC Internals
    sfc_port_chain_tap
    sfc_non_transparent_sf
    ietf_sfc_encapsulation
+   sfc_proxy_port_correlation
