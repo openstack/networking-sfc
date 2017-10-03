@@ -32,7 +32,8 @@ Controller nodes
 After installing the package, enable the service plugins in neutron-server by
 adding them in ``neutron.conf`` (typically found in ``/etc/neutron/``)::
 
-    service_plugins=router,networking_sfc.services.flowclassifier.plugin.FlowClassifierPlugin,networking_sfc.services.sfc.plugin.SfcPlugin
+    [DEFAULT]
+    service_plugins = flow_classifier,sfc
 
 In the same configuration file, specify the driver to use in the plugins. Here
 we use the OVS driver::
@@ -43,8 +44,11 @@ we use the OVS driver::
     [flowclassifier]
     drivers = ovs
 
-After that, restart the neutron-server. In devstack, this is the ``q-svc``
-service. With systemd setups you can run::
+After that, restart the neutron-server. In devstack, run::
+
+    systemctl restart devstack@q-svc
+
+In a similar way with systemd setups, you can run::
 
     systemctl restart neutron-server
 
@@ -55,10 +59,14 @@ After installing the package, enable the networking-sfc extension in the Open
 vSwitch agent. The configuration file name can change, the default one is
 ``/etc/neutron/plugins/ml2/ml2_conf.ini``. Add the sfc extension::
 
+    [agent]
     extensions = sfc
 
-And restart the neutron-openvswitch-agent process. In devstack, this is the
-``q-agt`` service. With systemd setups you can run::
+And restart the neutron-openvswitch-agent process. In devstack, run::
+
+    systemctl restart devstack@q-agt
+
+And with systemd setups you can run::
 
     systemctl restart neutron-openvswitch-agent
 
