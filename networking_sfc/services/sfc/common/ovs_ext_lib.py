@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron.agent.common import ovs_lib
 from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
     as ovs_consts
 from neutron_lib import exceptions
@@ -82,7 +83,7 @@ class SfcOVSBridgeExt(object):
         group = self.run_ofctl("dump-groups", [group_str])
         if group:
             retval = '\n'.join(item for item in group.splitlines()
-                               if 'NXST' not in item)
+                               if ovs_lib.is_a_flow_line(item))
         return retval
 
 
