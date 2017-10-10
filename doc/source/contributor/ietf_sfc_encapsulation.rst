@@ -26,7 +26,7 @@ following scope:
 
 * Service Graphs allowing port-chains to be linked together
 
-* The IETF SFC Encapsulation protocol, NSH, support
+* The IETF SFC Encapsulation protocol, NSH (exposed to SFs), support
 
 * No NSH Metadata support
 
@@ -41,19 +41,16 @@ context information."*
 Metadata is a very important capability of SFC Encapsulation, but it's out of
 scope for this umbrella of work in networking-sfc.
 
-Currently, networking-sfc supports both MPLS correlation and Service Graphs
-outlined above.
-The remaining points are work in progress. As such, this documentation only
-covers the supported points. Correlation is the term used to correlate packets
-to chains, in essence it is the Service Function Path (SFP) information
-that is part of the SFC Encapsulation.
+Correlation is the term used to correlate packets to chains, in essence it is
+the Service Function Path (SFP) information that is part of the
+SFC Encapsulation. Correlation can be MPLS or NSH (SFC Encapsulation).
 
 To clarify, MPLS correlation cannot be strictly called SFC Encapsulation
 since it doesn't fully encapsulate the packets, amongst other limitations
 such as available space to carry metadata [1]. However, since it can be
 used for Service Function Path identification, it is
-a good workaround to exercise the IETF SFC Encapsulation
-architectural concept in networking-sfc until NSH is added.
+a good workaround to exercise the IETF SFC Encapsulation architectural
+concept in networking-sfc, when NSH is not desired.
 
 Service Graphs is a concept mentioned in [1] but further defined and
 refined in [5] that builds on top of Reclassification and Branching (from [1]).
@@ -134,11 +131,15 @@ Terminology
 Usage
 -----
 
-In order to create Port Chains with Port Pairs that make use of the MPLS
-correlation (i.e. the MPLS labels are exposed to the SFs, so no SFC Proxy is
-logically instantiated by the the networking-sfc backend), the Port Pair's
-``correlation`` service function parameter can be used, by setting it to
-``mpls``:
+In order to create Port Chains with Port Pairs that make use of the NSH
+correlation (i.e. the Network Service Header (NSH) is exposed to the SFs,
+so no SFC Proxy is logically instantiated by the the networking-sfc backend),
+the Port Pair's ``correlation`` service function parameter can be used,
+by setting it to ``nsh`` (default is set to ``None``):
+
+``service_function_parameters: {correlation: 'nsh'}``
+
+Alternatively, the MPLS correlation can be used as a workaround to NSH:
 
 ``service_function_parameters: {correlation: 'mpls'}``
 
@@ -146,7 +147,7 @@ Enabling the MPLS correlation doesn't fully encapsulate frames like NSH would,
 since the MPLS labels are inserted between the Ethernet header and the L3
 protocol.
 
-By default, port-chains always have their correlation set to MPLS:
+By default, port-chains always have their correlation set to ``mpls``:
 
 ``chain_parameters: {correlation: 'mpls'}``
 
@@ -156,6 +157,13 @@ Port Pairs that share the same correlation type (to process each hop and expose
 their feature set in a consistent and predictable way). The SFC OVS driver and
 agent are smart enough to only apply SFC Proxies to the hops that require so.
 
+The MPLS correlation is only recommended when using SFC-proxied Port Pair
+Groups. In order to use NSH, the Port Chain correlation must be set to ``nsh``
+(to clarify, SFC Proxies can also be used with NSH Port Chains, as long as
+the Port Pairs have no correlation set):
+
+``chain_parameters: {correlation: 'nsh'}``
+
 To create a Service Graph, first create the set of Port Chains that will
 compose the Service Graph. Then, create the Service Graph itself by referencing
 the Port Chains needed as a dictionary of source to (list of) destination
@@ -163,7 +171,8 @@ chains, essentially describing each of the branching points of the chain.
 The following example, using the OpenStack Client, illustrates this (by
 creating a graph that starts from an initial chain ``pc1`` which forks into
 ``pc2`` and ``pc3``, and then joins back into a single chain ``pc4`` (if
-that's what the user intended)::
+that's what the user intended) using the MPLS correlation (if using NSH, the
+flows are equivalent but OpenFlow NSH actions and matches are used instead)::
 
   # we assume that the Neutron ports p0..p4 are already created and bound
   $ openstack sfc port pair create --ingress p1 --egress p1  --service-function-parameters correlation=mpls pp1
@@ -178,10 +187,10 @@ that's what the user intended)::
   $ openstack sfc flow classifier create --protocol udp --source-port 2002 --logical-source-port p0 fc2
   $ openstack sfc flow classifier create --protocol udp --source-port 2003 --logical-source-port p0 fc3
   $ openstack sfc flow classifier create --protocol udp --source-port 2004 --logical-source-port p0 fc4
-  $ openstack sfc port chain create --port-pair-group ppg1 --flow-classifier fc1 pc1
-  $ openstack sfc port chain create --port-pair-group ppg2 --flow-classifier fc2 pc2
-  $ openstack sfc port chain create --port-pair-group ppg3 --flow-classifier fc3 pc3
-  $ openstack sfc port chain create --port-pair-group ppg4 --flow-classifier fc4 pc4
+  $ openstack sfc port chain create --port-pair-group ppg1 --flow-classifier --chain-parameters correlation=mpls fc1 pc1
+  $ openstack sfc port chain create --port-pair-group ppg2 --flow-classifier --chain-parameters correlation=mpls fc2 pc2
+  $ openstack sfc port chain create --port-pair-group ppg3 --flow-classifier --chain-parameters correlation=mpls fc3 pc3
+  $ openstack sfc port chain create --port-pair-group ppg4 --flow-classifier --chain-parameters correlation=mpls fc4 pc4
   $ openstack sfc service graph create --port-chains pc1:pc2,pc3;pc2:pc4;pc3:pc4 sg1
 
 In the Python language, the dictionary of Port Chains provided above via the
@@ -253,21 +262,22 @@ there are three important things to notice from the Service Graphs flows above:
 Implementation
 --------------
 
-MPLS correlation
-~~~~~~~~~~~~~~~~
+PPG/SF Correlation
+~~~~~~~~~~~~~~~~~~
 
-At the API side, the MPLS correlation is defined as a possible option to the
-``correlation`` key in the ``service_function_parameters`` field of the
-``port_pair`` resource.
+At the API side, both MPLS and NSH correlations are defined as possible options
+(values) to the ``correlation`` key in the ``service_function_parameters``
+field of the ``port_pair`` resource. Furthermore, Port Pair Groups must include
+Port Pairs of the same correlation type.
 
 The parameter is saved in the database in the same way as any other port-pair
-parameter, inside the ``sfc_service_function_params`` table::
+parameter, inside the ``sfc_service_function_params`` table (example for NSH)::
 
  keyword='correlation'
- value='mpls'
+ value='nsh'
  pair_id=PORT_PAIR_UUID
 
-The MPLS correlation parameter will eventually be fed to the enabled backend,
+The NSH correlation parameter will eventually be fed to the enabled backend,
 such as Open vSwitch. Through the OVS SFC driver and agent, the vswitches
 on the multiple nodes where networking-sfc is deployed will be configured
 with the set of flows that allow classification, encapsulation, decapsulation
@@ -288,11 +298,10 @@ correlation type, so the comparison between ``pc_corr`` and each of the
 ``pp_corr`` of the next hops will yield the same result.
 
 ``pc_corr`` is the correlation mechanism (SFC Encapsulation) to be used for
-the entire  port-chain. The values may be ``None``, ``'mpls'``, or ``'nsh'``
-(when supported).
+the entire  port-chain. The values may be ``None``, ``'mpls'``, or ``'nsh'``.
 
 ``pp_corr`` is the correlation mechanism supported by an individual SF. The
-values may be ``'None'``, ``'mpls'``, or ``'nsh'`` (when supported).
+values may be ``'None'``, ``'mpls'``, or ``'nsh'``.
 
 The backend driver compares ``pc_corr`` and ``pp_corr`` to determine if SFC
 Proxy is needed for a SF that is not capable of processing the
@@ -314,7 +323,7 @@ rule (taken from one of the SFC OVS agent's unit tests)::
                     'gw_mac': '00:01:02:03:06:09',
                     'cidr': '10.0.0.0/8',
                     'mac_address': '12:34:56:78:cf:23',
-                    'pp_corr': 'mpls'
+                    'pp_corr': 'nsh'
                 }],
                 'del_fcs': [],
                 'group_refcnt': 1,
@@ -333,95 +342,99 @@ rule (taken from one of the SFC OVS agent's unit tests)::
                     'ethertype': 'IPv4',
                     'destination_port_range_max': 100,
                 }],
-                'pc_corr': 'mpls',
-                'pp_corr': 'mpls',
+                'pc_corr': 'nsh',
+                'pp_corr': 'nsh',
                 'id': uuidutils.generate_uuid()
 
-It can be seen that ``'mpls'`` appears three times in the flow rule, twice in
+It can be seen that ``'nsh'`` appears three times in the flow rule, twice in
 the root (specifying the correlation of port-chain and port-pair of the current
 hop) and once inside the single hop of ``next_hops``, regarding its port-pair.
 
 The three appearances will dictate how flows (both matches and actions) will
 be added by the OVS agent.
 
-Currently, the only allowed protocol for chain correlation is MPLS, in which
-case ``pc_corr`` gets set to ``'mpls'``. With ``pc_corr='mpls'``,
-let's take a look at the possible scenarios:
+Let's take a look at the possible scenarios:
 
-+-+------------------+------------------+-------------------------------------+
-| | Curr Hop pp_corr | Next Hop pp_corr |              Action                 |
-+=+==================+==================+=====================================+
-|1| MPLS             | MPLS             | Egress from SF: match on MPLS       |
-| |                  |                  | to determine next hop               |
-| |                  |                  | Ingress to next SF: send MPLS to SF |
-+-+------------------+------------------+-------------------------------------+
-|2| MPLS             | None             | Egress from SF: match on MPLS       |
-| |                  |                  | to determine next hop               |
-| |                  |                  | Ingress to next SF: pop MPLS first  |
-+-+------------------+------------------+-------------------------------------+
-|3| None             | MPLS             | Egress from SF: reclassify packet   |
-| |                  |                  | and add new MPLS                    |
-| |                  |                  | Ingress to next SF: send MPLS to SF |
-+-+------------------+------------------+-------------------------------------+
-|4| None             | None             | Egress from SF: reclassify packet   |
-| |                  |                  | and add new MPLS                    |
-| |                  |                  | Ingress to next SF: pop MPLS first  |
-+-+------------------+------------------+-------------------------------------+
++-+------------------+------------------+-----------------------------------------+
+| | Curr Hop pp_corr | Next Hop pp_corr |              Action                     |
++=+==================+==================+=========================================+
+|1| NSH/MPLS         | NSH/MPLS         | Egress from SF: match on NSH/MPLS       |
+| |                  |                  | to determine next hop                   |
+| |                  |                  | Ingress to next SF: send NSH/MPLS to SF |
++-+------------------+------------------+-----------------------------------------+
+|2| NSH/MPLS         | None             | Egress from SF: match on NSH/MPLS       |
+| |                  |                  | to determine next hop                   |
+| |                  |                  | Ingress to next SF: pop NSH/MPLS first  |
++-+------------------+------------------+-----------------------------------------+
+|3| None             | NSH/MPLS         | Egress from SF: reclassify packet       |
+| |                  |                  | and add new NSH/MPLS                    |
+| |                  |                  | Ingress to next SF: send NSH/MPLS to SF |
++-+------------------+------------------+-----------------------------------------+
+|4| None             | None             | Egress from SF: reclassify packet       |
+| |                  |                  | and add new NSH/MPLS                    |
+| |                  |                  | Ingress to next SF: pop NSH/MPLS first  |
++-+------------------+------------------+-----------------------------------------+
+
+An important point to make is that correlations cannot be mixed, i.e. if the
+Port Chain uses the MPLS correlation, then its PPGs cannot include Port Pairs
+using the NSH correlation, and vice-versa. So, on the table above, consider
+either NSH or MPLS for any given row, but not both.
 
 The following further explains each of the possibilities from the table above.
+To simplify, the NSH correlation is considered (MPLS is equivalent here).
 
-1. **pp_corr=mpls and every next_hop's pp_corr=mpls**
+1. **pp_corr=nsh and every next_hop's pp_corr=nsh**
 
-The ingress of this sf_node will not remove the MPLS labels. When
+The ingress of this sf_node will not remove the NSH. When
 egressing from this sf_node, OVS will not attempt to match on the
-flow_classifier defined in ``add_fcs``, but rather the expected MPLS labels
+flow_classifier defined in ``add_fcs``, but rather the expected NSH
 after the SF is done processing the packet (the NSI is supposed to be
 decremented by 1 by the SF). When preparing the packet to go to the next hop,
-no attempt at inserting MPLS labels will be done,
+no attempt at inserting NSH will be done,
 since the packet already has the correct labels.
 
-2. **pp_corr=mpls and every next_hop's pp_corr=None**
+2. **pp_corr=nsh and every next_hop's pp_corr=None**
 
-The ingress of this sf_node will not remove the MPLS labels. When
+The ingress of this sf_node will not remove the NSH. When
 egressing from this sf_node, OVS will not attempt to match on the
-flow_classifier defined in ``add_fcs``, but rather the expected MPLS labels
+flow_classifier defined in ``add_fcs``, but rather the expected NSH
 after the SF is done processing the packet (the NSI is supposed to be
 decremented by 1 by the SF). When preparing the packet to go to the next hop,
-no attempt at inserting MPLS labels will be done,
+no attempt at inserting NSH will be done,
 since the packet already has the correct labels.
 The next hop's own flow rule (not the one shown above) will have an action to
-first remove the MPLS labels and then forward to the SF.
+first remove the NSH and then forward to the SF.
 
-3. **pp_corr=None and every next_hop's pp_corr=mpls**
+3. **pp_corr=None and every next_hop's pp_corr=nsh**
 
-The ingress of this sf_node will first remove the MPLS labels and then forward
+The ingress of this sf_node will first remove the NSH and then forward
 to the SF, as its actions. When egressing from this sf_node, OVS will match on
 the flow-classifier defined in ``add_fcs``, effectively implementing an SFC
 Proxy and running networking-sfc's "classic" mode.
-When preparing the packet to go to the next hop, a new MPLS header needs to be
+When preparing the packet to go to the next hop, a new NSH needs to be
 inserted. This is done on Table 0, the same table where ``add_fcs`` was
 matched. Right before the packets are submitted to the Groups Table, they
-receive the expected MPLS labels for the next hop. The reason why this can't
+receive the expected NSH for the next hop. The reason why this can't
 be done on the ``ACROSS_SUBNET_TABLE`` like when the next_hop's correlation is
 set to None, is the fact that the choice of labels would be ambiguous.
 If multiple port-chains share the same port-pair-group at a given hop, then
-encapsulating/adding MPLS labels as one of ``ACROSS_SUBNET_TABLE``'s actions
+encapsulating/adding NSH as one of ``ACROSS_SUBNET_TABLE``'s actions
 means that at least one of port-chains will be fed the wrong label and,
 consequently, leak into a different port-chain. This is due to the fact that,
 in ``ACROSS_SUBNET_TABLE``, the flow matches only on the destination MAC
 address of the frame (and that isn't enough to know what chain the frame is
-part of). So, again, the encapsulation/adding of MPLS labels will have to be
+part of). So, again, the encapsulation/adding of NSH will have to be
 done in Table 0 for this specific scenario where in the current hop the packets
 don't have labels but on the next hop they are expected to.
 
 4. **pp_corr=None and every next_hop's pp_corr=None**
 
 This is "classic" networking-sfc. The ingress of this sf_node will first remove
-the MPLS labels and then forward to the SF, as its actions. When egressing from
+the NSH and then forward to the SF, as its actions. When egressing from
 this sf_node, OVS will match on the flow-classifier defined in ``add_fcs``
-effectively implementing an SFC Proxy and running networking-sfc's
-"classic" mode.
-When preparing the packet to go to the next hop, a new MPLS header needs to be
+effectively implementing an SFC Proxy and running networking-sfc's "classic"
+mode.
+When preparing the packet to go to the next hop, a new NSH needs to be
 inserted, which is done at the ``ACROSS_SUBNET_TABLE``, after a destination
 port-pair has been chosen with the help of the Groups Table.
 
@@ -475,7 +488,7 @@ Some of the validations that occur at the database/plugin level are:
 * A Port Chain can't be added twice as destination of the same source chain
   (that would essentially replicate packets).
 * Port Chains cannot be part of more than one graph at any given time.
-* Branching points have to support the MPLS correlation.
+* Branching points have to support a correlation protocol (MPLS or NSH).
 * The correlation protocol has to be the same for every included Port Chain.
 * For a given branching point (destination chain), the traffic classification
   of each branch has to be different to prevent ambiguity.
@@ -531,10 +544,10 @@ originally created by the constituent Port Chains
 
 ``'branch_point': True`` will tell the agent to replace the egress flow from the
 last ``sf_node``, in Table 0, with a new one whose actions will be to:
-* copy the NSP and NSI from the MPLS label into a register: ``reg0``;
-* remove the MPLS label;
-* send the traffic back to Table 0, now without MPLS but with ``reg0`` set.
-Example of this flow::
+* copy the NSP and NSI from the MPLS label or NSH into a register: ``reg0``;
+* remove the MPLS label or NSH;
+* send the traffic back to Table 0, now without MPLS/NSH but with ``reg0`` set.
+Example of this flow (using MPLS correlation)::
 
   table=0,priority=30,mpls,in_port=8,mpls_label=509 actions=load:0x1fd->NXM_NX_REG0[],pop_mpls:0x0800,resubmit(,0)
 
@@ -545,7 +558,7 @@ in Table 0, with a different set of matches from a typical ``src_node``:
 * it will still match on what the Flow Classifiers specify;
 * but the logical source port match is ignored (there is not in_port=X);
 * most importantly, it will match on a specified value of ``reg0`` (NSP/NSI).
-Example of this flow::
+Example of this flow (using MPLS correlation)::
 
   table=0,priority=30,udp,reg0=0x1fd actions=push_mpls:0x8847,set_field:767->mpls_label,set_mpls_ttl(255),group:3
 
@@ -558,8 +571,8 @@ Known Limitations
 
 * Service Graphs is not compatible with Symmetric Port Chains at the moment.
   Furthermore, Service Graphs are unidirectional;
-* The current MPLS correlation protocol does not provide full frame
-  encapsulation;
+* The MPLS correlation protocol does not provide full frame encapsulation,
+  so the SFC Encapsulation NSH protocol should be used instead;
 * Every Port Chain has to have a different set of Flow Classifiers, even if the
   logical source ports are different, even when they are attached to Service
   Graphs. This is necessary when deploying Port Chains that have Port Pairs
