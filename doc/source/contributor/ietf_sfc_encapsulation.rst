@@ -191,7 +191,7 @@ flows are equivalent but OpenFlow NSH actions and matches are used instead)::
   $ openstack sfc port chain create --port-pair-group ppg2 --flow-classifier --chain-parameters correlation=mpls fc2 pc2
   $ openstack sfc port chain create --port-pair-group ppg3 --flow-classifier --chain-parameters correlation=mpls fc3 pc3
   $ openstack sfc port chain create --port-pair-group ppg4 --flow-classifier --chain-parameters correlation=mpls fc4 pc4
-  $ openstack sfc service graph create --port-chains pc1:pc2,pc3;pc2:pc4;pc3:pc4 sg1
+  $ openstack sfc service graph create --branching-point pc1:pc2,pc3 --branching-point pc2:pc4 --branching-point pc3:pc4 sg1
 
 In the Python language, the dictionary of Port Chains provided above via the
 OpenStack Client would look like this::
