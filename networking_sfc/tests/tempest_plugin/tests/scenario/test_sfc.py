@@ -15,10 +15,10 @@
 import time
 
 from oslo_log import log
+from tempest.common import utils
 from tempest import config
 from tempest.lib.common.utils import test_utils
 from tempest.lib import decorators
-from tempest import test
 
 from networking_sfc.tests.tempest_plugin.tests.scenario import base
 
@@ -37,7 +37,7 @@ class TestSfc(base.SfcScenarioTest):
             raise cls.skipException(msg)
         required_exts = ['sfc', 'flow_classifier']
         for ext in required_exts:
-            if not test.is_extension_enabled(ext, 'network'):
+            if not utils.is_extension_enabled(ext, 'network'):
                 msg = "%s Extension not enabled." % ext
                 raise cls.skipException(msg)
 
@@ -155,12 +155,12 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a8')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_create_port_chain(self):
         self._create_port_chain_helper(False)
 
     @decorators.idempotent_id('35927961-1904-4a6b-9d08-ad819f1cf812')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_create_port_chain_symmetric(self):
         self._create_port_chain_helper(True)
 
@@ -241,12 +241,12 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a9')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_create_port_chain_multi_flow_classifiers(self):
         self._create_port_chain_multi_fc_helper(False)
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21b1')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_create_port_chain_multi_flow_classifiers_symmetric(self):
         self._create_port_chain_multi_fc_helper(True)
 
@@ -305,12 +305,12 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21aa')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_create_port_chain_multi_port_pairs(self):
         self._create_port_chain_multi_port_pairs_helper(False)
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f869be1e21ad')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_create_port_chain_multi_port_pairs_symmetric(self):
         self._create_port_chain_multi_port_pairs_helper(True)
 
@@ -372,17 +372,17 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ab')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_create_port_chain_multi_port_pair_groups(self):
         self._create_port_chain_multi_ppg_helper(False)
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21b0')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_create_port_chain_multi_port_pair_groups_symmetric(self):
         self._create_port_chain_multi_ppg_helper(True)
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e22ab')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_create_multi_port_chain(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
@@ -453,7 +453,7 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ac')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_update_port_chain_add_flow_classifiers(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
@@ -517,7 +517,7 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ad')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_update_port_chain_remove_flow_classifiers(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
@@ -581,7 +581,7 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ae')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_update_port_chain_replace_flow_classifiers(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
@@ -645,7 +645,7 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21af')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_update_port_chain_add_port_pair_groups(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
@@ -705,7 +705,7 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21bf')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_update_port_chain_remove_port_pair_groups(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
@@ -767,7 +767,7 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21be')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_update_port_chain_replace_port_pair_groups(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
@@ -829,7 +829,7 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21bc')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_update_port_chain_replace_port_pair_groups_flow_classifiers(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
@@ -907,7 +907,7 @@ class TestSfc(base.SfcScenarioTest):
         time.sleep(10)
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21bb')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_update_port_pair_group_add_port_pairs(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
@@ -961,7 +961,7 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21ba')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_update_port_pair_group_remove_port_pairs(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
@@ -1012,7 +1012,7 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21b9')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_update_port_pair_group_replace_port_pairs(self):
         (
             server1_floating_ip, server1_port_id, server1_fixed_ip
@@ -1063,7 +1063,7 @@ class TestSfc(base.SfcScenarioTest):
             private_key=self.keypair['private_key'])
 
     @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21b9')
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_multi_port_chains_update_port_pair_group_replace_port_pairs(
         self
     ):
