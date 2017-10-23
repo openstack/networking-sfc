@@ -17,9 +17,9 @@ import socket
 
 import netaddr
 from tempest.api.network import base
+from tempest.common import utils
 from tempest.lib.common.utils import data_utils
 from tempest.lib import exceptions as lib_exc
-from tempest import test
 
 from networking_sfc.tests.tempest_plugin.tests import flowclassifier_client
 from networking_sfc.tests.tempest_plugin.tests import sfc_client
@@ -32,7 +32,7 @@ class BaseFlowClassifierTest(
     @classmethod
     def resource_setup(cls):
         super(BaseFlowClassifierTest, cls).resource_setup()
-        if not test.is_extension_enabled('flow_classifier', 'network'):
+        if not utils.is_extension_enabled('flow_classifier', 'network'):
             msg = "FlowClassifier Extension not enabled."
             raise cls.skipException(msg)
         cls.network = cls.create_network()
@@ -41,7 +41,7 @@ class BaseFlowClassifierTest(
 
     @classmethod
     def resource_cleanup(cls):
-        if not test.is_extension_enabled('flow_classifier', 'network'):
+        if not utils.is_extension_enabled('flow_classifier', 'network'):
             msg = "FlowClassifier Extension not enabled."
             raise cls.skipException(msg)
         super(BaseFlowClassifierTest, cls).resource_cleanup()
@@ -95,13 +95,13 @@ class BaseSfcTest(
     @classmethod
     def resource_setup(cls):
         super(BaseSfcTest, cls).resource_setup()
-        if not test.is_extension_enabled('sfc', 'network'):
+        if not utils.is_extension_enabled('sfc', 'network'):
             msg = "Sfc Extension not enabled."
             raise cls.skipException(msg)
 
     @classmethod
     def resource_cleanup(cls):
-        if not test.is_extension_enabled('sfc', 'network'):
+        if not utils.is_extension_enabled('sfc', 'network'):
             msg = "Sfc Extension not enabled."
             raise cls.skipException(msg)
         super(BaseSfcTest, cls).resource_cleanup()
