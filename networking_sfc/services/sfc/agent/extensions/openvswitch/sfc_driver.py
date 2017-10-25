@@ -52,6 +52,14 @@ PC_INGRESS_PRI = 30
 # Reverse group number offset for dump_group
 REVERSE_GROUP_NUMBER_OFFSET = 7000
 
+TAP_CLASSIFIER_TABLE = 7
+# This table floods TAP packets on tunnel ports
+TAP_TUNNEL_OUTPUT_TABLE = 25
+
+# actions
+RESUBMIT_TAP_TABLE = ',resubmit(,%s)' % TAP_CLASSIFIER_TABLE
+NORMAL_ACTION = ",NORMAL"
+
 
 class SfcOVSAgentDriver(sfc.SfcAgentDriver):
     """This class will support MPLS frame
@@ -67,6 +75,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         super(SfcOVSAgentDriver, self).__init__()
         self.agent_api = None
         self.br_int = None
+        self.br_tun = None
 
         self.local_ip = None
         self.patch_tun_ofport = None
@@ -86,6 +95,12 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
 
         self._clear_sfc_flow_on_int_br()
 
+        self.br_tun = ovs_ext_lib.SfcOVSBridgeExt(
+            self.agent_api.request_tun_br())
+        self.patch_int_ofport = self.br_tun.get_port_ofport(
+            cfg.CONF.OVS.tun_peer_patch_port)
+        self._clear_sfc_flow_on_tun_br()
+
     def update_flow_rules(self, flowrule, flowrule_status):
         if flowrule['fwd_path'] is False and flowrule['node_type'] == \
                 'sf_node':
@@ -96,7 +111,8 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
 
             if flowrule.get('egress', None):
                 self._setup_egress_flow_rules(flowrule)
-            if flowrule.get('ingress', None):
+            if flowrule.get('ingress', None) and not flowrule.get(
+                    'skip_ingress_flow_config', None):
                 self._setup_ingress_flow_rules(flowrule)
             flowrule_status_temp = {'id': flowrule['id'],
                                     'status': constants.STATUS_ACTIVE}
@@ -132,15 +148,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     else:
                         self.br_int.delete_group(group_id=group_id +
                                                  REVERSE_GROUP_NUMBER_OFFSET)
-                    for item in flowrule['next_hops']:
-                        if flowrule['fwd_path']:
-                            self.br_int.delete_flows(
-                                table=ACROSS_SUBNET_TABLE,
-                                dl_dst=item['in_mac_address'])
-                        else:
-                            self.br_int.delete_flows(
-                                table=ACROSS_SUBNET_TABLE,
-                                dl_dst=item['mac_address'])
+                    self._delete_across_subnet_table_flows(flowrule)
 
             if flowrule['ingress'] is not None:
                 # delete table INGRESS_TABLE ingress match flow rule
@@ -162,6 +170,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         self.br_int.delete_group(group_id='all')
         self.br_int.delete_flows(table=ACROSS_SUBNET_TABLE)
         self.br_int.delete_flows(table=INGRESS_TABLE)
+        self.br_int.delete_flows(table=TAP_CLASSIFIER_TABLE)
         self.br_int.install_goto(dest_table_id=INGRESS_TABLE,
                                  priority=PC_DEF_PRI,
                                  eth_type=constants.ETH_TYPE_MPLS)
@@ -353,12 +362,16 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         pc_corr = flowrule.get('pc_corr', 'mpls')
         pp_corr = flowrule.get('pp_corr', None)
         node_type = flowrule.get('node_type')
+        next_hop_tap_enabled = None
         # if the group is not none, install the egress rule for this SF
         if group_id and next_hops:
             # 1st, install br-int flow rule on table ACROSS_SUBNET_TABLE
             # and group table
             buckets = []
             vlan = self._get_vlan_by_port(flowrule['egress'])
+
+            if isinstance(next(iter(next_hops)), dict):
+                next_hop_tap_enabled = next_hops[0].get('tap_enabled')
 
             for item in next_hops:
                 # all next hops share same pp_corr, enforced by higher layers
@@ -401,43 +414,18 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 if pp_corr == 'mpls' or pp_corr_nh == 'mpls':
                     eth_type = constants.ETH_TYPE_MPLS
 
-                if flowrule['fwd_path']:
-                    self.br_int.add_flow(
-                        table=ACROSS_SUBNET_TABLE,
-                        priority=0,
-                        dl_dst=item['in_mac_address'],
-                        eth_type=eth_type,
-                        actions="%s" % ','.join(subnet_actions_list))
+                if item.get('tap_enabled'):
+                    self._add_tap_classification_flows(flowrule,
+                                                       item,
+                                                       subnet_actions_list)
                 else:
-                    self.br_int.add_flow(
-                        table=ACROSS_SUBNET_TABLE,
-                        priority=0,
-                        dl_dst=item['mac_address'],
-                        eth_type=eth_type,
-                        actions="%s" % ','.join(subnet_actions_list))
+                    self._configure_across_subnet_flow(flowrule,
+                                                       item,
+                                                       subnet_actions_list,
+                                                       eth_type)
 
-            group_content = self.br_int.dump_group_for_id(group_id)
-            buckets = ','.join(buckets)
-            if flowrule['fwd_path']:
-                if group_content.find('group_id=%d' % group_id) == -1:
-                    self.br_int.add_group(group_id=group_id,
-                                          type='select',
-                                          buckets=buckets)
-                else:
-                    self.br_int.mod_group(group_id=group_id,
-                                          type='select',
-                                          buckets=buckets)
-            else:
-                # set different id for rev_group
-                rev_group_id = group_id + REVERSE_GROUP_NUMBER_OFFSET
-                if group_content.find('group_id=%d' % (rev_group_id)) == -1:
-                    self.br_int.add_group(group_id=rev_group_id,
-                                          type='select',
-                                          buckets=buckets)
-                else:
-                    self.br_int.mod_group(group_id=rev_group_id,
-                                          type='select',
-                                          buckets=buckets)
+            if not next_hop_tap_enabled:
+                self._add_group_table(buckets, flowrule, group_id)
 
             # 2nd, install br-int flow rule on table 0 for egress traffic
             enc_actions = ""
@@ -448,10 +436,13 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     enc_actions = self._build_push_mpls(flowrule['nsp'],
                                                         flowrule['nsi'])
             if flowrule['fwd_path']:
-                enc_actions = enc_actions + ("group:%d" % group_id)
+                enc_actions += "group:%d" % group_id
             else:
-                enc_actions = enc_actions + ("group:%d" % rev_group_id)
+                rev_group_id = group_id + REVERSE_GROUP_NUMBER_OFFSET
+                enc_actions += "group:%d" % rev_group_id
 
+            enc_actions = self._update_enc_actions(enc_actions, flowrule,
+                                                   next_hop_tap_enabled)
             # to uninstall the removed flow classifiers
             self._setup_local_switch_flows_on_int_br(
                 flowrule,
@@ -482,8 +473,12 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                                 hex(sfpi), constants.ETH_TYPE_IP))
                     else:
                         end_of_chain_actions = ("pop_mpls:0x%04x,%s" % (
-                                                constants.ETH_TYPE_IP,
-                                                end_of_chain_actions))
+                            constants.ETH_TYPE_IP,
+                            end_of_chain_actions))
+
+            if flowrule.get('tap_enabled'):
+                end_of_chain_actions += RESUBMIT_TAP_TABLE
+
             # to uninstall the removed flow classifiers
             if 'del_fcs' in flowrule:
                 self._setup_local_switch_flows_on_int_br(
@@ -518,6 +513,8 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
 
             # install br-int flow rule on table 0 for ingress traffic
             if pc_corr == 'mpls':
+                if flowrule.get('tap_enabled'):
+                    return self._add_tap_ingress_flow(flowrule, vif_port, vlan)
                 if pp_corr is None:
                     # install an SFC Proxy if the port pair doesn't support the
                     # SFC encapsulation (pc_corr) specified in the chain
@@ -569,9 +566,242 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         return match_field
 
     def _delete_flows_mpls(self, flowrule, vif_port):
-        self.br_int.delete_flows(
-            table=INGRESS_TABLE,
-            eth_type=constants.ETH_TYPE_MPLS,
-            dl_dst=vif_port.vif_mac,
-            mpls_label=flowrule['nsp'] << 8 | flowrule['nsi'] + 1
+        if flowrule.get('tap_enabled'):
+            self.br_int.delete_flows(
+                table=INGRESS_TABLE,
+                eth_type=constants.ETH_TYPE_MPLS,
+                dl_src=flowrule['mac_address'],
+                mpls_label=flowrule['nsp'] << 8 | flowrule['nsi']
+            )
+        else:
+            self.br_int.delete_flows(
+                table=INGRESS_TABLE,
+                eth_type=constants.ETH_TYPE_MPLS,
+                dl_dst=vif_port.vif_mac,
+                mpls_label=flowrule['nsp'] << 8 | flowrule['nsi'] + 1
+            )
+
+    def _add_group_table(self, buckets, flowrule, group_id):
+        group_content = self.br_int.dump_group_for_id(group_id)
+        buckets = ','.join(buckets)
+        if flowrule['fwd_path']:
+            if group_content.find('group_id=%d' % group_id) == -1:
+                self.br_int.add_group(group_id=group_id,
+                                      type='select',
+                                      buckets=buckets)
+            else:
+                self.br_int.mod_group(group_id=group_id,
+                                      type='select',
+                                      buckets=buckets)
+        else:
+            # set different id for rev_group
+            rev_group_id = group_id + REVERSE_GROUP_NUMBER_OFFSET
+            if group_content.find('group_id=%d' % (rev_group_id)) == -1:
+                self.br_int.add_group(group_id=rev_group_id,
+                                      type='select',
+                                      buckets=buckets)
+            else:
+                self.br_int.mod_group(group_id=rev_group_id,
+                                      type='select',
+                                      buckets=buckets)
+
+    def _configure_across_subnet_flow(self, flowrule, item,
+                                      subnet_actions_list, eth_type):
+        if flowrule['fwd_path']:
+            self.br_int.add_flow(
+                table=ACROSS_SUBNET_TABLE,
+                priority=0,
+                dl_dst=item['in_mac_address'],
+                eth_type=eth_type,
+                actions="%s" % ','.join(subnet_actions_list))
+        else:
+            self.br_int.add_flow(
+                table=ACROSS_SUBNET_TABLE,
+                priority=0,
+                dl_dst=item['mac_address'],
+                eth_type=eth_type,
+                actions="%s" % ','.join(subnet_actions_list))
+
+    def _add_tap_classification_flows(self, flowrule, item,
+                                      subnet_actions_list):
+        egress_port = self.br_int.get_vif_port_by_id(flowrule['egress'])
+        vlan = self._get_vlan_by_port(flowrule['egress'])
+        if not egress_port:
+            return
+        in_port = egress_port.ofport
+        vif_mac = egress_port.vif_mac
+
+        tap_action = ""
+        if flowrule['pc_corr'] == 'mpls':
+            tap_action += self._build_push_mpls(item['nsp'], item['nsi'])
+        tap_action += "mod_vlan_vid:%d," % vlan
+        subnet_actions_list[0] = tap_action
+        ovs_rule = dict()
+
+        self._get_eth_type(flowrule, item, ovs_rule)
+        ovs_rule.update(table=TAP_CLASSIFIER_TABLE,
+                        priority=0,
+                        in_port=in_port,
+                        dl_src=vif_mac,
+                        actions="%s" % ''.join(subnet_actions_list)
+                        )
+        self.br_int.add_flow(**ovs_rule)
+        if item['local_endpoint'] != self.local_ip:
+            self._configure_tunnel_bridge_flows(flowrule, item, vif_mac)
+
+    def _get_eth_type(self, flowrule, item, ovs_rule):
+        # eth_type is decided based on current node's pp_corr and next node of
+        # Tap node's pp_corr
+        if flowrule['pp_corr'] == item.get('pp_corr_tap_nh') is None:
+            ovs_rule.update(eth_type=constants.ETH_TYPE_IP)
+        elif flowrule['pp_corr'] and not item.get('pp_corr_tap_nh'):
+            ovs_rule.update(eth_type=constants.ETH_TYPE_IP)
+        elif not flowrule['pp_corr'] and item.get('pp_corr_tap_nh'):
+            if item['pp_corr_tap_nh'] == 'mpls':
+                eth_type = constants.ETH_TYPE_MPLS
+                mpls_label = flowrule['nsp'] << 8 | flowrule['nsi']
+                ovs_rule.update(mpls_label=mpls_label,
+                                eth_type=eth_type)
+        else:
+            if flowrule['pp_corr'] == 'mpls' or item.get(
+                    'pp_corr_tap_nh') == 'mpls':
+                ovs_rule.update(eth_type=constants.ETH_TYPE_MPLS)
+
+    def _configure_tunnel_bridge_flows(self, flowrule, item, vif_mac):
+        local_tunnel_ports = [port for port in
+                              self.br_tun.get_bridge_ports()
+                              if port != self.patch_int_ofport]
+        match_info = {'in_port': self.patch_int_ofport,
+                      'dl_src': vif_mac}
+        if flowrule['pc_corr'] == 'mpls':
+            self._build_classification_match_sfc_mpls(item, match_info)
+        self.br_tun.add_flow(
+            table=0,
+            priority=30,
+            actions="resubmit(,%s)" % TAP_TUNNEL_OUTPUT_TABLE,
+            **match_info
         )
+        output_actions = "strip_vlan,load:%s->NXM_NX_TUN_ID[]" % (
+            hex(flowrule['segment_id']))
+        for port in local_tunnel_ports:
+            output_actions += (",output:%d" % port)
+        self.br_tun.add_flow(
+            table=TAP_TUNNEL_OUTPUT_TABLE,
+            priority=0,
+            actions=output_actions,
+            **match_info
+        )
+
+    def _build_buckets(self, buckets, flowrule, item):
+        if item.get('tap_enabled'):
+            # Tap PPG doesn't use bucket as of now.
+            return
+        if flowrule['fwd_path']:
+            bucket = (
+                'bucket=weight=%d, mod_dl_dst:%s, resubmit(,%d)' % (
+                    item['weight'],
+                    item['in_mac_address'],
+                    ACROSS_SUBNET_TABLE))
+        else:
+            bucket = (
+                'bucket=weight=%d, mod_dl_dst:%s, resubmit(,%d)' % (
+                    item['weight'],
+                    item['mac_address'],
+                    ACROSS_SUBNET_TABLE))
+        buckets.append(bucket)
+
+    def _update_enc_actions(self, enc_actions, flow_rule,
+                            next_hop_tap_enabled):
+        # Add resubmit action to send to TAP table.
+        if next_hop_tap_enabled:
+            pp_corr = flow_rule['pp_corr']
+            pp_corr_tap_nh = flow_rule['next_hops'][0].get('pp_corr_tap_nh')
+            tap_nh_node_type = flow_rule['next_hops'][0].get(
+                'tap_nh_node_type', constants.DST_NODE)
+            group_action = enc_actions.split(',')[-1]
+            enc_actions = ""
+            if tap_nh_node_type == constants.SF_NODE:
+                if not pp_corr and pp_corr_tap_nh:
+                    if flow_rule.get('pc_corr', 'mpls') == 'mpls':
+                        mpls_act = self._build_push_mpls(flow_rule['nsp'],
+                                                         flow_rule['nsi'])
+                        enc_actions += mpls_act
+                    # enc_actions += group_action
+                enc_actions += group_action
+            else:
+                if flow_rule['pc_corr'] == 'mpls':
+                    # For DST Node
+                    if flow_rule['pp_corr']:
+                        enc_actions = ('pop_mpls:0x%04x,%s' % (
+                            constants.ETH_TYPE_IP, NORMAL_ACTION))
+                    else:
+                        enc_actions += NORMAL_ACTION
+            return enc_actions + RESUBMIT_TAP_TABLE
+        elif flow_rule.get('tap_enabled'):
+            return enc_actions + RESUBMIT_TAP_TABLE
+        return enc_actions
+
+    def _delete_across_subnet_table_flows(self, flowrule):
+        if not flowrule['next_hops']:
+            return
+        tap_enabled = flowrule['next_hops'][0].get('tap_enabled', False)
+        if tap_enabled:
+            egress_port = self.br_int.get_vif_port_by_id(flowrule['egress'])
+            for item in flowrule['next_hops']:
+                if flowrule['fwd_path']:
+                    self.br_int.delete_flows(
+                        table=TAP_CLASSIFIER_TABLE,
+                        dl_src=egress_port.vif_mac)
+                else:
+                    self.br_int.delete_flows(
+                        table=TAP_CLASSIFIER_TABLE,
+                        dl_src=egress_port.vif_mac)
+
+                if item['local_endpoint'] != self.local_ip:
+                    self._delete_tunnel_bridge_flows(flowrule,
+                                                     egress_port.vif_mac)
+        else:
+            for item in flowrule['next_hops']:
+                if flowrule['fwd_path']:
+                    self.br_int.delete_flows(
+                        table=ACROSS_SUBNET_TABLE,
+                        dl_dst=item['in_mac_address'])
+                else:
+                    self.br_int.delete_flows(
+                        table=ACROSS_SUBNET_TABLE,
+                        dl_dst=item['mac_address'])
+
+    def _add_tap_ingress_flow(self, flowrule, vif_port, vlan):
+        match_field = self._build_tap_ingress_match_field_sfc_mpls(
+            flowrule, vif_port, vlan)
+        actions = ('strip_vlan, pop_mpls:0x%04x,output:%s'
+                   % (constants.ETH_TYPE_MPLS,
+                      vif_port.ofport))
+        match_field['actions'] = actions
+        match_field.pop('dl_dst', None)
+        match_field.update(dl_src=flowrule['mac_address'])
+        self.br_int.add_flow(**match_field)
+
+    def _build_tap_ingress_match_field_sfc_mpls(self, flowrule, vif_port,
+                                                vlan):
+        match_field = self._build_ingress_common_match_field(vif_port, vlan)
+        match_field['eth_type'] = constants.ETH_TYPE_MPLS
+        match_field['mpls_label'] = flowrule['nsp'] << 8 | flowrule['nsi']
+        return match_field
+
+    def _delete_tunnel_bridge_flows(self, flowrule, src_mac):
+        match_info = {'in_port': self.patch_int_ofport,
+                      'dl_src': src_mac}
+        # Use Tap 'nsi'
+        flowrule_copy = flowrule.copy()
+        flowrule_copy['nsi'], flowrule_copy['nsp'] = (
+            flowrule['next_hops'][0]['nsi'], flowrule['next_hops'][0]['nsp'])
+        self._build_classification_match_sfc_mpls(flowrule_copy, match_info)
+        self.br_tun.delete_flows(table=0,
+                                 **match_info)
+        self.br_tun.delete_flows(table=TAP_TUNNEL_OUTPUT_TABLE,
+                                 **match_info)
+
+    def _clear_sfc_flow_on_tun_br(self):
+        self.br_tun.delete_flows(table=0, eth_type=constants.ETH_TYPE_MPLS)
+        self.br_tun.delete_flows(table=TAP_TUNNEL_OUTPUT_TABLE)
