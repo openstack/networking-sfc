@@ -15,7 +15,6 @@
 
 import neutron.common.constants as nc_const
 import neutron.common.rpc as n_rpc
-import neutron.db.api as db_api
 from neutron.db import models_v2
 import neutron.plugins.ml2.drivers.l2pop.db as l2pop_db
 import neutron.plugins.ml2.drivers.l2pop.rpc as l2pop_rpc
@@ -58,12 +57,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         self.conn.create_consumer(self.topic, self.endpoints, fanout=False)
         self.conn.consume_in_threads()
 
-    def _get_port_infos(self, port, segment, agent_host):
+    def _get_port_infos(self, context, port, segment, agent_host):
         if not agent_host:
             return
 
-        session = db_api.get_session()
-        agent = l2pop_db.get_agent_by_host(session, agent_host)
+        agent = l2pop_db.get_agent_by_host(context, agent_host)
         if not agent:
             return
 
@@ -91,8 +89,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         return agent_ip, fdb_entries
 
     @log_helpers.log_method_call
-    def _get_agent_fdb(self, port, segment, agent_host):
-        agent_ip, port_fdb_entries = self._get_port_infos(port,
+    def _get_agent_fdb(self, context, port, segment, agent_host):
+        agent_ip, port_fdb_entries = self._get_port_infos(context,
+                                                          port,
                                                           segment,
                                                           agent_host)
         if not port_fdb_entries:
@@ -116,7 +115,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         return other_fdb_entries
 
     @log_helpers.log_method_call
-    def _get_remote_pop_ports(self, flow_rule):
+    def _get_remote_pop_ports(self, context, flow_rule):
         pop_ports = []
         if not flow_rule.get('next_hops', None):
             return pop_ports
@@ -126,11 +125,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         l2pop_driver = drivers.get('l2population', None)
         if l2pop_driver is None:
             return pop_ports
-        session = db_api.get_session()
         for next_hop in flow_rule['next_hops']:
             agent_active_ports = \
                 l2pop_db.get_agent_network_active_port_count(
-                    session,
+                    context,
                     pop_host,
                     next_hop['net_uuid'])
             segment = {}
@@ -167,9 +165,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         return agent_active_ports
 
-    def _call_on_l2pop_driver(self, flow_rule, method_name):
+    def _call_on_l2pop_driver(self, context, method_name, flow_rule):
         pop_host = flow_rule['host_id']
-        pop_ports = self._get_remote_pop_ports(flow_rule)
+        pop_ports = self._get_remote_pop_ports(context, flow_rule)
         for (port, segment) in pop_ports:
             port_id = port['id']
             host_id = port['binding:host_id']
@@ -179,6 +177,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
             if active_entry_count == 1:
                 fdb_entry = self._get_agent_fdb(
+                    context,
                     port,
                     segment,
                     host_id)
@@ -186,11 +185,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 getattr(l2pop_rpc.L2populationAgentNotifyAPI(), method_name)(
                     self.rpc_ctx, fdb_entry, pop_host)
 
-    def _update_agent_fdb_entries(self, flow_rule):
-        self._call_on_l2pop_driver(flow_rule, "add_fdb_entries")
+    def _update_agent_fdb_entries(self, context, flow_rule):
+        self._call_on_l2pop_driver(context, "add_fdb_entries", flow_rule)
 
-    def _delete_agent_fdb_entries(self, flow_rule):
-        self._call_on_l2pop_driver(flow_rule, "remove_fdb_entries")
+    def _delete_agent_fdb_entries(self, context, flow_rule):
+        self._call_on_l2pop_driver(context, "remove_fdb_entries", flow_rule)
 
     def _get_subnet_by_port(self, id):
         core_plugin = directory.get_plugin()
@@ -555,7 +554,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                                 path_nodes[index] = node
         return path_nodes
 
-    def _delete_path_node_port_flowrule(self, node, port, pc_corr, fc_ids):
+    def _delete_path_node_port_flowrule(self, context, node,
+                                        port, pc_corr, fc_ids):
         # if this port is not binding, don't to generate flow rule
         if not port['host_id']:
             return
@@ -565,19 +565,19 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                                                         del_fc_ids=fc_ids)
         self.ovs_driver_rpc.ask_agent_to_delete_flow_rules(self.admin_context,
                                                            flow_rule)
-        self._delete_agent_fdb_entries(flow_rule)
+        self._delete_agent_fdb_entries(context, flow_rule)
 
-    def _delete_path_node_flowrule(self, node, pc_corr, fc_ids):
+    def _delete_path_node_flowrule(self, context, node, pc_corr, fc_ids):
         if node['portpair_details'] is None:
             return
         for each in node['portpair_details']:
             port = self.get_port_detail_by_filter(dict(id=each))
             if port:
                 self._delete_path_node_port_flowrule(
-                    node, port, pc_corr, fc_ids)
+                    context, node, port, pc_corr, fc_ids)
 
     @log_helpers.log_method_call
-    def _delete_portchain_path(self, port_chain):
+    def _delete_portchain_path(self, context, port_chain):
         pds = self.get_path_nodes_by_filter(
             dict(portchain_id=port_chain['id']))
         src_nodes = []
@@ -588,6 +588,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 pc_corr = port_chain['chain_parameters']['correlation']
                 updated_pd = self._update_tap_enabled_node(pd)
                 self._delete_path_node_flowrule(
+                    context,
                     updated_pd,
                     pc_corr,
                     port_chain['flow_classifiers']
@@ -774,7 +775,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
         return fc_return
 
-    def _update_path_node_port_flowrules(self, node, port, pc_corr,
+    def _update_path_node_port_flowrules(self, context, node, port, pc_corr,
                                          add_fc_ids=None, del_fc_ids=None):
         # if this port is not binding, don't to generate flow rule
         if not port['host_id']:
@@ -786,9 +787,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                                                         del_fc_ids=del_fc_ids)
         self.ovs_driver_rpc.ask_agent_to_update_flow_rules(self.admin_context,
                                                            flow_rule)
-        self._update_agent_fdb_entries(flow_rule)
+        self._update_agent_fdb_entries(context, flow_rule)
 
-    def _update_path_node_flowrules(self, node, pc_corr,
+    def _update_path_node_flowrules(self, context, node, pc_corr,
                                     add_fc_ids=None, del_fc_ids=None):
         if node['portpair_details'] is None:
             return
@@ -797,13 +798,14 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             port = self.get_port_detail_by_filter(dict(id=each))
             if port:
                 self._update_path_node_port_flowrules(
-                    updated_node, port, pc_corr, add_fc_ids, del_fc_ids)
+                    context, updated_node,
+                    port, pc_corr, add_fc_ids, del_fc_ids)
         self._build_tap_ingress_flow(pc_corr, updated_node, node['fwd_path'])
 
-    def _update_path_nodes(self, nodes, pc_corr,
+    def _update_path_nodes(self, context, nodes, pc_corr,
                            add_fc_ids=None, del_fc_ids=None):
         for node in nodes:
-            self._update_path_node_flowrules(node, pc_corr,
+            self._update_path_node_flowrules(context, node, pc_corr,
                                              add_fc_ids, del_fc_ids)
 
     def _get_portchain_fcs(self, port_chain):
@@ -858,11 +860,13 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             rev_path_nodes = self._create_portchain_path(context, port_chain,
                                                          False)
             self._update_path_nodes(
+                context,
                 fwd_path_nodes,
                 port_chain['chain_parameters']['correlation'],
                 port_chain['flow_classifiers'],
                 None)
             self._update_path_nodes(
+                context,
                 rev_path_nodes,
                 port_chain['chain_parameters']['correlation'],
                 port_chain['flow_classifiers'],
@@ -870,6 +874,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         elif symmetric is False:
             path_nodes = self._create_portchain_path(context, port_chain, True)
             self._update_path_nodes(
+                context,
                 path_nodes,
                 port_chain['chain_parameters']['correlation'],
                 port_chain['flow_classifiers'],
@@ -879,7 +884,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def delete_port_chain(self, context):
         port_chain = context.current
         LOG.debug("to delete portchain path")
-        self._delete_portchain_path(port_chain)
+        self._delete_portchain_path(context, port_chain)
 
     def _get_diff_set(self, orig, cur):
         orig_set = set(item for item in orig)
@@ -894,7 +899,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def update_port_chain(self, context):
         port_chain = context.current
         orig = context.original
-        self._delete_portchain_path(orig)
+        self._delete_portchain_path(context, orig)
         # recreate port_chain after delete the orig
         symmetric = port_chain['chain_parameters'].get('symmetric')
         if symmetric:
@@ -903,11 +908,13 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             rev_path_nodes = self._create_portchain_path(context, port_chain,
                                                          False)
             self._update_path_nodes(
+                context,
                 fwd_path_nodes,
                 port_chain['chain_parameters']['correlation'],
                 port_chain['flow_classifiers'],
                 None)
             self._update_path_nodes(
+                context,
                 rev_path_nodes,
                 port_chain['chain_parameters']['correlation'],
                 port_chain['flow_classifiers'],
@@ -916,6 +923,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         elif symmetric is False:
             path_nodes = self._create_portchain_path(context, port_chain, True)
             self._update_path_nodes(
+                context,
                 path_nodes,
                 port_chain['chain_parameters']['correlation'],
                 port_chain['flow_classifiers'],
@@ -969,10 +977,12 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 )
                 # update next hop to database
                 self.update_path_node(prev_node['id'], prev_node)
-                self._delete_path_node_flowrule(before_update_prev_node,
+                self._delete_path_node_flowrule(context,
+                                                before_update_prev_node,
                                                 pc_corr,
                                                 pc['flow_classifiers'])
-                self._update_path_node_flowrules(prev_node,
+                self._update_path_node_flowrules(context,
+                                                 prev_node,
                                                  pc_corr,
                                                  pc['flow_classifiers'],
                                                  None)
@@ -1020,7 +1030,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 self.create_pathport_assoc(assco_args)
                 updated_curr_node = self._update_tap_enabled_node(curr_node)
                 self._update_path_node_port_flowrules(
-                    updated_curr_node, ppd, pc_corr, pc['flow_classifiers'])
+                    context, updated_curr_node,
+                    ppd, pc_corr, pc['flow_classifiers'])
                 self._build_tap_ingress_flow(pc_corr=pc_corr,
                                              node=updated_curr_node,
                                              fwd_path=True)
@@ -1033,7 +1044,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 self.create_pathport_assoc(assco_args)
                 updated_rev_curr_node = self._update_tap_enabled_node(
                     rev_curr_node)
-                self._update_path_node_port_flowrules(updated_rev_curr_node,
+                self._update_path_node_port_flowrules(context,
+                                                      updated_rev_curr_node,
                                                       ppd,
                                                       pc_corr,
                                                       pc['flow_classifiers'])
@@ -1054,6 +1066,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     return
                 updated_curr_node = self._update_tap_enabled_node(curr_node)
                 self._delete_path_node_port_flowrule(
+                    context,
                     updated_curr_node,
                     ppd,
                     pc_corr,
@@ -1066,6 +1079,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 updated_rev_curr_node = self._update_tap_enabled_node(
                     rev_curr_node)
                 self._delete_path_node_port_flowrule(
+                    context,
                     updated_rev_curr_node,
                     ppd,
                     pc_corr,
@@ -1488,7 +1502,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                         self.ovs_driver_rpc.ask_agent_to_update_flow_rules(
                             self.admin_context,
                             flow_rule)
-                        self._update_agent_fdb_entries(flow_rule)
+                        self._update_agent_fdb_entries(context, flow_rule)
             else:
                 LOG.warning('Expected branch point did not get any branches.')
         # at this point we know about all chain links/matches
@@ -1503,7 +1517,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 self.ovs_driver_rpc.ask_agent_to_update_flow_rules(
                     self.admin_context,
                     flow_rule)
-                self._update_agent_fdb_entries(flow_rule)
+                self._update_agent_fdb_entries(context, flow_rule)
 
     @log_helpers.log_method_call
     def create_service_graph_precommit(self, context):
