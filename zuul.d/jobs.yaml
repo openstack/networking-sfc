@@ -1,8 +1,8 @@
 - job:
     name: networking-sfc-functional-dsvm
     parent: legacy-dsvm-base
-    run: playbooks/legacy/networking-sfc-functional-dsvm/run
-    post-run: playbooks/legacy/networking-sfc-functional-dsvm/post
+    run: playbooks/legacy/networking-sfc-functional-dsvm/run.yaml
+    post-run: playbooks/legacy/networking-sfc-functional-dsvm/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -11,8 +11,8 @@
 - job:
     name: networking-sfc-periodic-tempest-dsvm
     parent: legacy-dsvm-base
-    run: playbooks/legacy/networking-sfc-periodic-tempest-dsvm/run
-    post-run: playbooks/legacy/networking-sfc-periodic-tempest-dsvm/post
+    run: playbooks/legacy/networking-sfc-periodic-tempest-dsvm/run.yaml
+    post-run: playbooks/legacy/networking-sfc-periodic-tempest-dsvm/post.yaml
     timeout: 7800
     branches: master
     required-projects:
@@ -23,8 +23,8 @@
 - job:
     name: networking-sfc-tempest-dsvm
     parent: legacy-dsvm-base
-    run: playbooks/legacy/networking-sfc-tempest-dsvm/run
-    post-run: playbooks/legacy/networking-sfc-tempest-dsvm/post
+    run: playbooks/legacy/networking-sfc-tempest-dsvm/run.yaml
+    post-run: playbooks/legacy/networking-sfc-tempest-dsvm/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -34,8 +34,8 @@
 - job:
     name: networking-sfc-tempest-dsvm-multinode
     parent: legacy-dsvm-base-multinode
-    run: playbooks/legacy/networking-sfc-tempest-dsvm-multinode/run
-    post-run: playbooks/legacy/networking-sfc-tempest-dsvm-multinode/post
+    run: playbooks/legacy/networking-sfc-tempest-dsvm-multinode/run.yaml
+    post-run: playbooks/legacy/networking-sfc-tempest-dsvm-multinode/post.yaml
     timeout: 10800
     required-projects:
       - openstack-infra/devstack-gate
