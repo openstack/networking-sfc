@@ -1,10 +1,7 @@
 # This script is executed in the OpenStack CI job that runs DevStack + tempest.
-# You can find the CI job configuration here:
-#
-# http://git.openstack.org/cgit/openstack-infra/project-config/tree/jenkins/jobs/networking-sfc.yaml
-#
+# You can find the CI job configuration here in playbooks/
 
-OVERRIDE_ENABLED_SERVICES=q-svc,q-dhcp,q-meta,neutron,tempest
+OVERRIDE_ENABLED_SERVICES=neutron-api,neutron-dhcp,neutron-metadata-agent,tempest
 OVERRIDE_ENABLED_SERVICES+=,n-api,n-cond,n-cpu,n-crt,n-obj,n-sch,placement-api
 OVERRIDE_ENABLED_SERVICES+=,g-api,g-reg,mysql,rabbit,key,dstat
 export OVERRIDE_ENABLED_SERVICES
