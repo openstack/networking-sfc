@@ -1,5 +1,4 @@
 - project:
-    name: openstack/networking-sfc
     check:
       jobs:
         - networking-sfc-functional-dsvm
