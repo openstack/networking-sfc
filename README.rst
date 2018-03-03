@@ -81,4 +81,4 @@ Background on the Subject of Service Function Chaining
 * Original Neutron bug (request for enhancement): https://bugs.launchpad.net/neutron/+bug/1450617
 * https://blueprints.launchpad.net/neutron/+spec/neutron-api-extension-for-service-chaining
 * https://blueprints.launchpad.net/neutron/+spec/common-service-chaining-driver-api
-* https://wiki.opnfv.org/requirements_projects/openstack_based_vnf_forwarding_graph
+* https://wiki.opnfv.org/display/VFG/Openstack+Based+VNF+Forwarding+Graph
