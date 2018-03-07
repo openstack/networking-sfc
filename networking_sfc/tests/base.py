@@ -19,7 +19,6 @@ from neutron.agent import securitygroups_rpc as sg_rpc
 from neutron.api import extensions as api_ext
 from neutron.api.rpc.agentnotifiers import dhcp_rpc_agent_api as dhcp_rpc_log
 from neutron.api.v2 import resource as api_res_log
-from neutron.extensions import vlantransparent as vlan_log
 from neutron import manager
 from neutron.notifiers import nova as nova_log
 from neutron.plugins.ml2 import db as ml2_db
@@ -91,9 +90,6 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
         mock_log_cfg_p = mock.patch.object(cfg, 'LOG')
         self.mock_log_cfg = mock_log_cfg_p.start()
-
-        mock_log_vlan_log_p = mock.patch.object(vlan_log, 'LOG')
-        self.mock_log_vlan_log = mock_log_vlan_log_p.start()
 
         mock_log_manager_p = mock.patch.object(manager, 'LOG')
         self.mock_log_manager = mock_log_manager_p.start()
