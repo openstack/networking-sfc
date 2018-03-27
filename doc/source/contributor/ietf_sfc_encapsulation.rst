@@ -133,7 +133,7 @@ Usage
 
 In order to create Port Chains with Port Pairs that make use of the NSH
 correlation (i.e. the Network Service Header (NSH) is exposed to the SFs,
-so no SFC Proxy is logically instantiated by the the networking-sfc backend),
+so no SFC Proxy is logically instantiated by the networking-sfc backend),
 the Port Pair's ``correlation`` service function parameter can be used,
 by setting it to ``nsh`` (default is set to ``None``):
 
@@ -248,7 +248,7 @@ there are three important things to notice from the Service Graphs flows above:
 * At the beginning of the Destination Chains (pc2, pc3 and pc4), instead of
   the typical flow (in table 0) that would match solely on the Flow Classifier
   (specifically the ingress OF port that comes from the Logical Source Port
-  together with the the actual traffic classification definition), a specific
+  together with the actual traffic classification definition), a specific
   SFP information register value will be matched on (e.g. ``reg0=0x1fe``)
   together with the traffic classification definition from the Flow Classifier
   but not OF ingress port will be used (i.e. Logical Source Port ignored).
