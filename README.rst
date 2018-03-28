@@ -5,8 +5,8 @@ Service Function Chaining Extension for OpenStack Networking
 Team and repository tags
 ------------------------
 
-.. image:: http://governance.openstack.org/badges/networking-sfc.svg
-    :target: http://governance.openstack.org/reference/tags/index.html
+.. image:: https://governance.openstack.org/tc/badges/networking-sfc.svg
+    :target: https://governance.openstack.org/tc/reference/tags/index.html
 
 .. Change things from this point on
 
@@ -42,10 +42,10 @@ This is an initial release, feedback is requested from users and the API may
 evolve based on that feedback.
 
 * Free software: Apache license
-* Source: http://git.openstack.org/cgit/openstack/networking-sfc
+* Source: https://git.openstack.org/cgit/openstack/networking-sfc
 * Documentation: https://docs.openstack.org/networking-sfc/latest
 * Overview: https://launchpad.net/networking-sfc
-* Bugs: http://bugs.launchpad.net/networking-sfc
+* Bugs: https://bugs.launchpad.net/networking-sfc
 * Blueprints: https://blueprints.launchpad.net/networking-sfc
 * Wiki: https://wiki.openstack.org/wiki/Neutron/ServiceInsertionAndChaining
 
