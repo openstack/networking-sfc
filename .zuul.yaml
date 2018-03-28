@@ -1,0 +1,12 @@
+- project:
+    check:
+      jobs:
+        - openstack-tox-py27:
+            required-projects:
+              - openstack/neutron-lib
+        - openstack-tox-py35:
+            required-projects:
+              - openstack/neutron-lib
+        - build-openstack-sphinx-docs:
+            required-projects:
+              - openstack/neutron-lib
