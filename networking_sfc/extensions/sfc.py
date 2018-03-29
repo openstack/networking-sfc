@@ -486,9 +486,6 @@ class Sfc(extensions.ExtensionDescriptor):
 @six.add_metaclass(ABCMeta)
 class SfcPluginBase(service_base.ServicePluginBase):
 
-    def get_plugin_name(self):
-        return SFC_EXT
-
     def get_plugin_type(self):
         return SFC_EXT
 

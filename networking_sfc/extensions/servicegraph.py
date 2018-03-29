@@ -198,9 +198,6 @@ class Servicegraph(extensions.ExtensionDescriptor):
 @six.add_metaclass(ABCMeta)
 class ServiceGraphPluginBase(object):
 
-    def get_plugin_name(self):
-        return SG_EXT
-
     def get_plugin_type(self):
         return SG_EXT
 
