@@ -289,9 +289,6 @@ class Flowclassifier(extensions.ExtensionDescriptor):
 @six.add_metaclass(ABCMeta)
 class FlowClassifierPluginBase(service_base.ServicePluginBase):
 
-    def get_plugin_name(self):
-        return FLOW_CLASSIFIER_EXT
-
     def get_plugin_type(self):
         return FLOW_CLASSIFIER_EXT
 
