@@ -96,7 +96,7 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
         fc_context = fc_ctx.FlowClassifierContext(self, context, fc)
         try:
             self.driver_manager.delete_flow_classifier(fc_context)
-        except fc_exc.FlowClassfierDriverError as e:
+        except fc_exc.FlowClassifierDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
                 LOG.error("Delete flow classifier failed, "

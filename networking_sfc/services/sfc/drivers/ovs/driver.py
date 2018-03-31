@@ -128,7 +128,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         for next_hop in flow_rule['next_hops']:
             agent_active_ports = \
                 l2pop_db.get_agent_network_active_port_count(
-                    context,
+                    self.admin_context,
                     pop_host,
                     next_hop['net_uuid'])
             segment = {}
