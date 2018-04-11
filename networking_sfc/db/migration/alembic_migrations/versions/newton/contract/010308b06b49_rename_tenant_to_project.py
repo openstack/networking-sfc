@@ -21,15 +21,14 @@ Create Date: 2016-06-29 19:42:17.862721
 
 """
 
-# revision identifiers, used by Alembic.
-revision = '010308b06b49'
-down_revision = '48072cb59133'
-depends_on = ('5a475fc853e6',)
-
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.engine import reflection
 
+# revision identifiers, used by Alembic.
+revision = '010308b06b49'
+down_revision = '48072cb59133'
+depends_on = ('5a475fc853e6',)
 
 _INSPECTOR = None
 

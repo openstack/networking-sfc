@@ -539,8 +539,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                                 ppg_n_tuple_mapping.get('egress_n_tuple', None)
                             ):
                                 if (
-                                    ppg_n_tuple_mapping['curr_ppg_flag'] == 1
-                                    and fwd_path is False
+                                    ppg_n_tuple_mapping[
+                                        'curr_ppg_flag'] == 1 and
+                                    fwd_path is False
                                 ):
                                     ppg_n_tuple_mapping['curr_ppg_flag'] = 3
                                 else:
@@ -1397,8 +1398,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                         path_node = self.get_path_node(path['pathnode_id'])
                         if (
                             path_node['next_group_id'] ==
-                            flow_rule['next_group_id']
-                            and path_node['fwd_path']
+                            flow_rule['next_group_id'] and
+                            path_node['fwd_path']
                         ):
                             group_refcnt += 1
         flow_rule['group_refcnt'] = group_refcnt
@@ -1725,8 +1726,8 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 flowrule.update(mac_address=port['mac_address'])
             else:
                 flowrule.update(
-                    mac_address=(port['in_mac_address']
-                                 or port['mac_address']))
+                    mac_address=(port['in_mac_address'] or
+                                 port['mac_address']))
 
             for pp_id in node['tap_node']['portpair_details']:
                 _port = self.get_port_detail_by_filter(dict(id=pp_id))
