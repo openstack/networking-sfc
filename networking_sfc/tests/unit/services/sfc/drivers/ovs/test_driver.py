@@ -139,9 +139,9 @@ class OVSSfcDriverTestCase(
         )
         rpc.SfcAgentRpcClient = mock.Mock(
             return_value=self.mocked_notifier)
-        self.backup_conn_creator = n_rpc.create_connection
-        n_rpc.create_connection = mock.Mock()
-        n_rpc.create_connection.return_value = mock.Mock()
+        self.backup_conn_creator = n_rpc.Connection
+        n_rpc.Connection = mock.Mock()
+        n_rpc.Connection.return_value = mock.Mock()
         self.threads = []
         self.backup_spawn = greenthread.spawn
         greenthread.spawn = mock.Mock(
@@ -156,7 +156,7 @@ class OVSSfcDriverTestCase(
 
     def tearDown(self):
         rpc.SfcAgentRpcClient = self.backup_notifier_creator
-        n_rpc.create_connection = self.backup_conn_creator
+        n_rpc.Connection = self.backup_conn_creator
         greenthread.spawn = self.backup_spawn
         type_vxlan.VxlanTypeDriver.get_endpoint_by_host = (
             self.backup_get_endpoint_by_host)

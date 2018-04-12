@@ -53,7 +53,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         # Setup a rpc server
         self.topic = sfc_topics.SFC_PLUGIN
         self.endpoints = [ovs_sfc_rpc.SfcRpcCallback(self)]
-        self.conn = n_rpc.create_connection()
+        self.conn = n_rpc.Connection()
         self.conn.create_consumer(self.topic, self.endpoints, fanout=False)
         self.conn.consume_in_threads()
 
