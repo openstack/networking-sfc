@@ -31,5 +31,5 @@ subunit.log
 !/.mailmap
 !/.pylintrc
 !/.stestr.conf
-!/.testr.conf
 !/.zuul.yaml
+.stestr/
