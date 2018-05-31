@@ -13,6 +13,9 @@
 #    under the License.
 #
 
+from alembic import op
+import sqlalchemy as sa
+
 """add tap_enabled attribute to port-pair-group
 
 Revision ID: d6fb381b65f2
@@ -24,9 +27,6 @@ Create Date: 2017-08-03 13:57:59.908621
 # revision identifiers, used by Alembic.
 revision = 'd6fb381b65f2'
 down_revision = '53ed5bec6cff'
-
-from alembic import op
-import sqlalchemy as sa
 
 
 def upgrade():

@@ -38,11 +38,12 @@ class TestService(test_server.TestPluginWorker):
         os.kill(self.service_pid, signal.SIGHUP)
         expected_msg = test_server.FAKE_START_MSG * workers * 2
         expected_size = len(expected_msg)
-        condition = lambda: (os.path.isfile(self.temp_file)
-                             and os.stat(self.temp_file).st_size ==
-                             expected_size)
+
         utils.wait_until_true(
-            condition, timeout=5, sleep=0.1,
+            lambda: (os.path.isfile(self.temp_file) and
+                     os.stat(self.temp_file).st_size ==
+                     expected_size),
+            timeout=5, sleep=0.1,
             exception=RuntimeError(
                 "Timed out waiting for file %(filename)s to be created and "
                 "its size become equal to %(size)s." %

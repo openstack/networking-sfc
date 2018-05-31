@@ -23,7 +23,6 @@ from sqlalchemy.engine import reflection
 
 from neutron.db import migration
 
-
 # revision identifiers, used by Alembic.
 revision = '06382790fb2c'
 down_revision = '010308b06b49'
