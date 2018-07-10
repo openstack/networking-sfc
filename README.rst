@@ -48,6 +48,7 @@ evolve based on that feedback.
 * Bugs: https://bugs.launchpad.net/networking-sfc
 * Blueprints: https://blueprints.launchpad.net/networking-sfc
 * Wiki: https://wiki.openstack.org/wiki/Neutron/ServiceInsertionAndChaining
+* Release notes: https://docs.openstack.org/releasenotes/networking-sfc/
 
 Features
 --------
