@@ -47,13 +47,6 @@ class TestSfc(base.SfcScenarioTest):
         cls.set_network_resources()
         super(TestSfc, cls).setup_credentials()
 
-    def _setup_security_group(self):
-        self.security_group = self._create_security_group()
-        self._create_security_group_rule(
-            self.security_group, protocol=None,
-            direction='ingress'
-        )
-
     def setUp(self):
         super(TestSfc, self).setUp()
 
@@ -67,8 +60,8 @@ class TestSfc(base.SfcScenarioTest):
 
         self.ssh_user = CONF.validation.image_ssh_user
         self.keypair = self.create_keypair()
-        self._setup_security_group()
-        self.net1, self.subnet1, self.router1 = self.create_networks()
+        self.net1, self.subnet1, self.router1 = self.create_networks(
+            port_security_enabled=False)
         self.router2 = self._create_router()
         self.router3 = self._create_router()
         self.router2_net1 = self._create_port(self.net1['id'])
@@ -1181,7 +1174,6 @@ class TestSfc(base.SfcScenarioTest):
         inst = self.create_server(
             networks=[{'uuid': network['id']}],
             key_name=self.keypair['name'],
-            security_groups=[{'name': self.security_group['name']}],
             wait_until='ACTIVE',
             **kwargs)
 
