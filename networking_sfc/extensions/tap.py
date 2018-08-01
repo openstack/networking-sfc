@@ -18,6 +18,7 @@ from neutron_lib.api import converters as lib_converters
 from neutron_lib.api import extensions
 from neutron_lib import exceptions as neutron_exc
 
+from networking_sfc._i18n import _
 
 DEFAULT_TAP_ENABLED = False
 TAP_EXT = "networking-sfc-tap"
