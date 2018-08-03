@@ -25,6 +25,7 @@ from sqlalchemy.orm import exc
 
 from neutron_lib import constants as const
 from neutron_lib.db import model_base
+from neutron_lib.db import utils as db_utils
 
 from neutron.db import api as db_api
 from neutron.db import common_db_mixin
@@ -295,8 +296,8 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
     def get_flow_classifiers(self, context, filters=None, fields=None,
                              sorts=None, limit=None, marker=None,
                              page_reverse=False):
-        marker_obj = self._get_marker_obj(context, 'flow_classifier',
-                                          limit, marker)
+        marker_obj = db_utils.get_marker_obj(self, context, 'flow_classifier',
+                                             limit, marker)
         return self._get_collection(context,
                                     FlowClassifier,
                                     self._make_flow_classifier_dict,

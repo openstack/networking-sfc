@@ -30,6 +30,7 @@ from neutron.db import common_db_mixin
 from neutron.db import models_v2
 from neutron_lib.db import constants as db_const
 from neutron_lib.db import model_base
+from neutron_lib.db import utils as db_utils
 
 from networking_sfc.db import flowclassifier_db as fc_db
 from networking_sfc.extensions import flowclassifier as ext_fc
@@ -402,7 +403,8 @@ class SfcDbPlugin(
     def get_port_chains(self, context, filters=None, fields=None,
                         sorts=None, limit=None,
                         marker=None, page_reverse=False, default_sg=False):
-        marker_obj = self._get_marker_obj(context, 'port_chain', limit, marker)
+        marker_obj = db_utils.get_marker_obj(self, context, 'port_chain',
+                                             limit, marker)
         return self._get_collection(context,
                                     PortChain,
                                     self._make_port_chain_dict,
@@ -537,8 +539,8 @@ class SfcDbPlugin(
     def get_port_pairs(self, context, filters=None, fields=None,
                        sorts=None, limit=None, marker=None,
                        page_reverse=False):
-        marker_obj = self._get_marker_obj(context, 'port_pair',
-                                          limit, marker)
+        marker_obj = db_utils.get_marker_obj(self, context, 'port_pair',
+                                             limit, marker)
         return self._get_collection(context,
                                     PortPair,
                                     self._make_port_pair_dict,
@@ -672,8 +674,8 @@ class SfcDbPlugin(
     def get_port_pair_groups(self, context, filters=None, fields=None,
                              sorts=None, limit=None, marker=None,
                              page_reverse=False):
-        marker_obj = self._get_marker_obj(context, 'port_pair_group',
-                                          limit, marker)
+        marker_obj = db_utils.get_marker_obj(self, context, 'port_pair_group',
+                                             limit, marker)
         return self._get_collection(context,
                                     PortPairGroup,
                                     self._make_port_pair_group_dict,
@@ -930,8 +932,8 @@ class SfcDbPlugin(
                            fields=None, sorts=None, limit=None,
                            marker=None, page_reverse=False):
         """Get Service Graphs."""
-        marker_obj = self._get_marker_obj(context,
-                                          'service_graph', limit, marker)
+        marker_obj = db_utils.get_marker_obj(self, context,
+                                             'service_graph', limit, marker)
         return self._get_collection(context,
                                     ServiceGraph,
                                     self._make_service_graph_dict,
