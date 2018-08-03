@@ -24,9 +24,6 @@ from sqlalchemy import orm
 from sqlalchemy.orm import exc
 from sqlalchemy import sql
 
-import six
-
-from oslo_log import helpers as log_helpers
 from oslo_utils import uuidutils
 
 from networking_sfc._i18n import _
@@ -62,57 +59,6 @@ def singleton(class_):
         return instances[class_]
 
     return getinstance
-
-
-@singleton
-class IDAllocation(object):
-    def __init__(self, context):
-        # Get the initial range from conf file.
-        conf_obj = {'group': [1, 255], 'portchain': [256, 65536]}
-        self.conf_obj = conf_obj
-        self.context = context
-
-    @log_helpers.log_method_call
-    def assign_intid(self, type_, uuid):
-        query = self.context.session.query(UuidIntidAssoc).filter_by(
-            type_=type_).order_by(UuidIntidAssoc.intid)
-
-        allocated_int_ids = {obj.intid for obj in query.all()}
-
-        # Find the first one from the available range that
-        # is not in allocated_int_ids
-        start, end = self.conf_obj[type_][0], self.conf_obj[type_][1] + 1
-        for init_id in six.moves.range(start, end):
-            if init_id not in allocated_int_ids:
-                with db_api.context_manager.writer.using(self.context):
-                    uuid_intid = UuidIntidAssoc(
-                        uuid, init_id, type_)
-                    self.context.session.add(uuid_intid)
-                return init_id
-        return None
-
-    @log_helpers.log_method_call
-    def get_intid_by_uuid(self, type_, uuid):
-
-        query_obj = self.context.session.query(UuidIntidAssoc).filter_by(
-            type_=type_, uuid=uuid).first()
-        if query_obj:
-            return query_obj.intid
-        return None
-
-    @log_helpers.log_method_call
-    def release_intid(self, type_, intid):
-        """Release int id.
-
-        @param: type_: str
-        @param: intid: int
-        """
-        with db_api.context_manager.writer.using(self.context):
-            query_obj = self.context.session.query(UuidIntidAssoc).filter_by(
-                intid=intid, type_=type_).first()
-
-            if query_obj:
-                self.session.delete(query_obj)
 
 
 class PathPortAssoc(model_base.BASEV2):
