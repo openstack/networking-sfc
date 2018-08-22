@@ -43,11 +43,10 @@ class FlowClassifierExtensionTestCase(
     def setUp(self):
         self._mock_unnecessary_logging()
         super(FlowClassifierExtensionTestCase, self).setUp()
-        self._setUpExtension(
+        self.setup_extension(
             'networking_sfc.extensions.flowclassifier.'
             'FlowClassifierPluginBase',
             fc_ext.FLOW_CLASSIFIER_EXT,
-            fc_ext.RESOURCE_ATTRIBUTE_MAP,
             fc_ext.Flowclassifier,
             fc_ext.FLOW_CLASSIFIER_PREFIX[1:],
             plural_mappings={}

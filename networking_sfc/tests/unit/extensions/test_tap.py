@@ -37,10 +37,9 @@ class SFCTapExtensionTestCase(test_sfc_ext.SfcExtensionTestCase):
         attr_map = sfc_ext.RESOURCE_ATTRIBUTE_MAP
         attr_map['port_pair_groups'].update(
             tap_ext.EXTENDED_ATTRIBUTES_2_0['port_pair_groups'])
-        self._setUpExtension(
+        self.setup_extension(
             'networking_sfc.extensions.sfc.SfcPluginBase',
             sfc_ext.SFC_EXT,
-            attr_map,
             sfc_ext.Sfc,
             sfc_ext.SFC_PREFIX[1:],
             plural_mappings={}

@@ -41,10 +41,9 @@ class ServiceGraphExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
     def setUp(self):
         self._mock_unnecessary_logging()
         super(ServiceGraphExtensionTestCase, self).setUp()
-        self._setUpExtension(
+        self.setup_extension(
             'networking_sfc.extensions.servicegraph.ServiceGraphPluginBase',
             sfc_ext.SFC_EXT,
-            sg_ext.RESOURCE_ATTRIBUTE_MAP,
             sg_ext.Servicegraph,
             sg_ext.SG_PREFIX[1:],
             plural_mappings={}
