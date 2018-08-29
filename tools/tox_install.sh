@@ -48,5 +48,10 @@ else
     $install_cmd -U -egit+https://git.openstack.org/openstack/neutron@$BRANCH_NAME#egg=neutron
 fi
 
+if [ -z "$@" ]; then
+    echo "No packages to be installed."
+    exit 0
+fi
+
 $install_cmd -U $*
 exit $?
