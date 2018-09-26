@@ -15,10 +15,10 @@
 import abc
 
 from neutron.agent import rpc as agent_rpc
-from neutron.common import rpc as n_rpc
 from neutron import manager
 from neutron_lib.agent import l2_extension
 from neutron_lib.agent import topics
+from neutron_lib import rpc as n_rpc
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
