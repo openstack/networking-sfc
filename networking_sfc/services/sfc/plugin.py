@@ -16,7 +16,7 @@ from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from neutron.db import api as db_api
+from neutron_lib.db import api as db_api
 
 from networking_sfc.db import sfc_db
 from networking_sfc.extensions import servicegraph as sg_ext
@@ -47,7 +47,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     @log_helpers.log_method_call
     def create_port_chain(self, context, port_chain):
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             port_chain_db = super(SfcPlugin, self).create_port_chain(
                 context, port_chain)
             portchain_db_context = sfc_ctx.PortChainContext(
@@ -69,7 +69,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     @log_helpers.log_method_call
     def update_port_chain(self, context, portchain_id, port_chain):
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             original_portchain = self.get_port_chain(context, portchain_id)
             updated_portchain = super(SfcPlugin, self).update_port_chain(
                 context, portchain_id, port_chain)
@@ -104,7 +104,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
                           portchain_id)
 
         # TODO(qijing): unsync in case deleted in driver but fail in database
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             pc = self.get_port_chain(context, portchain_id)
             pc_context = sfc_ctx.PortChainContext(self, context, pc)
             super(SfcPlugin, self).delete_port_chain(context, portchain_id)
@@ -113,7 +113,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     @log_helpers.log_method_call
     def create_port_pair(self, context, port_pair):
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             portpair_db = super(SfcPlugin, self).create_port_pair(
                 context, port_pair)
             portpair_context = sfc_ctx.PortPairContext(
@@ -134,7 +134,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     @log_helpers.log_method_call
     def update_port_pair(self, context, portpair_id, port_pair):
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             original_portpair = self.get_port_pair(context, portpair_id)
             updated_portpair = super(SfcPlugin, self).update_port_pair(
                 context, portpair_id, port_pair)
@@ -165,7 +165,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
                 LOG.error("Delete port pair failed, port_pair '%s'",
                           portpair_id)
 
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             portpair = self.get_port_pair(context, portpair_id)
             portpair_context = sfc_ctx.PortPairContext(
                 self, context, portpair)
@@ -175,7 +175,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     @log_helpers.log_method_call
     def create_port_pair_group(self, context, port_pair_group):
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             portpairgroup_db = super(SfcPlugin, self).create_port_pair_group(
                 context, port_pair_group)
             portpairgroup_context = sfc_ctx.PortPairGroupContext(
@@ -199,7 +199,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
     def update_port_pair_group(
         self, context, portpairgroup_id, port_pair_group
     ):
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             original_portpairgroup = self.get_port_pair_group(
                 context, portpairgroup_id)
             updated_portpairgroup = super(
@@ -236,7 +236,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
                           "port_pair_group '%s'",
                           portpairgroup_id)
 
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             portpairgroup = self.get_port_pair_group(context, portpairgroup_id)
             portpairgroup_context = sfc_ctx.PortPairGroupContext(
                 self, context, portpairgroup)
@@ -249,7 +249,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     @log_helpers.log_method_call
     def create_service_graph(self, context, service_graph):
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             service_graph_db = super(SfcPlugin, self).create_service_graph(
                 context, service_graph)
             service_graph_db_context = sfc_ctx.ServiceGraphContext(
@@ -271,7 +271,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     @log_helpers.log_method_call
     def update_service_graph(self, context, id, service_graph):
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             original_graph = self.get_service_graph(context, id)
             updated_graph = super(SfcPlugin, self).update_service_graph(
                 context, id, service_graph)
@@ -293,7 +293,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
     def delete_service_graph(self, context, id):
         graph = self.get_service_graph(context, id)
         graph_context = sfc_ctx.ServiceGraphContext(self, context, graph)
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             graph = self.get_service_graph(context, id)
             graph_context = sfc_ctx.ServiceGraphContext(self, context, graph)
             super(SfcPlugin, self).delete_service_graph(context, id)
