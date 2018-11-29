@@ -141,12 +141,12 @@ Boot service VMs and attach ports
 ---------------------------------
 Create Neutron ports on network net1::
 
-   openstack sfc port create --name p1 net1
-   openstack sfc port create --name p2 net1
-   openstack sfc port create --name p3 net1
-   openstack sfc port create --name p4 net1
-   openstack sfc port create --name p5 net1
-   openstack sfc port create --name p6 net1
+   openstack port create --network net1 p1
+   openstack port create --network net1 p2
+   openstack port create --network net1 p3
+   openstack port create --network net1 p4
+   openstack port create --network net1 p5
+   openstack port create --network net1 p6
 
 Boot VM1 from Nova with ports p1 and p2 using two --nic options::
 
@@ -216,7 +216,8 @@ Create port-pair-group PG1 with port-pair PP1 and PP2, and
 port-pair-group PG2 with port-pair PP3::
 
  openstack sfc port pair group create \
-        --port-pair PP1 --port-pair PP2 PG1 \
+        --port-pair PP1 --port-pair PP2 PG1
+
  openstack sfc port pair group create \
         --port-pair PP3 PG2
 
