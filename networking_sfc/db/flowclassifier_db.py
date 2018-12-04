@@ -24,10 +24,10 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm import exc
 
 from neutron_lib import constants as const
+from neutron_lib.db import api as db_api
 from neutron_lib.db import model_base
 from neutron_lib.db import utils as db_utils
 
-from neutron.db import api as db_api
 from neutron.db import common_db_mixin
 from neutron.db import models_v2
 
@@ -231,7 +231,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
         self._check_ip_prefix_valid(destination_ip_prefix, ethertype)
         logical_source_port = fc['logical_source_port']
         logical_destination_port = fc['logical_destination_port']
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             if logical_source_port is not None:
                 self._get_port(context, logical_source_port)
             if logical_destination_port is not None:
@@ -326,7 +326,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
     @log_helpers.log_method_call
     def update_flow_classifier(self, context, id, flow_classifier):
         new_fc = flow_classifier['flow_classifier']
-        with db_api.context_manager.writer.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             old_fc = self._get_flow_classifier(context, id)
             old_fc.update(new_fc)
             return self._make_flow_classifier_dict(old_fc)
@@ -334,7 +334,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
     @log_helpers.log_method_call
     def delete_flow_classifier(self, context, id):
         try:
-            with db_api.context_manager.writer.using(context):
+            with db_api.CONTEXT_WRITER.using(context):
                 fc = self._get_flow_classifier(context, id)
                 context.session.delete(fc)
         except AssertionError:
