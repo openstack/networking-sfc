@@ -13,10 +13,11 @@
 #    under the License.
 #
 
-from neutron.db import common_db_mixin
 from neutron_lib import context as n_context
 from neutron_lib.db import api as db_api
 from neutron_lib.db import model_base
+from neutron_lib.db import model_query
+from neutron_lib.db import utils as db_utils
 from neutron_lib import exceptions as n_exc
 
 import sqlalchemy as sa
@@ -123,7 +124,7 @@ class PathNode(model_base.BASEV2, model_base.HasId, model_base.HasProject):
         sa.ForeignKey('sfc_path_nodes.id', ondelete='SET NULL'))
 
 
-class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
+class OVSSfcDriverDB(object):
     def initialize(self):
         self.admin_context = n_context.get_admin_context()
 
@@ -146,7 +147,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                'previous_node_id': node['previous_node_id']
                }
 
-        return self._fields(res, fields)
+        return db_utils.resource_fields(res, fields)
 
     def _make_port_detail_dict(self, port, fields=None):
         res = {'id': port['id'],
@@ -165,7 +166,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                'correlation': port['correlation']
                }
 
-        return self._fields(res, fields)
+        return db_utils.resource_fields(res, fields)
 
     def _make_pathport_assoc_dict(self, assoc, fields=None):
         res = {'pathnode_id': assoc['pathnode_id'],
@@ -173,25 +174,26 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                'weight': assoc['weight'],
                }
 
-        return self._fields(res, fields)
+        return db_utils.resource_fields(res, fields)
 
     def _get_path_node(self, id):
         try:
-            node = self._get_by_id(self.admin_context, PathNode, id)
+            node = model_query.get_by_id(self.admin_context, PathNode, id)
         except exc.NoResultFound:
             raise NodeNotFound(node_id=id)
         return node
 
     def _get_port_pair_detail(self, id):
         try:
-            port = self._get_by_id(self.admin_context, PortPairDetail, id)
+            port = model_query.get_by_id(
+                self.admin_context, PortPairDetail, id)
         except exc.NoResultFound:
             raise PortPairDetailNotFound(port_id=id)
         return port
 
     def create_port_pair_detail(self, port):
         with db_api.CONTEXT_WRITER.using(self.admin_context):
-            args = self._filter_non_model_columns(port, PortPairDetail)
+            args = db_utils.filter_non_model_columns(port, PortPairDetail)
             args['id'] = uuidutils.generate_uuid()
             port_obj = PortPairDetail(**args)
             self.admin_context.session.add(port_obj)
@@ -199,7 +201,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
 
     def create_path_node(self, node):
         with db_api.CONTEXT_WRITER.using(self.admin_context):
-            args = self._filter_non_model_columns(node, PathNode)
+            args = db_utils.filter_non_model_columns(node, PathNode)
             args['id'] = uuidutils.generate_uuid()
             node_obj = PathNode(**args)
             self.admin_context.session.add(node_obj)
@@ -207,7 +209,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
 
     def create_pathport_assoc(self, assoc):
         with db_api.CONTEXT_WRITER.using(self.admin_context):
-            args = self._filter_non_model_columns(assoc, PathPortAssoc)
+            args = db_utils.filter_non_model_columns(assoc, PathPortAssoc)
             assoc_obj = PathPortAssoc(**args)
             self.admin_context.session.add(assoc_obj)
             return self._make_pathport_assoc_dict(assoc_obj)
@@ -227,7 +229,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                     for pn in value:
                         pn_id = pn['pathnode_id']
                         self._get_path_node(pn_id)
-                        query = self._model_query(
+                        query = model_query.query_with_hooks(
                             self.admin_context, PathPortAssoc)
                         pn_association = query.filter_by(
                             pathnode_id=pn_id,
@@ -253,7 +255,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
                 if key == 'portpair_details':
                     pds = []
                     for pd_id in value:
-                        query = self._model_query(
+                        query = model_query.query_with_hooks(
                             self.admin_context, PathPortAssoc)
                         pd_association = query.filter_by(
                             pathnode_id=id,
@@ -289,7 +291,7 @@ class OVSSfcDriverDB(common_db_mixin.CommonDbMixin):
     def get_port_detail_without_exception(self, id):
         with db_api.CONTEXT_READER.using(self.admin_context):
             try:
-                port = self._get_by_id(
+                port = model_query.get_by_id(
                     self.admin_context, PortPairDetail, id)
             except exc.NoResultFound:
                 return None

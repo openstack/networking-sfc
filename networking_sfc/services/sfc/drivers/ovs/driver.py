@@ -20,6 +20,7 @@ import neutron.plugins.ml2.drivers.l2pop.db as l2pop_db
 import neutron.plugins.ml2.drivers.l2pop.rpc as l2pop_rpc
 from neutron_lib import constants as const
 from neutron_lib import context as n_context
+from neutron_lib.db import model_query
 from neutron_lib.plugins import directory
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -713,7 +714,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             router_ints = const.ROUTER_INTERFACE_OWNERS
             logical_source_port = new_fc['logical_source_port']
             if logical_source_port is not None:
-                port_src = self._get_by_id(
+                port_src = model_query.get_by_id(
                     self.admin_context, models_v2.Port, logical_source_port
                 )
                 if (
@@ -727,7 +728,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
             logical_destination_port = new_fc['logical_destination_port']
             if logical_destination_port is not None:
-                port_dst = self._get_by_id(
+                port_dst = model_query.get_by_id(
                     self.admin_context, models_v2.Port,
                     logical_destination_port
                 )

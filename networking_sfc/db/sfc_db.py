@@ -25,11 +25,11 @@ from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm import exc
 
-from neutron.db import common_db_mixin
 from neutron.db import models_v2
 from neutron_lib.db import api as db_api
 from neutron_lib.db import constants as db_const
 from neutron_lib.db import model_base
+from neutron_lib.db import model_query
 from neutron_lib.db import utils as db_utils
 
 from networking_sfc.db import flowclassifier_db as fc_db
@@ -218,7 +218,6 @@ class ServiceGraph(model_base.BASEV2, model_base.HasId, model_base.HasProject):
 
 class SfcDbPlugin(
     ext_sfc.SfcPluginBase,
-    common_db_mixin.CommonDbMixin,
     ext_sg.ServiceGraphPluginBase
 ):
     """Mixin class to add port chain to db_plugin_base_v2."""
@@ -243,7 +242,7 @@ class SfcDbPlugin(
             },
             'chain_id': port_chain['chain_id'],
         }
-        return self._fields(res, fields)
+        return db_utils.resource_fields(res, fields)
 
     def _validate_port_pair_groups(self, context, pg_ids, pc_id=None):
         with db_api.CONTEXT_READER.using(context):
@@ -255,7 +254,7 @@ class SfcDbPlugin(
                     raise ext_tap.ConsecutiveTapPPGNotSupported()
                 else:
                     prev_pg_tap_enabled = curr_pg_tap_enabled
-            query = self._model_query(context, PortChain)
+            query = model_query.query_with_hooks(context, PortChain)
             for port_chain_db in query.all():
                 if port_chain_db['id'] == pc_id:
                     continue
@@ -290,7 +289,7 @@ class SfcDbPlugin(
                 if fc_assoc and fc_assoc['portchain_id'] != pc_id:
                     raise ext_fc.FlowClassifierInUse(id=fc.id)
 
-            query = self._model_query(context, PortChain)
+            query = model_query.query_with_hooks(context, PortChain)
             for port_chain_db in query.all():
                 if port_chain_db['id'] == pc_id:
                     continue
@@ -319,7 +318,7 @@ class SfcDbPlugin(
         with db_api.CONTEXT_READER.using(context):
             chain_group_associations = []
             for pg_id in pg_ids:
-                query = self._model_query(context, ChainGroupAssoc)
+                query = model_query.query_with_hooks(context, ChainGroupAssoc)
                 chain_group_association = query.filter_by(
                     portchain_id=port_chain.id, portpairgroup_id=pg_id
                 ).first()
@@ -336,7 +335,8 @@ class SfcDbPlugin(
         with db_api.CONTEXT_READER.using(context):
             chain_classifier_associations = []
             for fc_id in fc_ids:
-                query = self._model_query(context, ChainClassifierAssoc)
+                query = model_query.query_with_hooks(
+                    context, ChainClassifierAssoc)
                 chain_classifier_association = query.filter_by(
                     portchain_id=port_chain.id, flowclassifier_id=fc_id
                 ).first()
@@ -405,17 +405,17 @@ class SfcDbPlugin(
                         marker=None, page_reverse=False, default_sg=False):
         marker_obj = db_utils.get_marker_obj(self, context, 'port_chain',
                                              limit, marker)
-        return self._get_collection(context,
-                                    PortChain,
-                                    self._make_port_chain_dict,
-                                    filters=filters, fields=fields,
-                                    sorts=sorts,
-                                    limit=limit, marker_obj=marker_obj,
-                                    page_reverse=page_reverse)
+        return model_query.get_collection(
+            context, PortChain,
+            self._make_port_chain_dict,
+            filters=filters, fields=fields,
+            sorts=sorts,
+            limit=limit, marker_obj=marker_obj,
+            page_reverse=page_reverse)
 
     def get_port_chains_count(self, context, filters=None):
-        return self._get_collection_count(context, PortChain,
-                                          filters=filters)
+        return model_query.get_collection_count(
+            context, PortChain, filters=filters)
 
     @log_helpers.log_method_call
     def get_port_chain(self, context, id, fields=None):
@@ -425,7 +425,7 @@ class SfcDbPlugin(
     @log_helpers.log_method_call
     def _get_port_chain(self, context, id):
         try:
-            return self._get_by_id(context, PortChain, id)
+            return model_query.get_by_id(context, PortChain, id)
         except exc.NoResultFound:
             raise ext_sfc.PortChainNotFound(id=id)
 
@@ -481,7 +481,7 @@ class SfcDbPlugin(
             }
         }
 
-        return self._fields(res, fields)
+        return db_utils.resource_fields(res, fields)
 
     def _validate_port_pair_ingress_egress(self, ingress, egress):
         if 'device_id' not in ingress or not ingress['device_id']:
@@ -503,7 +503,7 @@ class SfcDbPlugin(
         pp = port_pair['port_pair']
         project_id = pp['project_id']
         with db_api.CONTEXT_WRITER.using(context):
-            query = self._model_query(context, PortPair)
+            query = model_query.query_with_hooks(context, PortPair)
             pp_in_use = query.filter_by(
                 ingress=pp['ingress'], egress=pp['egress']
             ).first()
@@ -541,17 +541,17 @@ class SfcDbPlugin(
                        page_reverse=False):
         marker_obj = db_utils.get_marker_obj(self, context, 'port_pair',
                                              limit, marker)
-        return self._get_collection(context,
-                                    PortPair,
-                                    self._make_port_pair_dict,
-                                    filters=filters, fields=fields,
-                                    sorts=sorts,
-                                    limit=limit, marker_obj=marker_obj,
-                                    page_reverse=page_reverse)
+        return model_query.get_collection(
+            context, PortPair,
+            self._make_port_pair_dict,
+            filters=filters, fields=fields,
+            sorts=sorts,
+            limit=limit, marker_obj=marker_obj,
+            page_reverse=page_reverse)
 
     def get_port_pairs_count(self, context, filters=None):
-        return self._get_collection_count(context, PortPair,
-                                          filters=filters)
+        return model_query.get_collection_count(
+            context, PortPair, filters=filters)
 
     @log_helpers.log_method_call
     def get_port_pair(self, context, id, fields=None):
@@ -560,13 +560,13 @@ class SfcDbPlugin(
 
     def _get_port_pair(self, context, id):
         try:
-            return self._get_by_id(context, PortPair, id)
+            return model_query.get_by_id(context, PortPair, id)
         except exc.NoResultFound:
             raise ext_sfc.PortPairNotFound(id=id)
 
     def _get_port(self, context, id):
         try:
-            return self._get_by_id(context, models_v2.Port, id)
+            return model_query.get_by_id(context, models_v2.Port, id)
         except exc.NoResultFound:
             raise ext_sfc.PortPairPortNotFound(id=id)
 
@@ -605,7 +605,7 @@ class SfcDbPlugin(
             'group_id': port_pair_group.get('group_id') or 0
         }
 
-        return self._fields(res, fields)
+        return db_utils.resource_fields(res, fields)
 
     def _validate_pps_in_ppg(self, portpairs_list, id=None):
         first_check = True
@@ -676,17 +676,17 @@ class SfcDbPlugin(
                              page_reverse=False):
         marker_obj = db_utils.get_marker_obj(self, context, 'port_pair_group',
                                              limit, marker)
-        return self._get_collection(context,
-                                    PortPairGroup,
-                                    self._make_port_pair_group_dict,
-                                    filters=filters, fields=fields,
-                                    sorts=sorts,
-                                    limit=limit, marker_obj=marker_obj,
-                                    page_reverse=page_reverse)
+        return model_query.get_collection(
+            context, PortPairGroup,
+            self._make_port_pair_group_dict,
+            filters=filters, fields=fields,
+            sorts=sorts,
+            limit=limit, marker_obj=marker_obj,
+            page_reverse=page_reverse)
 
     def get_port_pair_groups_count(self, context, filters=None):
-        return self._get_collection_count(context, PortPairGroup,
-                                          filters=filters)
+        return model_query.get_collection_count(
+            context, PortPairGroup, filters=filters)
 
     @log_helpers.log_method_call
     def get_port_pair_group(self, context, id, fields=None):
@@ -695,13 +695,13 @@ class SfcDbPlugin(
 
     def _get_port_pair_group(self, context, id):
         try:
-            return self._get_by_id(context, PortPairGroup, id)
+            return model_query.get_by_id(context, PortPairGroup, id)
         except exc.NoResultFound:
             raise ext_sfc.PortPairGroupNotFound(id=id)
 
     def _get_flow_classifier(self, context, id):
         try:
-            return self._get_by_id(context, fc_db.FlowClassifier, id)
+            return model_query.get_by_id(context, fc_db.FlowClassifier, id)
         except exc.NoResultFound:
             raise ext_fc.FlowClassifierNotFound(id=id)
 
@@ -757,7 +757,7 @@ class SfcDbPlugin(
             'port_chains': self._graph_assocs_to_pc_dict(
                 graph_db['graph_chain_associations'])
         }
-        return self._fields(res, fields)
+        return db_utils.resource_fields(res, fields)
 
     def _make_graph_chain_assoc_dict(self, assoc_db, fields=None):
         res = {
@@ -765,7 +765,7 @@ class SfcDbPlugin(
             'src_chain': assoc_db['src_chain'],
             'dst_chain': assoc_db['dst_chain']
         }
-        return self._fields(res, fields)
+        return db_utils.resource_fields(res, fields)
 
     def _is_there_a_loop(self, parenthood, current_chain, traversed):
         if current_chain not in parenthood:
@@ -784,7 +784,7 @@ class SfcDbPlugin(
         if not port_chains:
             return False
         with db_api.CONTEXT_READER.using(context):
-            query = self._model_query(context, ServiceGraph)
+            query = model_query.query_with_hooks(context, ServiceGraph)
             for graph_db in query.all():
                 if graph_db['id'] == graph_id:
                     continue
@@ -890,7 +890,7 @@ class SfcDbPlugin(
         with db_api.CONTEXT_READER.using(context):
             graph_chain_associations = []
             for src_chain in port_chains:
-                query = self._model_query(context, GraphChainAssoc)
+                query = model_query.query_with_hooks(context, GraphChainAssoc)
                 for dst_chain in port_chains[src_chain]:
                     graph_chain_association = query.filter_by(
                         service_graph_id=graph_db.id,
@@ -905,10 +905,10 @@ class SfcDbPlugin(
             graph_db.graph_chain_associations = graph_chain_associations
 
     def _get_branches(self, context, filters):
-        return self._get_collection(context,
-                                    GraphChainAssoc,
-                                    self._make_graph_chain_assoc_dict,
-                                    filters=filters)
+        return model_query.get_collection(
+            context, GraphChainAssoc,
+            self._make_graph_chain_assoc_dict,
+            filters=filters)
 
     @log_helpers.log_method_call
     def create_service_graph(self, context, service_graph):
@@ -934,13 +934,13 @@ class SfcDbPlugin(
         """Get Service Graphs."""
         marker_obj = db_utils.get_marker_obj(self, context,
                                              'service_graph', limit, marker)
-        return self._get_collection(context,
-                                    ServiceGraph,
-                                    self._make_service_graph_dict,
-                                    filters=filters, fields=fields,
-                                    sorts=sorts,
-                                    limit=limit, marker_obj=marker_obj,
-                                    page_reverse=page_reverse)
+        return model_query.get_collection(
+            context, ServiceGraph,
+            self._make_service_graph_dict,
+            filters=filters, fields=fields,
+            sorts=sorts,
+            limit=limit, marker_obj=marker_obj,
+            page_reverse=page_reverse)
 
     @log_helpers.log_method_call
     def get_service_graph(self, context, id, fields=None):
@@ -951,7 +951,7 @@ class SfcDbPlugin(
     @log_helpers.log_method_call
     def _get_service_graph(self, context, id):
         try:
-            return self._get_by_id(context, ServiceGraph, id)
+            return model_query.get_by_id(context, ServiceGraph, id)
         except exc.NoResultFound:
             raise ext_sg.ServiceGraphNotFound(id=id)
 

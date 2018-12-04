@@ -26,9 +26,9 @@ from sqlalchemy.orm import exc
 from neutron_lib import constants as const
 from neutron_lib.db import api as db_api
 from neutron_lib.db import model_base
+from neutron_lib.db import model_query
 from neutron_lib.db import utils as db_utils
 
-from neutron.db import common_db_mixin
 from neutron.db import models_v2
 
 from networking_sfc.extensions import flowclassifier as fc_ext
@@ -74,8 +74,7 @@ class FlowClassifier(model_base.BASEV2, model_base.HasId,
         cascade='all, delete-orphan')
 
 
-class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
-                             common_db_mixin.CommonDbMixin):
+class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase):
 
     @classmethod
     def _check_port_range_valid(cls, port_range_min,
@@ -236,7 +235,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
                 self._get_port(context, logical_source_port)
             if logical_destination_port is not None:
                 self._get_port(context, logical_destination_port)
-            query = self._model_query(context, FlowClassifier)
+            query = model_query.query_with_hooks(context, FlowClassifier)
             for flow_classifier_db in query.all():
                 if self.flowclassifier_conflict(
                     fc,
@@ -290,7 +289,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
                 for k, param in flow_classifier.l7_parameters.items()
             }
         }
-        return self._fields(res, fields)
+        return db_utils.resource_fields(res, fields)
 
     @log_helpers.log_method_call
     def get_flow_classifiers(self, context, filters=None, fields=None,
@@ -298,13 +297,14 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
                              page_reverse=False):
         marker_obj = db_utils.get_marker_obj(self, context, 'flow_classifier',
                                              limit, marker)
-        return self._get_collection(context,
-                                    FlowClassifier,
-                                    self._make_flow_classifier_dict,
-                                    filters=filters, fields=fields,
-                                    sorts=sorts,
-                                    limit=limit, marker_obj=marker_obj,
-                                    page_reverse=page_reverse)
+        return model_query.get_collection(
+            context,
+            FlowClassifier,
+            self._make_flow_classifier_dict,
+            filters=filters, fields=fields,
+            sorts=sorts,
+            limit=limit, marker_obj=marker_obj,
+            page_reverse=page_reverse)
 
     @log_helpers.log_method_call
     def get_flow_classifier(self, context, id, fields=None):
@@ -313,13 +313,13 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase,
 
     def _get_flow_classifier(self, context, id):
         try:
-            return self._get_by_id(context, FlowClassifier, id)
+            return model_query.get_by_id(context, FlowClassifier, id)
         except exc.NoResultFound:
             raise fc_ext.FlowClassifierNotFound(id=id)
 
     def _get_port(self, context, id):
         try:
-            return self._get_by_id(context, models_v2.Port, id)
+            return model_query.get_by_id(context, models_v2.Port, id)
         except exc.NoResultFound:
             raise fc_ext.FlowClassifierPortNotFound(id=id)
 
