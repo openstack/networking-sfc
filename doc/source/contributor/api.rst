@@ -175,7 +175,7 @@ openstack sfc port pair group create
 
 Inside each "port-pair-group", there could be one or more port-pairs.
 Multiple port-pairs may be included in a "port-pair-group" to allow the specification of
-a set of functionally equivalent SFs that can be be used for load distribution,
+a set of functionally equivalent SFs that can be used for load distribution,
 i.e., the ``--port-pair`` option may be repeated for multiple port-pairs of
 functionally equivalent SFs.
 
