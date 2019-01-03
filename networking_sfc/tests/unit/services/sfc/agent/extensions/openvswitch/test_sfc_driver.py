@@ -2591,9 +2591,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
@@ -2683,9 +2683,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'eth_type': 2048,
                 'in_port': 42,
@@ -2761,9 +2761,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
@@ -2855,9 +2855,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'eth_type': 2048,
                 'in_port': 42,
@@ -2941,9 +2941,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'mod_vlan_vid:0,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
@@ -3054,9 +3054,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'eth_type': 2048,
                 'in_port': 42,
@@ -3171,9 +3171,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'mod_vlan_vid:0,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
@@ -3286,9 +3286,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'eth_type': 2048,
                 'in_port': 42,
@@ -3424,9 +3424,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'reg0': 61640,
                 'eth_type': 2048,
@@ -3548,9 +3548,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'reg0': 61640,
                 'eth_type': 2048,
@@ -3779,9 +3779,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'reg0': 61640,
                 'eth_type': 2048,
@@ -3794,9 +3794,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'tp_src': '0x64/0xffff'
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'reg0': 64100,
                 'eth_type': 2048,
@@ -3936,9 +3936,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'eth_type': 2048,
                 'in_port': 42,
@@ -4057,9 +4057,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'in_port': 42,
                 'eth_type': 2048,
@@ -4275,9 +4275,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'in_port': 42,
                 'eth_type': 2048,
@@ -4410,9 +4410,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'table': 5
             }, {
                 'actions': (
-                    "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+                    "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0xfa->nsh_spi,set_field:0xfc->nsh_si,"
-                    "encap(hdr=ethernet),"
+                    "encap(ethernet),"
                     'group:1'),
                 'in_port': 42,
                 'eth_type': 2048,
