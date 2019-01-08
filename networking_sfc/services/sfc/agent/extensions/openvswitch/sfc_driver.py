@@ -578,9 +578,9 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
 
     def _build_push_nsh(self, nsp, nsi):
         return (
-            "encap(hdr=nsh,prop(class=nsh,type=md_type,val=1)),"
+            "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
             "set_field:%s->nsh_spi,set_field:%s->nsh_si,"
-            "encap(hdr=ethernet)," %
+            "encap(ethernet)," %
             (hex(nsp), hex(nsi)))
 
     def _build_ingress_common_match_field(self, vif_port, vlan):

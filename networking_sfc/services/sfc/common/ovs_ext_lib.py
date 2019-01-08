@@ -50,8 +50,9 @@ class SfcOVSBridgeExt(object):
     def __init__(self, ovs_bridge):
         self.bridge = ovs_bridge
 
-        # OpenFlow 1.1 is needed to manipulate groups
-        self.bridge.use_at_least_protocol(ovs_consts.OPENFLOW11)
+        # OpenFlow 1.3 is needed to manipulate groups
+        # To support NSH feature, OpenFlow 1.3 is also needed
+        self.bridge.use_at_least_protocol(ovs_consts.OPENFLOW13)
 
     # proxy most methods to self.bridge
     def __getattr__(self, name):
