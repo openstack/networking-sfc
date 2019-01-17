@@ -8,6 +8,7 @@ covhtml/
 dist/
 doc/build
 doc/source/_static/config_samples/*.sample
+doc/source/_static/*.policy.yaml.sample
 etc/**/*.sample
 *.DS_Store
 *.pyc
