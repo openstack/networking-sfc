@@ -615,9 +615,9 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
     def _build_proxy_sfc_nsh(self, flowrule, vif_port, vlan):
         match_field = self._build_ingress_match_field_sfc_nsh(
             flowrule, vif_port, vlan)
-        actions = ("strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],"
+        actions = ("strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG0[0..47],"
                    "decap(),decap(),"
-                   "move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:%s"
+                   "move:OXM_OF_PKT_REG0[0..47]->NXM_OF_ETH_DST,output:%s"
                    "" % vif_port.ofport)
         match_field['actions'] = actions
         return match_field

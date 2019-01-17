@@ -2161,9 +2161,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.assertEqual(
             [{
                 'actions': (
-                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG0[0..47],'
                     'decap(),decap(),'
-                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                    'move:OXM_OF_PKT_REG0[0..47]->NXM_OF_ETH_DST,output:6'),
                 'dl_dst': '00:01:02:03:05:07',
                 'eth_type': 35151,
                 'dl_vlan': 0,
@@ -2426,9 +2426,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'tp_src': '0x64/0xffff'
             }, {
                 'actions': (
-                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG0[0..47],'
                     'decap(),decap(),'
-                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:42'),
+                    'move:OXM_OF_PKT_REG0[0..47]->NXM_OF_ETH_DST,output:42'),
                 'dl_dst': '00:01:02:03:06:08',
                 'eth_type': 35151,
                 'nsh_mdtype': 1,
@@ -2962,9 +2962,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'tp_src': '0x64/0xffff'
             }, {
                 'actions': (
-                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG0[0..47],'
                     'decap(),decap(),'
-                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                    'move:OXM_OF_PKT_REG0[0..47]->NXM_OF_ETH_DST,output:6'),
                 'dl_dst': '00:01:02:03:05:07',
                 'eth_type': 35151,
                 'nsh_mdtype': 1,
@@ -3069,9 +3069,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'tp_src': '0x64/0xffff'
             }, {
                 'actions': (
-                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG0[0..47],'
                     'decap(),decap(),'
-                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                    'move:OXM_OF_PKT_REG0[0..47]->NXM_OF_ETH_DST,output:6'),
                 'dl_dst': '00:01:02:03:05:07',
                 'eth_type': 35151,
                 'nsh_mdtype': 1,
@@ -3192,9 +3192,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'tp_src': '0x64/0xffff'
             }, {
                 'actions': (
-                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG0[0..47],'
                     'decap(),decap(),'
-                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                    'move:OXM_OF_PKT_REG0[0..47]->NXM_OF_ETH_DST,output:6'),
                 'dl_dst': '00:01:02:03:05:07',
                 'eth_type': 35151,
                 'nsh_mdtype': 1,
@@ -3301,9 +3301,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'tp_src': '0x64/0xffff'
             }, {
                 'actions': (
-                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG0[0..47],'
                     'decap(),decap(),'
-                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                    'move:OXM_OF_PKT_REG0[0..47]->NXM_OF_ETH_DST,output:6'),
                 'dl_dst': '00:01:02:03:05:07',
                 'eth_type': 35151,
                 'nsh_mdtype': 1,
@@ -3951,9 +3951,9 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
                 'tp_src': '0x64/0xffff'
             }, {
                 'actions': (
-                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG[0..47],'
+                    'strip_vlan,move:NXM_OF_ETH_DST->OXM_OF_PKT_REG0[0..47],'
                     'decap(),decap(),'
-                    'move:OXM_OF_PKT_REG[0..47]->NXM_OF_ETH_DST,output:6'),
+                    'move:OXM_OF_PKT_REG0[0..47]->NXM_OF_ETH_DST,output:6'),
                 'dl_dst': '00:01:02:03:05:07',
                 'eth_type': 35151,
                 'nsh_mdtype': 1,
