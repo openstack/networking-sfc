@@ -25,7 +25,7 @@
     parent: legacy-dsvm-base
     run: playbooks/legacy/networking-sfc-tempest-dsvm/run.yaml
     post-run: playbooks/legacy/networking-sfc-tempest-dsvm/post.yaml
-    timeout: 7800
+    timeout: 10800
     required-projects:
       - openstack-infra/devstack-gate
       - openstack/networking-sfc
