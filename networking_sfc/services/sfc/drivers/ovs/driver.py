@@ -14,7 +14,6 @@
 #    under the License.
 
 import neutron.common.constants as nc_const
-import neutron.common.rpc as n_rpc
 from neutron.db import models_v2
 import neutron.plugins.ml2.drivers.l2pop.db as l2pop_db
 import neutron.plugins.ml2.drivers.l2pop.rpc as l2pop_rpc
@@ -22,6 +21,7 @@ from neutron_lib import constants as const
 from neutron_lib import context as n_context
 from neutron_lib.db import model_query
 from neutron_lib.plugins import directory
+from neutron_lib import rpc as n_rpc
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils

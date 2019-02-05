@@ -15,8 +15,8 @@ from oslo_log import log as logging
 
 import oslo_messaging
 
-from neutron.common import rpc as n_rpc
 from neutron_lib.agent import topics
+from neutron_lib import rpc as n_rpc
 
 from networking_sfc.services.sfc.drivers.ovs import rpc_topics as sfc_topics
 
