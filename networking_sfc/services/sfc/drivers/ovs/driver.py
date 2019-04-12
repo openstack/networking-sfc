@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import neutron.common.constants as nc_const
 from neutron.db import models_v2
 import neutron.plugins.ml2.drivers.l2pop.db as l2pop_db
 import neutron.plugins.ml2.drivers.l2pop.rpc as l2pop_rpc
@@ -107,9 +106,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         # Agent is removing its last activated port in this network,
         # other agents needs to be notified to delete their flooding entry.
         other_fdb_entries[network_id]['ports'][agent_ip].append(
-            nc_const.FLOODING_ENTRY)
+            const.FLOODING_ENTRY)
         # Notify other agents to remove fdb rules for current port
-        if port['device_owner'] != nc_const.DEVICE_OWNER_DVR_INTERFACE:
+        if port['device_owner'] != const.DEVICE_OWNER_DVR_INTERFACE:
             fdb_entries = port_fdb_entries
             other_fdb_entries[network_id]['ports'][agent_ip] += fdb_entries
 
