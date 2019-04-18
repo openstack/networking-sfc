@@ -9,36 +9,105 @@
       - openstack/networking-sfc
 
 - job:
-    name: networking-sfc-periodic-tempest-dsvm
-    parent: legacy-dsvm-base
-    run: playbooks/legacy/networking-sfc-periodic-tempest-dsvm/run.yaml
-    post-run: playbooks/legacy/networking-sfc-periodic-tempest-dsvm/post.yaml
-    timeout: 7800
+    name: networking-sfc-tempest
+    parent: neutron-tempest-plugin-sfc
+    files: ^.*$
+    irrelevant-files:
+      - ^(test-|)requirements.txt$
+      - ^setup.cfg$
+
+- job:
+    name: networking-sfc-tempest-multinode
+    parent: networking-sfc-tempest
+    nodeset: openstack-two-node-bionic
+    pre-run: playbooks/multinode-scenario-pre-run.yaml
+    roles:
+      - zuul: openstack/devstack
+    vars:
+      devstack_localrc:
+        PHYSICAL_NETWORK: default
+      tempest_plugins:
+        - neutron-tempest-plugin
+      devstack_services:
+        tls-proxy: false
+        tempest: true
+        neutron-dns: true
+        neutron-qos: true
+        neutron-segments: true
+        neutron-trunk: true
+        neutron-log: true
+        cinder: true
+      devstack_local_conf:
+        post-config:
+          $NEUTRON_CONF:
+            quotas:
+              quota_router: 100
+              quota_floatingip: 500
+              quota_security_group: 100
+              quota_security_group_rule: 1000
+          # NOTE(slaweq): We can get rid of this hardcoded absolute path when
+          # devstack-tempest job will be switched to use lib/neutron instead of
+          # lib/neutron-legacy
+          "/$NEUTRON_CORE_PLUGIN_CONF":
+            ml2:
+              type_drivers: flat,geneve,vlan,gre,local,vxlan
+              mechanism_drivers: openvswitch,l2population
+            ml2_type_vlan:
+              network_vlan_ranges: foo:1:10
+            ml2_type_vxlan:
+              vni_ranges: 1:2000
+            ml2_type_gre:
+              tunnel_id_ranges: 1:1000
+            agent:
+              l2_population: True
+              tunnel_types: vxlan,gre
+            ovs:
+              tunnel_bridge: br-tun
+              bridge_mappings: public:br-ex
+          $NEUTRON_L3_CONF:
+            agent:
+              availability_zone: nova
+          $NEUTRON_DHCP_CONF:
+            agent:
+              availability_zone: nova
+          "/etc/neutron/api-paste.ini":
+            "composite:neutronapi_v2_0":
+              use: "call:neutron.auth:pipeline_factory"
+              noauth: "cors request_id catch_errors osprofiler extensions neutronapiapp_v2_0"
+              keystone: "cors request_id catch_errors osprofiler authtoken keystonecontext extensions neutronapiapp_v2_0"
+        test-config:
+          $TEMPEST_CONFIG:
+            neutron_plugin_options:
+              provider_vlans: foo,
+              agent_availability_zone: nova
+              available_type_drivers: flat,geneve,vlan,gre,local,vxlan
+    group-vars:
+      subnode:
+        devstack_services:
+          tls-proxy: false
+          q-agt: true
+          q-l3: true
+          q-meta: true
+          neutron-qos: true
+          neutron-trunk: true
+          neutron-log: true
+        devstack_local_conf:
+          post-config:
+            # NOTE(slaweq): We can get rid of this hardcoded absolute path when
+            # devstack-tempest job will be switched to use lib/neutron instead of
+            # lib/neutron-legacy
+            "/$NEUTRON_CORE_PLUGIN_CONF":
+              agent:
+                l2_population: True
+                tunnel_types: vxlan,gre
+              ovs:
+                tunnel_bridge: br-tun
+                bridge_mappings: public:br-ex
+            $NEUTRON_L3_CONF:
+              agent:
+                availability_zone: nova
+
+- job:
+    name: networking-sfc-tempest-periodic
+    parent: networking-sfc-tempest
     branches: master
-    required-projects:
-      - openstack/devstack-gate
-      - openstack/networking-sfc
-      - openstack/tempest
-
-- job:
-    name: networking-sfc-tempest-dsvm
-    parent: legacy-dsvm-base
-    run: playbooks/legacy/networking-sfc-tempest-dsvm/run.yaml
-    post-run: playbooks/legacy/networking-sfc-tempest-dsvm/post.yaml
-    timeout: 10800
-    required-projects:
-      - openstack/devstack-gate
-      - openstack/networking-sfc
-      - openstack/tempest
-
-- job:
-    name: networking-sfc-tempest-dsvm-multinode
-    parent: legacy-dsvm-base-multinode
-    run: playbooks/legacy/networking-sfc-tempest-dsvm-multinode/run.yaml
-    post-run: playbooks/legacy/networking-sfc-tempest-dsvm-multinode/post.yaml
-    timeout: 10800
-    required-projects:
-      - openstack/devstack-gate
-      - openstack/networking-sfc
-      - openstack/tempest
-    nodeset: legacy-ubuntu-xenial-2-node

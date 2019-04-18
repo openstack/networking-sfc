@@ -2,25 +2,13 @@
     check:
       jobs:
         - networking-sfc-functional-dsvm
-        - networking-sfc-tempest-dsvm:
-            irrelevant-files:
-              - ^(test-|)requirements.txt$
-              - ^setup.cfg$
-        - networking-sfc-tempest-dsvm-multinode:
+        - networking-sfc-tempest
+        - networking-sfc-tempest-multinode:
             voting: false
-            irrelevant-files:
-              - ^(test-|)requirements.txt$
-              - ^setup.cfg$
     gate:
       jobs:
         - networking-sfc-functional-dsvm
-        - networking-sfc-tempest-dsvm:
-            irrelevant-files:
-              - ^(test-|)requirements.txt$
-              - ^setup.cfg$
+        - networking-sfc-tempest
     periodic:
       jobs:
-        - networking-sfc-periodic-tempest-dsvm:
-            irrelevant-files:
-              - ^(test-|)requirements.txt$
-              - ^setup.cfg$
+        - networking-sfc-tempest-periodic
