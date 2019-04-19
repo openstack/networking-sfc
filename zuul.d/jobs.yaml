@@ -5,7 +5,7 @@
     post-run: playbooks/legacy/networking-sfc-functional-dsvm/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/networking-sfc
 
 - job:
@@ -16,7 +16,7 @@
     timeout: 7800
     branches: master
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/networking-sfc
       - openstack/tempest
 
@@ -27,7 +27,7 @@
     post-run: playbooks/legacy/networking-sfc-tempest-dsvm/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/networking-sfc
       - openstack/tempest
 
@@ -38,7 +38,7 @@
     post-run: playbooks/legacy/networking-sfc-tempest-dsvm-multinode/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/networking-sfc
       - openstack/tempest
     nodeset: legacy-ubuntu-xenial-2-node
