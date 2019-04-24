@@ -35,7 +35,7 @@ OpenStack distribution:
 If you use ``pip``, follow these steps to install networking-sfc:
 
 * `identify the version of the networking-sfc package
-  <http://git.openstack.org/cgit/openstack/releases/plain/deliverables/_independent/networking-sfc.yaml>`_
+  <https://opendev.org/openstack/releases/raw/branch/master/deliverables/_independent/networking-sfc.yaml>`_
   that matches your OpenStack version:
 
   * Ocata: latest 4.0.x version
@@ -48,4 +48,4 @@ If you use ``pip``, follow these steps to install networking-sfc:
 
   .. code-block:: console
 
-     pip install -c https://git.openstack.org/cgit/openstack/requirements/plain/upper-constraints.txt?h=stable/ocata networking-sfc==4.0.0
+     pip install -c https://opendev.org/openstack/requirements/raw/branch/master/upper-constraints.txt?h=stable/ocata networking-sfc==4.0.0

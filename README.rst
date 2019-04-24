@@ -42,7 +42,7 @@ This is an initial release, feedback is requested from users and the API may
 evolve based on that feedback.
 
 * Free software: Apache license
-* Source: https://git.openstack.org/cgit/openstack/networking-sfc
+* Source: https://opendev.org/openstack/networking-sfc
 * Documentation: https://docs.openstack.org/networking-sfc/latest
 * Overview: https://launchpad.net/networking-sfc
 * Bugs: https://bugs.launchpad.net/networking-sfc
