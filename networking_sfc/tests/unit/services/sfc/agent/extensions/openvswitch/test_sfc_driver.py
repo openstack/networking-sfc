@@ -17,13 +17,14 @@
 import mock
 
 from oslo_config import cfg
+from oslo_utils import importutils
 from oslo_utils import uuidutils
 
 from neutron.agent.common import ovs_lib
 from neutron.agent.common import utils
 from neutron.plugins.ml2.drivers.openvswitch.agent import (
     ovs_agent_extension_api as ovs_ext_api)
-from neutron.plugins.ml2.drivers.openvswitch.agent.openflow.ovs_ofctl import (
+from neutron.plugins.ml2.drivers.openvswitch.agent.openflow.native import (
     ovs_bridge)
 
 from neutron.tests.unit.plugins.ml2.drivers.openvswitch.agent import (
@@ -33,11 +34,12 @@ from networking_sfc.services.sfc.agent.extensions.openvswitch import sfc_driver
 from networking_sfc.services.sfc.common import ovs_ext_lib
 
 
-class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
+class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
     def _clear_local_entries(self):
         self.executed_cmds = []
         self.node_flowrules = []
         self.added_flows = []
+        self.installed_instructions = []
         self.deleted_flows = []
         self.group_mapping = {}
         self.deleted_groups = []
@@ -56,6 +58,16 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.use_at_least_protocol = mock.patch(
             'neutron.agent.common.ovs_lib.OVSBridge.use_at_least_protocol')
         self.use_at_least_protocol.start()
+
+        self.dp = mock.Mock()
+        self.ofp = importutils.import_module("os_ken.ofproto.ofproto_v1_3")
+        self.ofpp = importutils.import_module(
+            "os_ken.ofproto.ofproto_v1_3_parser")
+        mock.patch.object(ovs_bridge.OVSAgentBridge, "_get_dp",
+                          return_value=self._get_dp()).start()
+        mock.patch.object(ovs_bridge.OVSAgentBridge, "install_instructions",
+                          self.mock_install_instructions).start()
+
         self.add_flow = mock.patch(
             "neutron.agent.common.ovs_lib.OVSBridge.add_flow",
             self.mock_add_flow
@@ -182,13 +194,17 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.get_bridge_ports.start()
 
         self.sfc_driver = sfc_driver.SfcOVSAgentDriver()
+        os_ken_app = mock.Mock()
         self.agent_api = ovs_ext_api.OVSAgentExtensionAPI(
-            ovs_bridge.OVSAgentBridge('br-int'),
-            ovs_bridge.OVSAgentBridge('br-tun'))
+            ovs_bridge.OVSAgentBridge('br-int', os_ken_app=os_ken_app),
+            ovs_bridge.OVSAgentBridge('br-tun', os_ken_app=os_ken_app))
         self.sfc_driver.consume_api(self.agent_api)
         self.sfc_driver.initialize()
 
         self._clear_local_entries()
+
+    def _get_dp(self):
+        return self.dp, self.ofp, self.ofpp
 
     def mock_delete_group(self, group_id):
         if group_id == 'all':
@@ -326,6 +342,10 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
 
     def mock_create(self, secure_mode=False):
         pass
+
+    def mock_install_instructions(self, *args, **kwargs):
+        if kwargs not in self.installed_instructions:
+            self.installed_instructions.append(kwargs)
 
     def mock_add_flow(self, *args, **kwargs):
         if kwargs not in self.added_flows:
@@ -4741,21 +4761,26 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOFCtlTestBase):
         self.sfc_driver._clear_sfc_flow_on_int_br()
         self.assertEqual(
             [{
-                'actions': 'resubmit(,10)',
                 'eth_type': 34887,
+                'instructions': [
+                    self.ofpp.OFPInstructionGotoTable(table_id=10)],
+                'match': None,
                 'priority': 20,
-                'table': 0
+                'table_id': 0
             }, {
-                'actions': 'resubmit(,10)',
                 'eth_type': 35151,
+                'instructions': [
+                    self.ofpp.OFPInstructionGotoTable(table_id=10)],
+                'match': None,
                 'priority': 20,
-                'table': 0
+                'table_id': 0
             }, {
-                'actions': 'drop',
+                'instructions': [],
+                'match': None,
                 'priority': 0,
-                'table': 10
+                'table_id': 10
             }],
-            self.added_flows
+            self.installed_instructions
         )
         self.assertEqual(
             ["all"],
