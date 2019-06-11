@@ -1,12 +1,8 @@
 - job:
-    name: networking-sfc-functional-dsvm
-    parent: legacy-dsvm-base
-    run: playbooks/legacy/networking-sfc-functional-dsvm/run.yaml
-    post-run: playbooks/legacy/networking-sfc-functional-dsvm/post.yaml
-    timeout: 7800
-    required-projects:
-      - openstack/devstack-gate
-      - openstack/networking-sfc
+    name: networking-sfc-functional
+    parent: neutron-functional
+    vars:
+        project_name: networking-sfc
 
 - job:
     name: networking-sfc-tempest

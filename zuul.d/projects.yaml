@@ -1,13 +1,13 @@
 - project:
     check:
       jobs:
-        - networking-sfc-functional-dsvm
+        - networking-sfc-functional
         - networking-sfc-tempest
         - networking-sfc-tempest-multinode:
             voting: false
     gate:
       jobs:
-        - networking-sfc-functional-dsvm
+        - networking-sfc-functional
         - networking-sfc-tempest
     periodic:
       jobs:
