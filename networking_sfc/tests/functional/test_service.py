@@ -33,10 +33,16 @@ class TestService(test_server.TestPluginWorker):
         with open(self.temp_file, 'ab') as f:
             f.write(test_server.FAKE_START_MSG)
 
+    def _fake_reset(self):
+        with open(self.temp_file, 'ab') as f:
+            f.write(test_server.FAKE_RESET_MSG)
+
     def _test_restart_service_on_sighup(self, service, workers=1):
         self._start_server(callback=service, workers=workers)
         os.kill(self.service_pid, signal.SIGHUP)
-        expected_msg = test_server.FAKE_START_MSG * workers * 2
+        expected_msg = (
+            test_server.FAKE_START_MSG * workers +
+            test_server.FAKE_RESET_MSG * (workers + 1))
         expected_size = len(expected_msg)
 
         utils.wait_until_true(
