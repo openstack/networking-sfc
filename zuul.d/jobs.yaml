@@ -6,7 +6,7 @@
 
 - job:
     name: networking-sfc-tempest
-    parent: neutron-tempest-plugin-sfc
+    parent: neutron-tempest-plugin-sfc-train
     files: ^.*$
     irrelevant-files:
       - ^(test-|)requirements.txt$
@@ -106,4 +106,4 @@
 - job:
     name: networking-sfc-tempest-periodic
     parent: networking-sfc-tempest
-    branches: master
+    branches: stable/train
