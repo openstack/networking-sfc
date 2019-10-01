@@ -23,10 +23,25 @@
 
 .. the main title comes from README.rst
 
-.. include:: ../../README.rst
+.. NOTE(amotoki): The content of this file is NOT rendered in the generated
+   PDF file. This is because toctree_only=False is specified in latex_documents
+   in doc/source/conf.py to get a better structure of the PDF doc.
+
+.. NOTE(amotoki): The following "include" and hidden "toctree" directives
+   are the magic to make both HTML and PDF versions of the document properly.
+   The latex builder recognizes the doc structure based on "toctree"
+   directive, while we would like to show the content of README file in
+   the top page of the HTML version.
+
+.. include:: readme.rst
+
+.. toctree::
+   :hidden:
+
+   readme
 
 Contents
-========
+--------
 
 .. toctree::
    :maxdepth: 2
@@ -40,7 +55,9 @@ Contents
 
    contributor/index
 
-.. rubric:: Indices and tables
+.. only:: html
 
-* :ref:`genindex`
-* :ref:`search`
+   .. rubric:: Indices and tables
+
+   * :ref:`genindex`
+   * :ref:`search`

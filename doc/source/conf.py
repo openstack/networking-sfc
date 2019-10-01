@@ -27,6 +27,7 @@ extensions = [
     'oslo_config.sphinxconfiggen',
     'oslo_policy.sphinxext',
     'oslo_policy.sphinxpolicygen',
+    'sphinxcontrib.rsvgconverter',
 ]
 
 # openstackdocstheme options
@@ -73,13 +74,22 @@ htmlhelp_basename = '%sdoc' % project
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass
-# [howto/manual]).
+# [howto/manual], torctree_only).
 latex_documents = [
     ('index',
-     '%s.tex' % project,
-     u'%s Documentation' % project,
-     u'OpenStack Foundation', 'manual'),
+     'doc-%s.tex' % project,
+     u'Networking SFC Documentation',
+     u'OpenStack Foundation', 'manual',
+     # Specify toctree_only=True for a better document structure of the
+     # generated PDF file. Note that this means the contents of the top
+     # page will be ignored.
+     True),
 ]
+
+latex_elements = {
+    'preamble': r'\setcounter{tocdepth}{2}',
+    'extraclassoptions': 'openany,oneside',
+}
 
 # -- Options for oslo_config.sphinxconfiggen ---------------------------------
 
