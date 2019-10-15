@@ -28,7 +28,7 @@ infrastructure.
 Proposed Changes
 ================
 The proposed extensions to the OVN northbound DB schema and API are described
-briefly here. Refer to openvwitch documentation for details. In addition the
+briefly here. Refer to openvswitch documentation for details. In addition the
 new OVN driver for networking-sfc will map from networking-sfc requests
 to Logical Port Chain resources in the OVN northbound DB via the networking-ovn
 driver.
