@@ -4970,7 +4970,7 @@ class OVSSfcDriverTestCase(
                 'egress': pc4port['port']['id']}
             ) as pc4pp:
                 # main reason for splitting this method in 2 is having
-                # more than 20 contexts, both in python2 and python3
+                # more than 20 contexts
                 self._test_agent_init_service_graphs_end(
                     lsport, pc1port, pc2port1, pc2port2, pc3port, pc4port,
                     pc1fc, pc2fc, pc3fc, pc4fc, pc1pp, pc2pp1, pc2pp2,
@@ -6554,7 +6554,7 @@ class OVSSfcDriverTestCase(
                 'egress': pc6port['port']['id']}
             ) as pc6pp:
                 # main reason for splitting this method in 2 is having
-                # more than 20 contexts, both in python2 and python3
+                # more than 20 contexts
                 self._test_service_graph_complex_end(
                     create, pc1fc, pc2fc, pc3fc, pc4fc, pc5fc, pc6fc,
                     pc1pp, pc2pp, pc3pp, pc4pp, pc5pp, pc6pp, correlation)
