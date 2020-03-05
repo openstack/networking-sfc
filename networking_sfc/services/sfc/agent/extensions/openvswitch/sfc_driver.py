@@ -523,11 +523,13 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                     match_inport=True)
 
     def _get_vlan_by_port(self, port_id):
-        try:
-            net_uuid = self.vlan_manager.get_net_uuid(port_id)
-            return self.vlan_manager.get(net_uuid).vlan
-        except (vlanmanager.VifIdNotFound, vlanmanager.MappingNotFound):
+        port_name = 'qvo' + port_id[0:11]
+        vlans = self.br_int.get_port_tag_dict()
+        if port_name in vlans:
+            return vlans[port_name]
+        else:
             return None
+
 
     def _setup_ingress_flow_rules(self, flowrule):
         vif_port = self.br_int.get_vif_port_by_id(flowrule['ingress'])
