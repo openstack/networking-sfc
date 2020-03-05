@@ -46,7 +46,10 @@ DEFAULT_CHAIN_PARAMETERS = {'correlation': DEFAULT_CHAIN_CORRELATION,
                             'symmetric': DEFAULT_CHAIN_SYMMETRY}
 
 # Default SF Parameters
-DEFAULT_SF_PARAMETERS = {'correlation': None, 'weight': 1}
+DEFAULT_SF_CORRELATION = None
+DEFAULT_SF_WEIGHT = 1
+DEFAULT_SF_PARAMETERS = {'correlation': DEFAULT_SF_CORRELATION,
+                         'weight': DEFAULT_SF_WEIGHT}
 
 # Default and Supported PPG Parameters
 DEFAULT_PPG_LB_FIELDS = []
@@ -220,7 +223,13 @@ def normalize_chain_parameters(parameters):
 
 
 def normalize_sf_parameters(parameters):
-    return parameters if parameters else DEFAULT_SF_PARAMETERS
+    if not parameters:
+        return DEFAULT_SF_PARAMETERS
+    if 'correlation' not in parameters:
+        parameters['correlation'] = DEFAULT_SF_CORRELATION
+    if 'weight' not in parameters:
+        parameters['weight'] = DEFAULT_SF_WEIGHT
+    return parameters
 
 
 def normalize_ppg_parameters(parameters):
