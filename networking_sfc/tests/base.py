@@ -13,8 +13,8 @@
 #    under the License.
 
 import contextlib
+from unittest import mock
 
-import mock
 from neutron.agent import securitygroups_rpc as sg_rpc
 from neutron.api import extensions as api_ext
 from neutron.api.rpc.agentnotifiers import dhcp_rpc_agent_api as dhcp_rpc_log

@@ -13,8 +13,7 @@
 #    under the License.
 
 import copy
-
-import mock
+from unittest import mock
 
 from networking_sfc.services.flowclassifier.common import context as fc_ctx
 from networking_sfc.services.flowclassifier.common import exceptions as fc_exc

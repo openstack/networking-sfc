@@ -13,8 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
+
 from eventlet import greenthread
-import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron.plugins.ml2.drivers import type_vxlan

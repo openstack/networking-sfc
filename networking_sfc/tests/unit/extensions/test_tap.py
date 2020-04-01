@@ -14,8 +14,8 @@
 #    under the License.
 
 import copy
+from unittest import mock
 
-import mock
 from networking_sfc.extensions import sfc as sfc_ext
 from networking_sfc.extensions import tap as tap_ext
 from networking_sfc.tests.unit.extensions import test_sfc as test_sfc_ext

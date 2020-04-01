@@ -14,8 +14,8 @@
 
 import contextlib
 import logging
+from unittest import mock
 
-import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
 import neutron.extensions as nextensions

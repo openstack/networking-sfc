@@ -13,8 +13,8 @@
 #    under the License.
 
 import copy
+from unittest import mock
 
-import mock
 from neutron.api.v2 import resource as api_res_log
 from neutron import manager
 from neutron.notifiers import nova as nova_log

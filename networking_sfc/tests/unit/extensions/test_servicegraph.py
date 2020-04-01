@@ -13,8 +13,7 @@
 #    under the License.
 
 import copy
-
-import mock
+from unittest import mock
 
 from neutron.api.v2 import resource as api_res_log
 from neutron import manager

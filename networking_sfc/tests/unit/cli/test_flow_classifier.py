@@ -15,8 +15,7 @@
 #
 
 import sys
-
-import mock
+from unittest import mock
 
 from neutronclient import shell
 from neutronclient.tests.unit import test_cli20

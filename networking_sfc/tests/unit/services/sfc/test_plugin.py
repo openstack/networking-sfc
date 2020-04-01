@@ -13,8 +13,7 @@
 #    under the License.
 
 import copy
-
-import mock
+from unittest import mock
 
 from networking_sfc.services.sfc.common import context as sfc_ctx
 from networking_sfc.services.sfc.common import exceptions as sfc_exc

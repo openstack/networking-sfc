@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
+from unittest import mock
 
 from neutron.plugins.ml2.drivers.openvswitch.agent import (
     ovs_agent_extension_api as ovs_ext_api)
