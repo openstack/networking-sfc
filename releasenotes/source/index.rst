@@ -6,6 +6,7 @@ Networking SFC Release Notes
    :maxdepth: 1
 
    unreleased
+   ussuri
    train
    stein
    rocky
