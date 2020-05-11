@@ -2,13 +2,13 @@
     check:
       jobs:
         - networking-sfc-functional
-        - networking-sfc-tempest
-        - networking-sfc-tempest-multinode:
+        - networking-sfc-tempest-ussuri
+        - networking-sfc-tempest-multinode-ussuri:
             voting: false
     gate:
       jobs:
         - networking-sfc-functional
-        - networking-sfc-tempest
+        - networking-sfc-tempest-ussuri
     periodic:
       jobs:
         - networking-sfc-tempest-periodic

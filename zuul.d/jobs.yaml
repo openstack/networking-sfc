@@ -5,16 +5,16 @@
         project_name: networking-sfc
 
 - job:
-    name: networking-sfc-tempest
-    parent: neutron-tempest-plugin-sfc
+    name: networking-sfc-tempest-ussuri
+    parent: neutron-tempest-plugin-sfc-ussuri
     files: ^.*$
     irrelevant-files:
       - ^(test-|)requirements.txt$
       - ^setup.cfg$
 
 - job:
-    name: networking-sfc-tempest-multinode
-    parent: networking-sfc-tempest
+    name: networking-sfc-tempest-multinode-ussuri
+    parent: networking-sfc-tempest-ussuri
     nodeset: openstack-two-node-bionic
     pre-run: playbooks/multinode-scenario-pre-run.yaml
     roles:
