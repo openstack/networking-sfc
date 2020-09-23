@@ -1,7 +1,7 @@
 - project:
     templates:
       - openstack-lower-constraints-jobs-neutron
-      - openstack-python3-victoria-jobs-neutron
+      - openstack-python3-wallaby-jobs-neutron
       - publish-openstack-docs-pti
       - check-requirements
       - release-notes-jobs-python3
