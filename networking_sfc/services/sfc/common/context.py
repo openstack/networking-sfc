@@ -13,7 +13,7 @@
 #    under the License.
 
 
-class SfcPluginContext(object):
+class SfcPluginContext():
     """SFC context base class."""
     def __init__(self, plugin, plugin_context):
         self._plugin = plugin

@@ -252,8 +252,7 @@ class SfcDbPlugin(
                 curr_pg_tap_enabled = pg['tap_enabled']
                 if prev_pg_tap_enabled and curr_pg_tap_enabled:
                     raise ext_tap.ConsecutiveTapPPGNotSupported()
-                else:
-                    prev_pg_tap_enabled = curr_pg_tap_enabled
+                prev_pg_tap_enabled = curr_pg_tap_enabled
             query = model_query.query_with_hooks(context, PortChain)
             for port_chain_db in query.all():
                 if port_chain_db['id'] == pc_id:
@@ -803,88 +802,88 @@ class SfcDbPlugin(
 
     def _validate_port_chains_for_graph(self, context,
                                         port_chains, graph_id=None):
-            # create a list of all port-chains that will be associated
-            all_port_chains = set()
-            for src_chain in port_chains:
-                all_port_chains.add(src_chain)
-                for dst_chain in port_chains[src_chain]:
-                    all_port_chains.add(dst_chain)
-            # check if any of the port-chains are already in a graph
-            if self._any_port_chains_in_a_graph(
-                    context, all_port_chains, graph_id):
-                raise ext_sg.ServiceGraphInvalidPortChains(
-                    port_chains=port_chains)
+        # create a list of all port-chains that will be associated
+        all_port_chains = set()
+        for src_chain in port_chains:
+            all_port_chains.add(src_chain)
+            for dst_chain in port_chains[src_chain]:
+                all_port_chains.add(dst_chain)
+        # check if any of the port-chains are already in a graph
+        if self._any_port_chains_in_a_graph(
+                context, all_port_chains, graph_id):
+            raise ext_sg.ServiceGraphInvalidPortChains(
+                port_chains=port_chains)
 
-            # dict whose keys are PCs and values are lists of dependency-PCs
-            # (PCs incoming to the point where the key is a outgoing)
-            parenthood = {}
-            encapsulation = None
-            fc_cls = fc_db.FlowClassifierDbPlugin
-            for src_chain in port_chains:
-                src_pc = self._get_port_chain(context, src_chain)
-                curr_corr = src_pc.chain_parameters['correlation']['value']
-                # guarantee that branching PPG supports correlation
-                assocs = src_pc.chain_group_associations
-                src_ppg = max(assocs, key=(lambda ppg: ppg.position))
-                ppg_id = src_ppg['portpairgroup_id']
+        # dict whose keys are PCs and values are lists of dependency-PCs
+        # (PCs incoming to the point where the key is a outgoing)
+        parenthood = {}
+        encapsulation = None
+        fc_cls = fc_db.FlowClassifierDbPlugin
+        for src_chain in port_chains:
+            src_pc = self._get_port_chain(context, src_chain)
+            curr_corr = src_pc.chain_parameters['correlation']['value']
+            # guarantee that branching PPG supports correlation
+            assocs = src_pc.chain_group_associations
+            src_ppg = max(assocs, key=(lambda ppg: ppg.position))
+            ppg_id = src_ppg['portpairgroup_id']
+            ppg = self._get_port_pair_group(context, ppg_id)
+            for pp in ppg.port_pairs:
+                sfparams = pp['service_function_parameters']
+                if sfparams['correlation']['value'] != curr_corr:
+                    raise ext_sg.ServiceGraphImpossibleBranching()
+
+            # verify encapsulation consistency across all PCs (part 1)
+            if not encapsulation:
+                encapsulation = curr_corr
+            elif encapsulation != curr_corr:
+                raise ext_sg.ServiceGraphInconsistentEncapsulation()
+            # list of all port chains at this branching point:
+            branching_point = []
+            # list of every flow classifier at this branching point:
+            fcs_for_src_chain = []
+            for dst_chain in port_chains[src_chain]:
+                # check if the current destination PC was already added
+                if dst_chain in branching_point:
+                    raise ext_sg.ServiceGraphPortChainInConflict(
+                        pc_id=dst_chain)
+                branching_point.append(dst_chain)
+                dst_pc = self._get_port_chain(context, dst_chain)
+                curr_corr = dst_pc.chain_parameters['correlation']['value']
+                # guarantee that destination PPG supports correlation
+                assocs = dst_pc.chain_group_associations
+                dst_ppg = min(assocs, key=(lambda ppg: ppg.position))
+                ppg_id = dst_ppg['portpairgroup_id']
                 ppg = self._get_port_pair_group(context, ppg_id)
                 for pp in ppg.port_pairs:
                     sfparams = pp['service_function_parameters']
                     if sfparams['correlation']['value'] != curr_corr:
                         raise ext_sg.ServiceGraphImpossibleBranching()
-
-                # verify encapsulation consistency across all PCs (part 1)
-                if not encapsulation:
-                    encapsulation = curr_corr
-                elif encapsulation != curr_corr:
+                # verify encapsulation consistency across all PCs (part 2)
+                if encapsulation != curr_corr:
                     raise ext_sg.ServiceGraphInconsistentEncapsulation()
-                # list of all port chains at this branching point:
-                branching_point = []
-                # list of every flow classifier at this branching point:
-                fcs_for_src_chain = []
-                for dst_chain in port_chains[src_chain]:
-                    # check if the current destination PC was already added
-                    if dst_chain in branching_point:
-                        raise ext_sg.ServiceGraphPortChainInConflict(
-                            pc_id=dst_chain)
-                    branching_point.append(dst_chain)
-                    dst_pc = self._get_port_chain(context, dst_chain)
-                    curr_corr = dst_pc.chain_parameters['correlation']['value']
-                    # guarantee that destination PPG supports correlation
-                    assocs = dst_pc.chain_group_associations
-                    dst_ppg = min(assocs, key=(lambda ppg: ppg.position))
-                    ppg_id = dst_ppg['portpairgroup_id']
-                    ppg = self._get_port_pair_group(context, ppg_id)
-                    for pp in ppg.port_pairs:
-                        sfparams = pp['service_function_parameters']
-                        if sfparams['correlation']['value'] != curr_corr:
-                            raise ext_sg.ServiceGraphImpossibleBranching()
-                    # verify encapsulation consistency across all PCs (part 2)
-                    if encapsulation != curr_corr:
-                        raise ext_sg.ServiceGraphInconsistentEncapsulation()
-                    dst_pc_dict = self._make_port_chain_dict(dst_pc)
-                    # acquire associated flow classifiers
-                    fcs = dst_pc_dict['flow_classifiers']
-                    for fc_id in fcs:
-                        fc = self._get_flow_classifier(context, fc_id)
-                        fcs_for_src_chain.append(fc)  # update list of every FC
-                    # update the parenthood dict
-                    if dst_chain in parenthood:
-                        parenthood[dst_chain].append(src_chain)
-                    else:
-                        parenthood[dst_chain] = [src_chain]
-                    # detect duplicate FCs, consequently branching ambiguity
-                    for i, fc1 in enumerate(fcs_for_src_chain):
-                        for fc2 in fcs_for_src_chain[i + 1:]:
-                            if(fc_cls.flowclassifier_basic_conflict(fc1, fc2)):
-                                raise ext_sg.\
-                                    ServiceGraphFlowClassifierInConflict(
-                                        fc1_id=fc1['id'], fc2_id=fc2['id'])
+                dst_pc_dict = self._make_port_chain_dict(dst_pc)
+                # acquire associated flow classifiers
+                fcs = dst_pc_dict['flow_classifiers']
+                for fc_id in fcs:
+                    fc = self._get_flow_classifier(context, fc_id)
+                    fcs_for_src_chain.append(fc)  # update list of every FC
+                # update the parenthood dict
+                if dst_chain in parenthood:
+                    parenthood[dst_chain].append(src_chain)
+                else:
+                    parenthood[dst_chain] = [src_chain]
+                # detect duplicate FCs, consequently branching ambiguity
+                for i, fc1 in enumerate(fcs_for_src_chain):
+                    for fc2 in fcs_for_src_chain[i + 1:]:
+                        if(fc_cls.flowclassifier_basic_conflict(fc1, fc2)):
+                            raise ext_sg.\
+                                ServiceGraphFlowClassifierInConflict(
+                                    fc1_id=fc1['id'], fc2_id=fc2['id'])
 
-            # check for circular paths within the graph via parenthood dict:
-            for port_chain in parenthood:
-                if self._is_there_a_loop(parenthood, port_chain, []):
-                    raise ext_sg.ServiceGraphLoopDetected()
+        # check for circular paths within the graph via parenthood dict:
+        for port_chain in parenthood:
+            if self._is_there_a_loop(parenthood, port_chain, []):
+                raise ext_sg.ServiceGraphLoopDetected()
 
     def _setup_graph_chain_associations(self, context, graph_db, port_chains):
         with db_api.CONTEXT_READER.using(context):

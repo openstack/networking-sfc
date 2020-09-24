@@ -108,10 +108,9 @@ class SfcDriverManager(NamedExtensionManager):
                 )
                 if raise_orig_exc:
                     raise
-                else:
-                    raise sfc_exc.SfcDriverError(
-                        method=method_name
-                    )
+                raise sfc_exc.SfcDriverError(
+                    method=method_name
+                )
 
     def create_port_chain_precommit(self, context):
         self._call_drivers("create_port_chain_precommit", context,

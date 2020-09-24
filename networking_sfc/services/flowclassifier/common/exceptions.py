@@ -25,7 +25,6 @@ class FlowClassifierDriverError(exceptions.NeutronException):
 
 class FlowClassifierException(exceptions.NeutronException):
     """Base for flow classifier driver exceptions returned to user."""
-    pass
 
 
 class FlowClassifierBadRequest(exceptions.BadRequest, FlowClassifierException):

@@ -13,7 +13,7 @@
 #    under the License.
 
 
-class FlowClassifierPluginContext(object):
+class FlowClassifierPluginContext():
     """Flow Classifier context base class."""
     def __init__(self, plugin, plugin_context):
         self._plugin = plugin

@@ -19,7 +19,7 @@ import six
 
 
 @six.add_metaclass(abc.ABCMeta)
-class SfcDriverBaseLegacy(object):
+class SfcDriverBaseLegacy():
     """SFC Driver Base Class for legacy interface."""
 
     @abc.abstractmethod

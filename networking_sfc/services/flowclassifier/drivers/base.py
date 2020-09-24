@@ -18,7 +18,7 @@ import six
 
 
 @six.add_metaclass(abc.ABCMeta)
-class FlowClassifierDriverBaseLegacy(object):
+class FlowClassifierDriverBaseLegacy():
     """Flow Classifier Driver Base Class for legacy driver interface"""
 
     @abc.abstractmethod
