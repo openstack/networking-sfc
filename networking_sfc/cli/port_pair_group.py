@@ -103,11 +103,10 @@ class PortPairGroupCreate(extension.ClientExtensionCreate, PortPairGroup):
                     ingress_n_tuple_dict = {}
                     egress_n_tuple_dict = {}
                     # Split input of ppg_n_tuple_mapping by & and =
-                    raw_data = dict([
-                        (content[0], content[1]) for content in
-                        [sub_field.split('=') for sub_field in
-                         [field for field in value.split('&') if field]]
-                    ])
+                    raw_data = {content[0]: content[1] for content in
+                                [sub_field.split('=') for sub_field in
+                                [field for field in value.split('&') if field]]
+                                }
                     # Store ingress_n_tuple values and egress_n_tuple values
                     # into corresponding dictionary, and expand
                     # source_port_range and destination_port_range to

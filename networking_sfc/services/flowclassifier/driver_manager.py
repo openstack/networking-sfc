@@ -111,10 +111,9 @@ class FlowClassifierDriverManager(NamedExtensionManager):
                 )
                 if raise_orig_exc:
                     raise
-                else:
-                    raise fc_exc.FlowClassifierDriverError(
-                        method=method_name
-                    )
+                raise fc_exc.FlowClassifierDriverError(
+                    method=method_name
+                )
 
     def create_flow_classifier_precommit(self, context):
         """Driver precommit before the db transaction committed."""

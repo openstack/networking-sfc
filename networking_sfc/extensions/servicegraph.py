@@ -117,6 +117,7 @@ def normalize_service_graph(port_chains):
                               'is invalid: %s.' % key)
     return port_chains
 
+
 RESOURCE_ATTRIBUTE_MAP = {
     SERVICE_GRAPHS: {
         'id': {
@@ -196,7 +197,7 @@ class Servicegraph(extensions.ExtensionDescriptor):
 
 
 @six.add_metaclass(ABCMeta)
-class ServiceGraphPluginBase(object):
+class ServiceGraphPluginBase():
 
     def get_plugin_type(self):
         return SG_EXT

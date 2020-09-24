@@ -29,7 +29,7 @@ from networking_sfc.services.sfc.drivers.ovs import rpc_topics as sfc_topics
 LOG = logging.getLogger(__name__)
 
 
-class SfcPluginApi(object):
+class SfcPluginApi():
     def __init__(self, topic, host):
         self.host = host
         self.target = oslo_messaging.Target(topic=topic, version='1.0')
@@ -49,7 +49,7 @@ class SfcPluginApi(object):
 
 
 @six.add_metaclass(abc.ABCMeta)
-class SfcAgentDriver(object):
+class SfcAgentDriver():
     """Defines stable abstract interface for SFC Agent Driver."""
 
     @abc.abstractmethod

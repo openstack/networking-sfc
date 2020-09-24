@@ -23,7 +23,7 @@ from networking_sfc.services.sfc.drivers.ovs import rpc_topics as sfc_topics
 LOG = logging.getLogger(__name__)
 
 
-class SfcRpcCallback(object):
+class SfcRpcCallback():
     """Sfc RPC server."""
 
     def __init__(self, driver):
@@ -48,7 +48,7 @@ class SfcRpcCallback(object):
                                                flowrule_dict['status'])
 
 
-class SfcAgentRpcClient(object):
+class SfcAgentRpcClient():
     """RPC client for ovs sfc agent."""
 
     def __init__(self, topic=sfc_topics.SFC_AGENT):

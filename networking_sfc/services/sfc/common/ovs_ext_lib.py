@@ -45,7 +45,7 @@ def get_port_mask(min_port, max_port):
     return masks
 
 
-class SfcOVSBridgeExt(object):
+class SfcOVSBridgeExt():
 
     def __init__(self, ovs_bridge):
         self.bridge = ovs_bridge
@@ -60,7 +60,7 @@ class SfcOVSBridgeExt(object):
 
     def do_action_groups(self, action, kwargs_list):
         group_strs = [_build_group_expr_str(kw, action) for kw in kwargs_list]
-        if action == 'add' or action == 'del':
+        if action in ('add', 'del'):
             cmd = '%s-groups' % action
         elif action == 'mod':
             cmd = '%s-group' % action

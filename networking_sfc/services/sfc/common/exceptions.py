@@ -25,7 +25,6 @@ class SfcDriverError(exceptions.NeutronException):
 
 class SfcException(exceptions.NeutronException):
     """Base for SFC driver exceptions returned to user."""
-    pass
 
 
 class SfcBadRequest(exceptions.BadRequest, SfcException):

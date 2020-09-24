@@ -124,7 +124,7 @@ class PathNode(model_base.BASEV2, model_base.HasId, model_base.HasProject):
         sa.ForeignKey('sfc_path_nodes.id', ondelete='SET NULL'))
 
 
-class OVSSfcDriverDB(object):
+class OVSSfcDriverDB():
     def initialize(self):
         self.admin_context = n_context.get_admin_context()
 

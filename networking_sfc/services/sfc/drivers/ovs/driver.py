@@ -1368,7 +1368,6 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             DBConnectionError: (pymysql.err.OperationalError)
                 (2014, 'Command Out of Sync'))
         """
-        pass
         # try:
         #     flowrule_status = dict(status=status)
         #     self.update_path_node(id, flowrule_status)
