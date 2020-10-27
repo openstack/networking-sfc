@@ -6,7 +6,7 @@
 
 - job:
     name: networking-sfc-tempest
-    parent: neutron-tempest-plugin-sfc
+    parent: neutron-tempest-plugin-sfc-victoria
     files: ^.*$
     irrelevant-files:
       - ^(test-|)requirements.txt$
