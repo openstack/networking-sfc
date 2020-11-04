@@ -22,7 +22,6 @@ from neutron_lib import rpc as n_rpc
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
-import six
 
 from networking_sfc.services.sfc.drivers.ovs import rpc_topics as sfc_topics
 
@@ -48,8 +47,7 @@ class SfcPluginApi():
             host=self.host, port_id=port_id)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class SfcAgentDriver():
+class SfcAgentDriver(metaclass=abc.ABCMeta):
     """Defines stable abstract interface for SFC Agent Driver."""
 
     @abc.abstractmethod

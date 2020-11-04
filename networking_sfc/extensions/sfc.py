@@ -15,8 +15,6 @@
 from abc import ABCMeta
 from abc import abstractmethod
 
-import six
-
 from neutron_lib.api import converters as lib_converters
 from neutron_lib.api import extensions
 from neutron_lib.api import validators as lib_validators
@@ -483,8 +481,7 @@ class Sfc(extensions.ExtensionDescriptor):
         return {}
 
 
-@six.add_metaclass(ABCMeta)
-class SfcPluginBase(service_base.ServicePluginBase):
+class SfcPluginBase(service_base.ServicePluginBase, metaclass=ABCMeta):
 
     def get_plugin_type(self):
         return SFC_EXT

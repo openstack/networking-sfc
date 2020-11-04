@@ -15,8 +15,6 @@
 from abc import ABCMeta
 from abc import abstractmethod
 
-import six
-
 from neutron_lib.api import converters as lib_converters
 from neutron_lib.api import extensions
 from neutron_lib.api import validators as lib_validators
@@ -196,8 +194,7 @@ class Servicegraph(extensions.ExtensionDescriptor):
         return {}
 
 
-@six.add_metaclass(ABCMeta)
-class ServiceGraphPluginBase():
+class ServiceGraphPluginBase(metaclass=ABCMeta):
 
     def get_plugin_type(self):
         return SG_EXT
