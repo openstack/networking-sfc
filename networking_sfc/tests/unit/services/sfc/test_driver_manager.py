@@ -12,7 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import Mock
+from unittest.mock import Mock
+
 from stevedore.extension import Extension
 
 from neutron.tests import base
