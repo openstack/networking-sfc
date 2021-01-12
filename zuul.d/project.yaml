@@ -1,6 +1,5 @@
 - project:
     templates:
-      - openstack-lower-constraints-jobs-neutron
       - openstack-python3-ussuri-jobs-neutron
       - publish-openstack-docs-pti
       - check-requirements
