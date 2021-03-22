@@ -15,8 +15,6 @@
 from abc import ABCMeta
 from abc import abstractmethod
 
-import six
-
 from neutron_lib.api import attributes as attr
 from neutron_lib.api import converters
 from neutron_lib.api import extensions
@@ -108,7 +106,7 @@ class FlowClassifierInvalidL7Parameter(neutron_exc.InvalidInput):
 def normalize_protocol(value):
     if value is None:
         return None
-    if isinstance(value, six.string_types):
+    if isinstance(value, str):
         if value.lower() in fc_supported_protocols:
             return value.lower()
     raise FlowClassifierInvalidProtocol(
@@ -118,7 +116,7 @@ def normalize_protocol(value):
 def normalize_ethertype(value):
     if value is None:
         return 'IPv4'
-    if isinstance(value, six.string_types):
+    if isinstance(value, str):
         for ether_type in fc_supported_ethertypes:
             if value.lower() == ether_type.lower():
                 return ether_type
@@ -286,8 +284,8 @@ class Flowclassifier(extensions.ExtensionDescriptor):
         return {}
 
 
-@six.add_metaclass(ABCMeta)
-class FlowClassifierPluginBase(service_base.ServicePluginBase):
+class FlowClassifierPluginBase(service_base.ServicePluginBase,
+                               metaclass=ABCMeta):
 
     def get_plugin_type(self):
         return FLOW_CLASSIFIER_EXT

@@ -15,11 +15,8 @@
 
 import abc
 
-import six
 
-
-@six.add_metaclass(abc.ABCMeta)
-class SfcDriverBaseLegacy():
+class SfcDriverBaseLegacy(metaclass=abc.ABCMeta):
     """SFC Driver Base Class for legacy interface."""
 
     @abc.abstractmethod
@@ -47,8 +44,7 @@ class SfcDriverBaseLegacy():
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class SfcDriverBase(SfcDriverBaseLegacy):
+class SfcDriverBase(SfcDriverBaseLegacy, metaclass=abc.ABCMeta):
     """SFC Driver Base Class."""
 
     def create_port_chain_precommit(self, context):
