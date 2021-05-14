@@ -170,7 +170,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 self.assertEqual(500, res.status_int)
                 res = self._list('port_chains')
                 self.assertIn('port_chains', res)
-                self.assertItemsEqual(
+                self.assertCountEqual(
                     res['port_chains'], [updated_port_chain])
 
     def test_update_port_chain_precommit_driver_manager_exception(self):
@@ -371,7 +371,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
             self.assertEqual(500, res.status_int)
             res = self._list('port_pair_groups')
             self.assertIn('port_pair_groups', res)
-            self.assertItemsEqual(
+            self.assertCountEqual(
                 res['port_pair_groups'], [updated_port_pair_group])
 
     def test_update_port_pair_group_precommit_driver_manager_exception(self):
@@ -623,7 +623,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                 self.assertEqual(500, res.status_int)
                 res = self._list('port_pairs')
                 self.assertIn('port_pairs', res)
-                self.assertItemsEqual(res['port_pairs'], [updated_port_pair])
+                self.assertCountEqual(res['port_pairs'], [updated_port_pair])
 
     def test_update_port_pair_precommit_driver_manager_exception(self):
         self.fake_driver_manager.update_port_pair_precommit = mock.Mock(
@@ -906,7 +906,7 @@ class SfcPluginTestCase(test_sfc_db.SfcDbPluginTestCase):
                     self.assertEqual(500, res.status_int)
                     res = self._list('service_graphs')
                     self.assertIn('service_graphs', res)
-                    self.assertItemsEqual(
+                    self.assertCountEqual(
                         res['service_graphs'], [updated_service_graph])
 
     def test_update_service_graph_precommit_driver_manager_exception(self):

@@ -210,7 +210,7 @@ class FlowClassifierPluginTestCase(
                      .assert_not_called())
                 res = self._list('flow_classifiers')
                 self.assertIn('flow_classifiers', res)
-                self.assertItemsEqual(
+                self.assertCountEqual(
                     res['flow_classifiers'], [updated_flow_classifier])
 
     def test_update_flow_classifier_precommit_driver_manager_exception(self):

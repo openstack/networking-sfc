@@ -48,7 +48,7 @@ class SfcDbPluginTestCaseBase(
         # Flow classifiers are stored in a list, only check items for them
         for k, v in expected.items():
             if type(v) is list:
-                self.assertItemsEqual(res_port_chain[k], v)
+                self.assertCountEqual(res_port_chain[k], v)
             else:
                 self.assertEqual(res_port_chain[k], v)
 
