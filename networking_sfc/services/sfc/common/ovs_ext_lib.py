@@ -13,8 +13,7 @@
 #    under the License.
 
 from neutron.agent.common import ovs_lib
-from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
-    as ovs_consts
+from neutron_lib import constants as n_consts
 from neutron_lib import exceptions
 from oslo_log import log as logging
 
@@ -52,7 +51,7 @@ class SfcOVSBridgeExt():
 
         # OpenFlow 1.3 is needed to manipulate groups
         # To support NSH feature, OpenFlow 1.3 is also needed
-        self.bridge.use_at_least_protocol(ovs_consts.OPENFLOW13)
+        self.bridge.use_at_least_protocol(n_consts.OPENFLOW13)
 
     # proxy most methods to self.bridge
     def __getattr__(self, name):
