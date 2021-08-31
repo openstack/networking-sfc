@@ -14,13 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from neutron.plugins.ml2.drivers.openvswitch.agent import vlanmanager
 from neutron_lib import constants as n_consts
 from oslo_config import cfg
 from oslo_log import log as logging
-
-from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
-    as ovs_consts
-from neutron.plugins.ml2.drivers.openvswitch.agent import vlanmanager
 
 from networking_sfc.services.sfc.agent.extensions import sfc
 from networking_sfc.services.sfc.common import ovs_ext_lib
@@ -352,14 +349,14 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 if add_flow:
                     if on_add:
                         self._match_by_header(match_info, nsp, nsi)
-                    self.br_int.add_flow(table=ovs_consts.LOCAL_SWITCHING,
+                    self.br_int.add_flow(table=n_consts.LOCAL_SWITCHING,
                                          priority=priority,
                                          actions=actions,
                                          **match_info)
                 else:
                     if on_add is False:
                         self._match_by_header(match_info, nsp, nsi)
-                    self.br_int.delete_flows(table=ovs_consts.LOCAL_SWITCHING,
+                    self.br_int.delete_flows(table=n_consts.LOCAL_SWITCHING,
                                              priority=priority,
                                              strict=True,
                                              **match_info)
