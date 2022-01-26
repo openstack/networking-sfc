@@ -653,7 +653,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         group_content = self.br_int.dump_group_for_id(group_id)
         buckets = ','.join(buckets)
         if flowrule['fwd_path']:
-            if group_content.find('group_id=%d' % group_id) == -1:
+            if group_content.find('group_id=%d,' % group_id) == -1:
                 self.br_int.add_group(group_id=group_id,
                                       type='select',
                                       buckets=buckets)
@@ -664,7 +664,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
         else:
             # set different id for rev_group
             rev_group_id = group_id + REVERSE_GROUP_NUMBER_OFFSET
-            if group_content.find('group_id=%d' % (rev_group_id)) == -1:
+            if group_content.find('group_id=%d,' % (rev_group_id)) == -1:
                 self.br_int.add_group(group_id=rev_group_id,
                                       type='select',
                                       buckets=buckets)
