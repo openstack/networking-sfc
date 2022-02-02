@@ -16,6 +16,7 @@
 
 from neutron.plugins.ml2.drivers.openvswitch.agent import vlanmanager
 from neutron_lib import constants as n_consts
+from neutron_lib.plugins.ml2 import ovs_constants as ovs_consts
 from oslo_config import cfg
 from oslo_log import log as logging
 
@@ -349,14 +350,14 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 if add_flow:
                     if on_add:
                         self._match_by_header(match_info, nsp, nsi)
-                    self.br_int.add_flow(table=n_consts.LOCAL_SWITCHING,
+                    self.br_int.add_flow(table=ovs_consts.LOCAL_SWITCHING,
                                          priority=priority,
                                          actions=actions,
                                          **match_info)
                 else:
                     if on_add is False:
                         self._match_by_header(match_info, nsp, nsi)
-                    self.br_int.delete_flows(table=n_consts.LOCAL_SWITCHING,
+                    self.br_int.delete_flows(table=ovs_consts.LOCAL_SWITCHING,
                                              priority=priority,
                                              strict=True,
                                              **match_info)

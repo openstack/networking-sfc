@@ -19,8 +19,8 @@ from neutron.plugins.ml2.drivers.openvswitch.agent import (
 from neutron.plugins.ml2.drivers.openvswitch.agent.openflow.native import (
     ovs_bridge)
 from neutron.tests import base
-from neutron_lib import constants as n_consts
 from neutron_lib import context
+from neutron_lib.plugins.ml2 import ovs_constants as ovs_consts
 
 from networking_sfc.services.sfc.agent.extensions import sfc
 
@@ -49,7 +49,7 @@ class SfcAgentExtensionTestCase(base.BaseTestCase):
         ).start()
 
         self.sfc_ext.initialize(
-            self.connection, n_consts.EXTENSION_DRIVER_TYPE)
+            self.connection, ovs_consts.EXTENSION_DRIVER_TYPE)
 
     def test_update_empty_flow_rules(self):
         self.sfc_ext.update_flow_rules(self.context, flowrule_entries={})

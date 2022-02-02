@@ -55,7 +55,7 @@ msgpack==0.6.0
 munch==2.2.0
 netaddr==0.7.18
 netifaces==0.10.6
-neutron-lib==2.11.0
+neutron-lib==2.19.0
 openstacksdk==0.31.2
 os-client-config==1.29.0
 os-ken==0.3.0
