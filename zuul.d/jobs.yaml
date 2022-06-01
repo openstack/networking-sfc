@@ -31,7 +31,6 @@
         neutron-segments: true
         neutron-trunk: true
         neutron-log: true
-        cinder: true
       devstack_local_conf:
         post-config:
           $NEUTRON_CONF:
@@ -78,10 +77,28 @@
               available_type_drivers: flat,geneve,vlan,gre,local,vxlan
     group-vars:
       subnode:
+        devstack_localrc:
+          Q_AGENT: openvswitch
+          Q_ML2_TENANT_NETWORK_TYPE: vxlan
+          Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
         devstack_services:
+          # Disable OVN services
+          br-ex-tcpdump: false
+          br-int-flows: false
+          ovn-controller: false
+          ovn-northd: false
+          ovs-vswitchd: false
+          ovsdb-server: false
+          q-ovn-metadata-agent: false
+          # Disable Cinder services
+          c-bak: false
+          c-vol: false
+          # Enable Neutron services that are not used by OVN
           q-agt: true
+          q-dhcp: true
           q-l3: true
           q-meta: true
+          q-metering: true
           neutron-qos: true
           neutron-trunk: true
           neutron-log: true

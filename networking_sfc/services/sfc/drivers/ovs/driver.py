@@ -62,7 +62,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         if not agent_host:
             return
 
-        agent = l2pop_db.get_agent_by_host(context, agent_host)
+        agent = l2pop_db.get_agent_by_host(context._plugin_context, agent_host)
         if not agent:
             return
 
