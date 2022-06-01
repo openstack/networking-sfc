@@ -18,6 +18,7 @@ import neutron.plugins.ml2.drivers.l2pop.db as l2pop_db
 import neutron.plugins.ml2.drivers.l2pop.rpc as l2pop_rpc
 from neutron_lib import constants as const
 from neutron_lib import context as n_context
+from neutron_lib.db import api as db_api
 from neutron_lib.db import model_query
 from neutron_lib.plugins import directory
 from neutron_lib import rpc as n_rpc
@@ -206,13 +207,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     @log_helpers.log_method_call
     def _get_portgroup_members(self, context, pg_id, fwd_path):
         next_group_members = []
-        ppg_obj = context._plugin._get_port_pair_group(context._plugin_context,
-                                                       pg_id)
-        group_intid = ppg_obj['group_id']
-        tap_enabled = ppg_obj['tap_enabled']
-        LOG.debug('group_intid: %s', group_intid)
         pg = context._plugin.get_port_pair_group(context._plugin_context,
                                                  pg_id)
+        group_intid = pg['group_id']
+        tap_enabled = pg['tap_enabled']
+        LOG.debug('group_intid: %s', group_intid)
         for pp_id in pg['port_pairs']:
             pp = context._plugin.get_port_pair(context._plugin_context, pp_id)
             filters = {}
@@ -713,9 +712,10 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             router_ints = const.ROUTER_INTERFACE_OWNERS
             logical_source_port = new_fc['logical_source_port']
             if logical_source_port is not None:
-                port_src = model_query.get_by_id(
-                    self.admin_context, models_v2.Port, logical_source_port
-                )
+                with db_api.CONTEXT_READER.using(self.admin_context):
+                    port_src = model_query.get_by_id(
+                        self.admin_context, models_v2.Port, logical_source_port
+                    )
                 if (
                     new_fc['source_ip_prefix'] is None and
                     port_src['device_owner'] not in router_ints
@@ -727,10 +727,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
 
             logical_destination_port = new_fc['logical_destination_port']
             if logical_destination_port is not None:
-                port_dst = model_query.get_by_id(
-                    self.admin_context, models_v2.Port,
-                    logical_destination_port
-                )
+                with db_api.CONTEXT_READER.using(self.admin_context):
+                    port_dst = model_query.get_by_id(
+                        self.admin_context, models_v2.Port,
+                        logical_destination_port
+                    )
                 if (
                     new_fc['destination_ip_prefix'] is None and
                     port_dst['device_owner'] not in router_ints
@@ -949,14 +950,16 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         # Update the path_nodes and flows for each port chain that
         # contains this port_pair_group
         # Note: _get_port_pair_group is temporarily used here.
-        ppg_obj = context._plugin._get_port_pair_group(context._plugin_context,
-                                                       current['id'])
-        port_chains = [assoc.portchain_id for assoc in
-                       ppg_obj.chain_group_associations]
+        p_context = context._plugin_context
+        with db_api.CONTEXT_READER.using(p_context):
+            ppg_obj = context._plugin._get_port_pair_group(p_context,
+                                                           current['id'])
+            port_chains = [assoc.portchain_id for assoc in
+                           ppg_obj.chain_group_associations]
 
         for chain_id in port_chains:
             pc = context._plugin.get_port_chain(
-                context._plugin_context, chain_id)
+                p_context, chain_id)
             pc_corr = pc['chain_parameters']['correlation']
             group_intid = current['group_id']
             # Get the previous node
@@ -1265,7 +1268,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         sfc_plugin = directory.get_plugin(sfc.SFC_EXT)
         if node['node_type'] == ovs_const.SRC_NODE:
             # check if port_chain is a dst_chain in a graph
-            branches = sfc_plugin._get_branches(
+            branches = sfc_plugin.get_branches(
                 context, filters={'dst_chain': [port_chain['id']]})
             if branches:
                 matches = set()
@@ -1303,7 +1306,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
               node['next_hop'] is None and
               node['next_group_id'] is None):
             # check if port_chain is a src_chain in a graph
-            branches = sfc_plugin._get_branches(
+            branches = sfc_plugin.get_branches(
                 context, filters={'src_chain': [port_chain['id']]})
             if branches:
                 flow_rule = self._build_bare_flow_rule(

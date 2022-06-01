@@ -292,6 +292,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase):
         return db_utils.resource_fields(res, fields)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_flow_classifiers(self, context, filters=None, fields=None,
                              sorts=None, limit=None, marker=None,
                              page_reverse=False):
@@ -307,6 +308,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase):
             page_reverse=page_reverse)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_flow_classifier(self, context, id, fields=None):
         flow_classifier = self._get_flow_classifier(context, id)
         return self._make_flow_classifier_dict(flow_classifier, fields)

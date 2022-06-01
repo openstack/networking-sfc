@@ -244,109 +244,109 @@ class SfcDbPlugin(
         }
         return db_utils.resource_fields(res, fields)
 
+    @db_api.CONTEXT_READER
     def _validate_port_pair_groups(self, context, pg_ids, pc_id=None):
-        with db_api.CONTEXT_READER.using(context):
-            prev_pg_tap_enabled = False
-            for pg_id in pg_ids:
-                pg = self._get_port_pair_group(context, pg_id)
-                curr_pg_tap_enabled = pg['tap_enabled']
-                if prev_pg_tap_enabled and curr_pg_tap_enabled:
-                    raise ext_tap.ConsecutiveTapPPGNotSupported()
-                prev_pg_tap_enabled = curr_pg_tap_enabled
-            query = model_query.query_with_hooks(context, PortChain)
-            for port_chain_db in query.all():
-                if port_chain_db['id'] == pc_id:
-                    continue
-                pc_pg_ids = [
-                    assoc['portpairgroup_id']
-                    for assoc in port_chain_db.chain_group_associations
-                ]
-                if pc_pg_ids and pg_ids and pc_pg_ids == pg_ids:
-                    raise ext_sfc.InvalidPortPairGroups(
-                        port_pair_groups=pg_ids, port_chain=port_chain_db.id)
+        prev_pg_tap_enabled = False
+        for pg_id in pg_ids:
+            pg = self._get_port_pair_group(context, pg_id)
+            curr_pg_tap_enabled = pg['tap_enabled']
+            if prev_pg_tap_enabled and curr_pg_tap_enabled:
+                raise ext_tap.ConsecutiveTapPPGNotSupported()
+            prev_pg_tap_enabled = curr_pg_tap_enabled
+        query = model_query.query_with_hooks(context, PortChain)
+        for port_chain_db in query.all():
+            if port_chain_db['id'] == pc_id:
+                continue
+            pc_pg_ids = [
+                assoc['portpairgroup_id']
+                for assoc in port_chain_db.chain_group_associations
+            ]
+            if pc_pg_ids and pg_ids and pc_pg_ids == pg_ids:
+                raise ext_sfc.InvalidPortPairGroups(
+                    port_pair_groups=pg_ids, port_chain=port_chain_db.id)
 
+    @db_api.CONTEXT_READER
     def _validate_correlation_consistency(self, context, ppg_ids, pc_corr):
         # format like in ServiceFunctionParam.value to aid comparison later:
         pc_corr = jsonutils.dumps(pc_corr)
-        with db_api.CONTEXT_READER.using(context):
-            for ppg_id in ppg_ids:
-                ppg = self._get_port_pair_group(context, ppg_id)
-                for pp in ppg['port_pairs']:
-                    pp_corr = pp['service_function_parameters']['correlation']
-                    if pp_corr.value != 'null' and pp_corr.value != pc_corr:
-                        raise ext_sfc.PortChainInconsistentCorrelations(
-                            ppg=ppg_id)
+        for ppg_id in ppg_ids:
+            ppg = self._get_port_pair_group(context, ppg_id)
+            for pp in ppg['port_pairs']:
+                pp_corr = pp['service_function_parameters']['correlation']
+                if pp_corr.value != 'null' and pp_corr.value != pc_corr:
+                    raise ext_sfc.PortChainInconsistentCorrelations(
+                        ppg=ppg_id)
 
+    @db_api.CONTEXT_READER
     def _validate_flow_classifiers(self, context, fc_ids, pc_id=None):
-        with db_api.CONTEXT_READER.using(context):
-            fcs = [
-                self._get_flow_classifier(context, fc_id)
-                for fc_id in fc_ids
+        fcs = [
+            self._get_flow_classifier(context, fc_id)
+            for fc_id in fc_ids
+        ]
+        for fc in fcs:
+            fc_assoc = fc.chain_classifier_association
+            if fc_assoc and fc_assoc['portchain_id'] != pc_id:
+                raise ext_fc.FlowClassifierInUse(id=fc.id)
+
+        query = model_query.query_with_hooks(context, PortChain)
+        for port_chain_db in query.all():
+            if port_chain_db['id'] == pc_id:
+                continue
+            pc_fc_ids = [
+                assoc['flowclassifier_id']
+                for assoc in port_chain_db.chain_classifier_associations
             ]
-            for fc in fcs:
-                fc_assoc = fc.chain_classifier_association
-                if fc_assoc and fc_assoc['portchain_id'] != pc_id:
-                    raise ext_fc.FlowClassifierInUse(id=fc.id)
+            pc_fcs = [
+                self._get_flow_classifier(context, pc_fc_id)
+                for pc_fc_id in pc_fc_ids
+            ]
+            for pc_fc in pc_fcs:
+                for fc in fcs:
+                    fc_cls = fc_db.FlowClassifierDbPlugin
+                    if fc_cls.flowclassifier_basic_conflict(
+                        pc_fc, fc
+                    ):
+                        raise ext_sfc.PortChainFlowClassifierInConflict(
+                            fc_id=fc['id'], pc_id=port_chain_db['id'],
+                            pc_fc_id=pc_fc['id']
+                        )
 
-            query = model_query.query_with_hooks(context, PortChain)
-            for port_chain_db in query.all():
-                if port_chain_db['id'] == pc_id:
-                    continue
-                pc_fc_ids = [
-                    assoc['flowclassifier_id']
-                    for assoc in port_chain_db.chain_classifier_associations
-                ]
-                pc_fcs = [
-                    self._get_flow_classifier(context, pc_fc_id)
-                    for pc_fc_id in pc_fc_ids
-                ]
-                for pc_fc in pc_fcs:
-                    for fc in fcs:
-                        fc_cls = fc_db.FlowClassifierDbPlugin
-                        if fc_cls.flowclassifier_basic_conflict(
-                            pc_fc, fc
-                        ):
-                            raise ext_sfc.PortChainFlowClassifierInConflict(
-                                fc_id=fc['id'], pc_id=port_chain_db['id'],
-                                pc_fc_id=pc_fc['id']
-                            )
-
+    @db_api.CONTEXT_READER
     def _setup_chain_group_associations(
         self, context, port_chain, pg_ids
     ):
-        with db_api.CONTEXT_READER.using(context):
-            chain_group_associations = []
-            for pg_id in pg_ids:
-                query = model_query.query_with_hooks(context, ChainGroupAssoc)
-                chain_group_association = query.filter_by(
-                    portchain_id=port_chain.id, portpairgroup_id=pg_id
-                ).first()
-                if not chain_group_association:
-                    chain_group_association = ChainGroupAssoc(
-                        portpairgroup_id=pg_id
-                    )
-                chain_group_associations.append(chain_group_association)
-            port_chain.chain_group_associations = chain_group_associations
+        chain_group_associations = []
+        for pg_id in pg_ids:
+            query = model_query.query_with_hooks(context, ChainGroupAssoc)
+            chain_group_association = query.filter_by(
+                portchain_id=port_chain.id, portpairgroup_id=pg_id
+            ).first()
+            if not chain_group_association:
+                chain_group_association = ChainGroupAssoc(
+                    portpairgroup_id=pg_id
+                )
+            chain_group_associations.append(chain_group_association)
+        port_chain.chain_group_associations = chain_group_associations
 
+    @db_api.CONTEXT_READER
     def _setup_chain_classifier_associations(
         self, context, port_chain, fc_ids
     ):
-        with db_api.CONTEXT_READER.using(context):
-            chain_classifier_associations = []
-            for fc_id in fc_ids:
-                query = model_query.query_with_hooks(
-                    context, ChainClassifierAssoc)
-                chain_classifier_association = query.filter_by(
-                    portchain_id=port_chain.id, flowclassifier_id=fc_id
-                ).first()
-                if not chain_classifier_association:
-                    chain_classifier_association = ChainClassifierAssoc(
-                        flowclassifier_id=fc_id
-                    )
-                chain_classifier_associations.append(
-                    chain_classifier_association)
-            port_chain.chain_classifier_associations = (
-                chain_classifier_associations)
+        chain_classifier_associations = []
+        for fc_id in fc_ids:
+            query = model_query.query_with_hooks(
+                context, ChainClassifierAssoc)
+            chain_classifier_association = query.filter_by(
+                portchain_id=port_chain.id, flowclassifier_id=fc_id
+            ).first()
+            if not chain_classifier_association:
+                chain_classifier_association = ChainClassifierAssoc(
+                    flowclassifier_id=fc_id
+                )
+            chain_classifier_associations.append(
+                chain_classifier_association)
+        port_chain.chain_classifier_associations = (
+            chain_classifier_associations)
 
     @log_helpers.log_method_call
     def create_port_chain(self, context, port_chain):
@@ -399,6 +399,7 @@ class SfcDbPlugin(
             return self._make_port_chain_dict(port_chain_db)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_port_chains(self, context, filters=None, fields=None,
                         sorts=None, limit=None,
                         marker=None, page_reverse=False, default_sg=False):
@@ -412,11 +413,13 @@ class SfcDbPlugin(
             limit=limit, marker_obj=marker_obj,
             page_reverse=page_reverse)
 
+    @db_api.CONTEXT_READER
     def get_port_chains_count(self, context, filters=None):
         return model_query.get_collection_count(
             context, PortChain, filters=filters)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_port_chain(self, context, id, fields=None):
         portchain = self._get_port_chain(context, id)
         return self._make_port_chain_dict(portchain, fields)
@@ -535,6 +538,7 @@ class SfcDbPlugin(
             return self._make_port_pair_dict(port_pair_db)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_port_pairs(self, context, filters=None, fields=None,
                        sorts=None, limit=None, marker=None,
                        page_reverse=False):
@@ -548,11 +552,13 @@ class SfcDbPlugin(
             limit=limit, marker_obj=marker_obj,
             page_reverse=page_reverse)
 
+    @db_api.CONTEXT_READER
     def get_port_pairs_count(self, context, filters=None):
         return model_query.get_collection_count(
             context, PortPair, filters=filters)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_port_pair(self, context, id, fields=None):
         port_pair = self._get_port_pair(context, id)
         return self._make_port_pair_dict(port_pair, fields)
@@ -670,6 +676,7 @@ class SfcDbPlugin(
             return self._make_port_pair_group_dict(port_pair_group_db)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_port_pair_groups(self, context, filters=None, fields=None,
                              sorts=None, limit=None, marker=None,
                              page_reverse=False):
@@ -683,11 +690,13 @@ class SfcDbPlugin(
             limit=limit, marker_obj=marker_obj,
             page_reverse=page_reverse)
 
+    @db_api.CONTEXT_READER
     def get_port_pair_groups_count(self, context, filters=None):
         return model_query.get_collection_count(
             context, PortPairGroup, filters=filters)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_port_pair_group(self, context, id, fields=None):
         port_pair_group = self._get_port_pair_group(context, id)
         return self._make_port_pair_group_dict(port_pair_group, fields)
@@ -698,6 +707,7 @@ class SfcDbPlugin(
         except exc.NoResultFound:
             raise ext_sfc.PortPairGroupNotFound(id=id)
 
+    @db_api.CONTEXT_READER
     def _get_flow_classifier(self, context, id):
         try:
             return model_query.get_by_id(context, fc_db.FlowClassifier, id)
@@ -903,7 +913,8 @@ class SfcDbPlugin(
                     graph_chain_associations.append(graph_chain_association)
             graph_db.graph_chain_associations = graph_chain_associations
 
-    def _get_branches(self, context, filters):
+    @db_api.CONTEXT_READER
+    def get_branches(self, context, filters):
         return model_query.get_collection(
             context, GraphChainAssoc,
             self._make_graph_chain_assoc_dict,
@@ -927,6 +938,7 @@ class SfcDbPlugin(
             return self._make_service_graph_dict(graph_db)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_service_graphs(self, context, filters=None,
                            fields=None, sorts=None, limit=None,
                            marker=None, page_reverse=False):
@@ -942,6 +954,7 @@ class SfcDbPlugin(
             page_reverse=page_reverse)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_service_graph(self, context, id, fields=None):
         """Get a Service Graph."""
         service_graph = self._get_service_graph(context, id)
