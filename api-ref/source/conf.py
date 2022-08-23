@@ -60,8 +60,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Networking SFC API Reference'
-copyright = u'2010-present, OpenStack Foundation'
+project = 'Networking SFC API Reference'
+copyright = '2010-present, OpenStack Foundation'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -200,8 +200,8 @@ htmlhelp_basename = 'networkingsfcdoc'
 # [howto/manual]).
 latex_documents = [
     ('index', 'NetworkingSfc.tex',
-     u'OpenStack Networking SFC API Documentation',
-     u'OpenStack Foundation', 'manual'),
+     'OpenStack Networking SFC API Documentation',
+     'OpenStack Foundation', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

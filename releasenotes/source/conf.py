@@ -64,8 +64,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Networking SFC Release Notes'
-copyright = u'2016, Networking SFC Developers'
+project = 'Networking SFC Release Notes'
+copyright = '2016, Networking SFC Developers'
 
 # Release notes are version independent.
 # The short X.Y version.
@@ -211,8 +211,8 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     ('index', 'NetworkingSFCReleaseNotes.tex',
-     u'Networking SFC Release Notes Documentation',
-     u'Networking SFC Developers', 'manual'),
+     'Networking SFC Release Notes Documentation',
+     'Networking SFC Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -242,8 +242,8 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'NetworkingSFCReleaseNotes',
-     u'Networking SFC Release Notes Documentation',
-     [u'Networking SFC Developers'], 1)
+     'Networking SFC Release Notes Documentation',
+     ['Networking SFC Developers'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -257,8 +257,8 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     ('index', 'NetworkingSFCReleaseNotes',
-     u'Networking SFC Release Notes Documentation',
-     u'Networking SFC Developers', 'NetworkingSFCReleaseNotes',
+     'Networking SFC Release Notes Documentation',
+     'Networking SFC Developers', 'NetworkingSFCReleaseNotes',
      'Networking SFC project.',
      'Miscellaneous'),
 ]

@@ -48,8 +48,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'networking-sfc'
-copyright = u'2013, OpenStack Foundation'
+project = 'networking-sfc'
+copyright = '2013, OpenStack Foundation'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
@@ -79,8 +79,8 @@ htmlhelp_basename = '%sdoc' % project
 latex_documents = [
     ('index',
      'doc-%s.tex' % project,
-     u'Networking SFC Documentation',
-     u'OpenStack Foundation', 'manual',
+     'Networking SFC Documentation',
+     'OpenStack Foundation', 'manual',
      # Specify toctree_only=True for a better document structure of the
      # generated PDF file. Note that this means the contents of the top
      # page will be ignored.
