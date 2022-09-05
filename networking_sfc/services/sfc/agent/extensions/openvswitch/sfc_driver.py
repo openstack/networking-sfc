@@ -522,8 +522,9 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
 
     def _get_vlan_by_port(self, port_id):
         try:
-            net_uuid = self.vlan_manager.get_net_uuid(port_id)
-            return self.vlan_manager.get(net_uuid).vlan
+            net_uuid, seg_id = self.vlan_manager.get_net_and_segmentation_id(
+                port_id)
+            return self.vlan_manager.get(net_uuid, seg_id).vlan
         except (vlanmanager.VifIdNotFound, vlanmanager.MappingNotFound):
             return None
 
