@@ -116,3 +116,11 @@
     name: networking-sfc-tempest-periodic
     parent: networking-sfc-tempest
     branches: master
+
+- job:
+    name: openstack-tox-py310-with-sqlalchemy-master-sfc
+    parent: openstack-tox-py310-with-oslo-master
+    required-projects:
+      - name: github.com/sqlalchemy/sqlalchemy
+        override-checkout: main
+
