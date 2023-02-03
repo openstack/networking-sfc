@@ -27,11 +27,13 @@ from oslo_config import cfg
 from neutron.api import extensions as neutron_ext
 from neutron.api.v2 import resource_helper
 from neutron.common import config as common_config
+from neutron.conf import service as service_config
 
 from networking_sfc._i18n import _
 from networking_sfc import extensions as sfc_extensions
 
 common_config.register_common_config_options()
+service_config.register_service_opts(service_config.SERVICE_OPTS, cfg.CONF)
 cfg.CONF.import_opt('api_extensions_path', 'neutron.common.config')
 neutron_ext.append_api_extensions_path(sfc_extensions.__path__)
 FLOW_CLASSIFIER_EXT = "flow_classifier"
