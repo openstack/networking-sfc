@@ -14,7 +14,13 @@
         - networking-sfc-tempest-periodic
     periodic-weekly:
       jobs:
-        - openstack-tox-py39:
+        - openstack-tox-py310:
+            required-projects:
+              - openstack/neutron
+        - openstack-tox-py310-with-oslo-master:
+            required-projects:
+              - openstack/neutron
+        - openstack-tox-py310-with-sqlalchemy-master-sfc:
             required-projects:
               - openstack/neutron
         - networking-sfc-functional
