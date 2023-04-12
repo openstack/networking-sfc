@@ -10,9 +10,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+from neutron_lib import policy as base
 from oslo_policy import policy
-
-from networking_sfc.policies import base
 
 
 rules = [
