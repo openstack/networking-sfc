@@ -35,17 +35,17 @@ OpenStack distribution:
 If you use ``pip``, follow these steps to install networking-sfc:
 
 * `identify the version of the networking-sfc package
-  <https://opendev.org/openstack/releases/raw/branch/master/deliverables/_independent/networking-sfc.yaml>`_
+  <https://opendev.org/openstack/releases/src/branch/master/deliverables>`_
   that matches your OpenStack version:
 
-  * Ocata: latest 4.0.x version
-  * Newton: latest 3.0.x version
-  * Mitaka: latest 2.0.x version
+  * 2023.1 Antelope: latest 16.0.x version
+  * Zed: latest 15.0.x version
+  * Yoga: latest 14.0.x version
 
 * indicate pip to (a) install precisely this version and (b) take into
   account OpenStack upper constraints on package versions for dependencies
-  (example for Ocata):
+  (example for Antelope):
 
   .. code-block:: console
 
-     pip install -c https://opendev.org/openstack/requirements/raw/branch/master/upper-constraints.txt?h=stable/ocata networking-sfc==4.0.0
+     pip install -c https://opendev.org/openstack/requirements/raw/branch/stable/2023.1/upper-constraints.txt networking-sfc==16.0.0
