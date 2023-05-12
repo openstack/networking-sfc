@@ -130,5 +130,6 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
     @contextlib.contextmanager
     def port(self, fmt=None, **kwargs):
         net_id = self._network['network']['id']
-        port = self._make_port(fmt or self.fmt, net_id, **kwargs)
+        port = self._make_port(fmt or self.fmt, net_id, as_admin=True,
+                               **kwargs)
         yield port
