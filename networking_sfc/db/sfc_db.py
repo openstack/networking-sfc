@@ -563,6 +563,7 @@ class SfcDbPlugin(
         port_pair = self._get_port_pair(context, id)
         return self._make_port_pair_dict(port_pair, fields)
 
+    @db_api.CONTEXT_READER
     def _get_port_pair(self, context, id):
         try:
             return model_query.get_by_id(context, PortPair, id)
@@ -810,6 +811,7 @@ class SfcDbPlugin(
                     return True
         return False
 
+    @db_api.CONTEXT_READER
     def _validate_port_chains_for_graph(self, context,
                                         port_chains, graph_id=None):
         # create a list of all port-chains that will be associated
