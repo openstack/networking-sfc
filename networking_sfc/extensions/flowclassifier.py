@@ -139,8 +139,8 @@ def normalize_port_value(port):
         return None
     try:
         val = int(port)
-    except (ValueError, TypeError):
-        raise FlowClassifierInvalidPortValue(port=port)
+    except (ValueError, TypeError) as exc:
+        raise FlowClassifierInvalidPortValue(port=port) from exc
 
     if 0 <= val <= 65535:
         return val
@@ -159,7 +159,8 @@ def normalize_l7parameters(parameters):
         attr.populate_project_info(SUPPORTED_L7_PARAMETERS)
         _l7_param_attrs.convert_values(parameters)
     except ValueError as error:
-        raise FlowClassifierInvalidL7Parameter(error_message=str(error))
+        raise FlowClassifierInvalidL7Parameter(
+            error_message=str(error)) from error
     return parameters
 
 
@@ -266,9 +267,11 @@ class Flowclassifier(extensions.ExtensionDescriptor):
     def get_updated(cls):
         return "2015-10-05T10:00:00-00:00"
 
-    def update_attributes_map(self, attributes):
-        super(Flowclassifier, self).update_attributes_map(
-            attributes, extension_attrs_map=RESOURCE_ATTRIBUTE_MAP)
+    @classmethod
+    def update_attributes_map(cls, extended_attributes,
+                              extension_attrs_map=None):
+        super().update_attributes_map(
+            extended_attributes, extension_attrs_map=RESOURCE_ATTRIBUTE_MAP)
 
     @classmethod
     def get_resources(cls):

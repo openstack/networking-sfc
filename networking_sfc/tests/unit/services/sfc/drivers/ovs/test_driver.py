@@ -4805,7 +4805,7 @@ class OVSSfcDriverTestCase(
                     self.assertEqual(flow_rules[key]['node_type'], 'sf_node')
                     self.assertIsNone(flow_rules[key]['next_group_id'])
                     self.assertIsNone(flow_rules[key]['next_hop'])
-                    self.assertFalse('branch_info' in flow_rules[key])
+                    self.assertNotIn('branch_info', flow_rules[key])
                     self.assertTrue(flow_rules[key]['branch_point'])
                     # verify pc2's matching flow rule (src_node):
                     key = self.build_ingress_egress(
@@ -4815,11 +4815,11 @@ class OVSSfcDriverTestCase(
                     self.assertEqual(flow_rules[key]['node_type'], 'src_node')
                     self.assertIsNotNone(flow_rules[key]['next_group_id'])
                     self.assertIsNotNone(flow_rules[key]['next_hop'])
-                    self.assertTrue('branch_info' in flow_rules[key])
+                    self.assertIn('branch_info', flow_rules[key])
                     branch_matches = flow_rules[key]['branch_info']['matches']
                     self.assertEqual(len(branch_matches), 1)
-                    self.assertTrue((1, 254,) in branch_matches)
-                    self.assertFalse('branch_point' in flow_rules[key])
+                    self.assertIn((1, 254,), branch_matches)
+                    self.assertNotIn('branch_point', flow_rules[key])
                     # verify pc2's branching flow rule (last sf_node):
                     key = self.build_ingress_egress_from_pp(
                         pc2['port_chain']['id'], pc2pp2['port_pair'])
@@ -4828,7 +4828,7 @@ class OVSSfcDriverTestCase(
                     self.assertEqual(flow_rules[key]['node_type'], 'sf_node')
                     self.assertIsNone(flow_rules[key]['next_group_id'])
                     self.assertIsNone(flow_rules[key]['next_hop'])
-                    self.assertFalse('branch_info' in flow_rules[key])
+                    self.assertNotIn('branch_info', flow_rules[key])
                     self.assertTrue(flow_rules[key]['branch_point'])
                     # verify pc3's matching flow rule (src_node):
                     key = self.build_ingress_egress(
@@ -4838,11 +4838,11 @@ class OVSSfcDriverTestCase(
                     self.assertEqual(flow_rules[key]['node_type'], 'src_node')
                     self.assertIsNotNone(flow_rules[key]['next_group_id'])
                     self.assertIsNotNone(flow_rules[key]['next_hop'])
-                    self.assertTrue('branch_info' in flow_rules[key])
+                    self.assertIn('branch_info', flow_rules[key])
                     branch_matches = flow_rules[key]['branch_info']['matches']
                     self.assertEqual(len(branch_matches), 1)
-                    self.assertTrue((1, 254,) in branch_matches)
-                    self.assertFalse('branch_point' in flow_rules[key])
+                    self.assertIn((1, 254,), branch_matches)
+                    self.assertNotIn('branch_point', flow_rules[key])
                     # verify pc3's branching flow rule (last sf_node):
                     key = self.build_ingress_egress_from_pp(
                         pc3['port_chain']['id'], pc3pp['port_pair'])
@@ -4851,7 +4851,7 @@ class OVSSfcDriverTestCase(
                     self.assertEqual(flow_rules[key]['node_type'], 'sf_node')
                     self.assertIsNone(flow_rules[key]['next_group_id'])
                     self.assertIsNone(flow_rules[key]['next_hop'])
-                    self.assertFalse('branch_info' in flow_rules[key])
+                    self.assertNotIn('branch_info', flow_rules[key])
                     self.assertTrue(flow_rules[key]['branch_point'])
                     # verify pc4's matching flow rule (last sf_node):
                     key = self.build_ingress_egress(
@@ -4861,25 +4861,25 @@ class OVSSfcDriverTestCase(
                     self.assertEqual(flow_rules[key]['node_type'], 'src_node')
                     self.assertIsNotNone(flow_rules[key]['next_group_id'])
                     self.assertIsNotNone(flow_rules[key]['next_hop'])
-                    self.assertTrue('branch_info' in flow_rules[key])
+                    self.assertIn('branch_info', flow_rules[key])
                     branch_matches = flow_rules[key]['branch_info']['matches']
                     self.assertEqual(len(branch_matches), 2)
-                    self.assertTrue((2, 253,) in branch_matches)
-                    self.assertTrue((3, 254,) in branch_matches)
-                    self.assertFalse('branch_point' in flow_rules[key])
+                    self.assertIn((2, 253,), branch_matches)
+                    self.assertIn((3, 254,), branch_matches)
+                    self.assertNotIn('branch_point', flow_rules[key])
                     # verify that all other flow rules are normal:
                     key = self.build_ingress_egress(
                         pc1['port_chain']['id'], None, lsport['port']['id'])
-                    self.assertFalse('branch_info' in flow_rules[key])
-                    self.assertFalse('branch_point' in flow_rules[key])
+                    self.assertNotIn('branch_info', flow_rules[key])
+                    self.assertNotIn('branch_point', flow_rules[key])
                     key = self.build_ingress_egress_from_pp(
                         pc2['port_chain']['id'], pc2pp1['port_pair'])
-                    self.assertFalse('branch_info' in flow_rules[key])
-                    self.assertFalse('branch_point' in flow_rules[key])
+                    self.assertNotIn('branch_info', flow_rules[key])
+                    self.assertNotIn('branch_point', flow_rules[key])
                     key = self.build_ingress_egress_from_pp(
                         pc4['port_chain']['id'], pc4pp['port_pair'])
-                    self.assertFalse('branch_info' in flow_rules[key])
-                    self.assertFalse('branch_point' in flow_rules[key])
+                    self.assertNotIn('branch_info', flow_rules[key])
+                    self.assertNotIn('branch_point', flow_rules[key])
 
     # this test will create a graph with both normal/forking branches
     # and joining branches, using 4 port chains in total, and will verify
@@ -6269,7 +6269,7 @@ class OVSSfcDriverTestCase(
                                     flow2_sta]['branch_info']['on_add'], True)
 
                                 # next_hops should be present in the src_node
-                                self.assertTrue('next_hops' in ufr[flow2_sta])
+                                self.assertIn('next_hops', ufr[flow2_sta])
 
                                 add_fcs = ufr[flow2_sta]['add_fcs']
                                 del_fcs = ufr[flow2_sta]['del_fcs']
@@ -6330,7 +6330,7 @@ class OVSSfcDriverTestCase(
                 }, add_fc)
 
             # next_hops should be present in src_node
-            self.assertTrue('next_hops' in ufr[node])
+            self.assertIn('next_hops', ufr[node])
             # no LSPs for destination chain src_node
             self.assertDictContainsSubset({
                 'logical_source_port': None},
@@ -6358,24 +6358,18 @@ class OVSSfcDriverTestCase(
                     lambda m: m[0]))  # sort by nsp
 
         # assert that each branch matches correctly
-        self.assertTrue((nsp[end_nodes[0]], nsi[
-            end_nodes[0]],) == ufr[sta_nodes[0]][
-                'branch_info']['matches'][0])
-        self.assertTrue((nsp[end_nodes[0]], nsi[
-            end_nodes[0]],) == ufr[sta_nodes[1]][
-                'branch_info']['matches'][0])
-        self.assertTrue((nsp[end_nodes[1]], nsi[
-            end_nodes[1]],) == ufr[sta_nodes[2]][
-                'branch_info']['matches'][0])
-        self.assertTrue((nsp[end_nodes[2]], nsi[
-            end_nodes[2]],) == ufr[sta_nodes[3]][
-                'branch_info']['matches'][0])
-        self.assertTrue((nsp[end_nodes[3]], nsi[
-            end_nodes[3]],) == ufr[sta_nodes[4]][
-                'branch_info']['matches'][0])
-        self.assertTrue((nsp[end_nodes[4]], nsi[
-            end_nodes[4]],) == ufr[sta_nodes[4]][
-                'branch_info']['matches'][1])
+        self.assertEqual((nsp[end_nodes[0]], nsi[
+            end_nodes[0]],), ufr[sta_nodes[0]]['branch_info']['matches'][0])
+        self.assertEqual((nsp[end_nodes[0]], nsi[
+            end_nodes[0]],), ufr[sta_nodes[1]]['branch_info']['matches'][0])
+        self.assertEqual((nsp[end_nodes[1]], nsi[
+            end_nodes[1]],), ufr[sta_nodes[2]]['branch_info']['matches'][0])
+        self.assertEqual((nsp[end_nodes[2]], nsi[
+            end_nodes[2]],), ufr[sta_nodes[3]]['branch_info']['matches'][0])
+        self.assertEqual((nsp[end_nodes[3]], nsi[
+            end_nodes[3]],), ufr[sta_nodes[4]]['branch_info']['matches'][0])
+        self.assertEqual((nsp[end_nodes[4]], nsi[
+            end_nodes[4]],), ufr[sta_nodes[4]]['branch_info']['matches'][1])
 
     # post-graph-creation testing of test_delete_service_graph_complex()
     def _test_delete_service_graph_complex(self, g, sta_nodes, end_nodes,
@@ -6402,7 +6396,7 @@ class OVSSfcDriverTestCase(
             # dst PPG add_fcs is the same as pre-graph add_fcs
             self.assertEqual(ufr[node]['add_fcs'], old_add2[node])
             # next_hops should be present in src_node
-            self.assertTrue('next_hops' in ufr[node])
+            self.assertIn('next_hops', ufr[node])
             # no LSPs for destination chain src_node (del_fcs)
             self.assertDictContainsSubset({
                 'logical_source_port': None},
@@ -6429,18 +6423,18 @@ class OVSSfcDriverTestCase(
                 lambda m: m[0]))  # sort by nsp
 
         # assert that each branch matches correctly
-        self.assertTrue((nsp[end_nodes[0]], nsi[
-            end_nodes[0]],) == ufr[sta_nodes[0]]['branch_info']['matches'][0])
-        self.assertTrue((nsp[end_nodes[0]], nsi[
-            end_nodes[0]],) == ufr[sta_nodes[1]]['branch_info']['matches'][0])
-        self.assertTrue((nsp[end_nodes[1]], nsi[
-            end_nodes[1]],) == ufr[sta_nodes[2]]['branch_info']['matches'][0])
-        self.assertTrue((nsp[end_nodes[2]], nsi[
-            end_nodes[2]],) == ufr[sta_nodes[3]]['branch_info']['matches'][0])
-        self.assertTrue((nsp[end_nodes[3]], nsi[
-            end_nodes[3]],) == ufr[sta_nodes[4]]['branch_info']['matches'][0])
-        self.assertTrue((nsp[end_nodes[4]], nsi[
-            end_nodes[4]],) == ufr[sta_nodes[4]]['branch_info']['matches'][1])
+        self.assertEqual((nsp[end_nodes[0]], nsi[
+            end_nodes[0]],), ufr[sta_nodes[0]]['branch_info']['matches'][0])
+        self.assertEqual((nsp[end_nodes[0]], nsi[
+            end_nodes[0]],), ufr[sta_nodes[1]]['branch_info']['matches'][0])
+        self.assertEqual((nsp[end_nodes[1]], nsi[
+            end_nodes[1]],), ufr[sta_nodes[2]]['branch_info']['matches'][0])
+        self.assertEqual((nsp[end_nodes[2]], nsi[
+            end_nodes[2]],), ufr[sta_nodes[3]]['branch_info']['matches'][0])
+        self.assertEqual((nsp[end_nodes[3]], nsi[
+            end_nodes[3]],), ufr[sta_nodes[4]]['branch_info']['matches'][0])
+        self.assertEqual((nsp[end_nodes[4]], nsi[
+            end_nodes[4]],), ufr[sta_nodes[4]]['branch_info']['matches'][1])
 
     # this test will create a very complex graph, that initially branches
     # (after pc1), and later joins back into a single service function path

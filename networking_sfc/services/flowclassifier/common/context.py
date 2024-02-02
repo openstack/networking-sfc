@@ -24,7 +24,7 @@ class FlowClassifierContext(FlowClassifierPluginContext):
 
     def __init__(self, plugin, plugin_context, flowclassifier,
                  original_flowclassifier=None):
-        super(FlowClassifierContext, self).__init__(plugin, plugin_context)
+        super().__init__(plugin, plugin_context)
         self._flowclassifier = flowclassifier
         self._original_flowclassifier = original_flowclassifier
 

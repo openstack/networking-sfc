@@ -316,14 +316,14 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase):
     def _get_flow_classifier(self, context, id):
         try:
             return model_query.get_by_id(context, FlowClassifier, id)
-        except exc.NoResultFound:
-            raise fc_ext.FlowClassifierNotFound(id=id)
+        except exc.NoResultFound as no_res_found:
+            raise fc_ext.FlowClassifierNotFound(id=id) from no_res_found
 
     def _get_port(self, context, id):
         try:
             return model_query.get_by_id(context, models_v2.Port, id)
-        except exc.NoResultFound:
-            raise fc_ext.FlowClassifierPortNotFound(id=id)
+        except exc.NoResultFound as no_res_found:
+            raise fc_ext.FlowClassifierPortNotFound(id=id) from no_res_found
 
     @log_helpers.log_method_call
     def update_flow_classifier(self, context, id, flow_classifier):
@@ -339,7 +339,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase):
             with db_api.CONTEXT_WRITER.using(context):
                 fc = self._get_flow_classifier(context, id)
                 context.session.delete(fc)
-        except AssertionError:
-            raise fc_ext.FlowClassifierInUse(id=id)
+        except AssertionError as exc:
+            raise fc_ext.FlowClassifierInUse(id=id) from exc
         except fc_ext.FlowClassifierNotFound:
             LOG.info("Deleting a non-existing flow classifier.")

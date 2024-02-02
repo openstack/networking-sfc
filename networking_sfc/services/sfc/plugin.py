@@ -42,13 +42,13 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
 
     def __init__(self):
         self.driver_manager = sfc_driver.SfcDriverManager()
-        super(SfcPlugin, self).__init__()
+        super().__init__()
         self.driver_manager.initialize()
 
     @log_helpers.log_method_call
     def create_port_chain(self, context, port_chain):
         with db_api.CONTEXT_WRITER.using(context):
-            port_chain_db = super(SfcPlugin, self).create_port_chain(
+            port_chain_db = super().create_port_chain(
                 context, port_chain)
             portchain_db_context = sfc_ctx.PortChainContext(
                 self, context, port_chain_db)
@@ -68,11 +68,11 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         return port_chain_db
 
     @log_helpers.log_method_call
-    def update_port_chain(self, context, portchain_id, port_chain):
+    def update_port_chain(self, context, id, port_chain):
         with db_api.CONTEXT_WRITER.using(context):
-            original_portchain = self.get_port_chain(context, portchain_id)
-            updated_portchain = super(SfcPlugin, self).update_port_chain(
-                context, portchain_id, port_chain)
+            original_portchain = self.get_port_chain(context, id)
+            updated_portchain = super().update_port_chain(
+                context, id, port_chain)
             portchain_db_context = sfc_ctx.PortChainContext(
                 self, context, updated_portchain,
                 original_portchain=original_portchain)
@@ -92,29 +92,28 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         return updated_portchain
 
     @log_helpers.log_method_call
-    def delete_port_chain(self, context, portchain_id):
-        pc = self.get_port_chain(context, portchain_id)
+    def delete_port_chain(self, context, id):
+        pc = self.get_port_chain(context, id)
         pc_context = sfc_ctx.PortChainContext(self, context, pc)
         try:
             self.driver_manager.delete_port_chain(pc_context)
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error("Delete port chain failed, portchain '%s'",
-                          portchain_id)
+                LOG.error("Delete port chain failed, portchain '%s'", id)
 
         # TODO(qijing): unsync in case deleted in driver but fail in database
         with db_api.CONTEXT_WRITER.using(context):
-            pc = self.get_port_chain(context, portchain_id)
+            pc = self.get_port_chain(context, id)
             pc_context = sfc_ctx.PortChainContext(self, context, pc)
-            super(SfcPlugin, self).delete_port_chain(context, portchain_id)
+            super().delete_port_chain(context, id)
             self.driver_manager.delete_port_chain_precommit(pc_context)
         self.driver_manager.delete_port_chain_postcommit(pc_context)
 
     @log_helpers.log_method_call
     def create_port_pair(self, context, port_pair):
         with db_api.CONTEXT_WRITER.using(context):
-            portpair_db = super(SfcPlugin, self).create_port_pair(
+            portpair_db = super().create_port_pair(
                 context, port_pair)
             portpair_context = sfc_ctx.PortPairContext(
                 self, context, portpair_db)
@@ -133,11 +132,11 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         return portpair_db
 
     @log_helpers.log_method_call
-    def update_port_pair(self, context, portpair_id, port_pair):
+    def update_port_pair(self, context, id, port_pair):
         with db_api.CONTEXT_WRITER.using(context):
-            original_portpair = self.get_port_pair(context, portpair_id)
-            updated_portpair = super(SfcPlugin, self).update_port_pair(
-                context, portpair_id, port_pair)
+            original_portpair = self.get_port_pair(context, id)
+            updated_portpair = super().update_port_pair(
+                context, id, port_pair)
             portpair_context = sfc_ctx.PortPairContext(
                 self, context, updated_portpair,
                 original_portpair=original_portpair)
@@ -153,8 +152,8 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         return updated_portpair
 
     @log_helpers.log_method_call
-    def delete_port_pair(self, context, portpair_id):
-        portpair = self.get_port_pair(context, portpair_id)
+    def delete_port_pair(self, context, id):
+        portpair = self.get_port_pair(context, id)
         portpair_context = sfc_ctx.PortPairContext(
             self, context, portpair)
         try:
@@ -162,21 +161,20 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         except sfc_exc.SfcDriverError as e:
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
-                LOG.error("Delete port pair failed, port_pair '%s'",
-                          portpair_id)
+                LOG.error("Delete port pair failed, port_pair '%s'", id)
 
         with db_api.CONTEXT_WRITER.using(context):
-            portpair = self.get_port_pair(context, portpair_id)
+            portpair = self.get_port_pair(context, id)
             portpair_context = sfc_ctx.PortPairContext(
                 self, context, portpair)
-            super(SfcPlugin, self).delete_port_pair(context, portpair_id)
+            super().delete_port_pair(context, id)
             self.driver_manager.delete_port_pair_precommit(portpair_context)
         self.driver_manager.delete_port_pair_postcommit(portpair_context)
 
     @log_helpers.log_method_call
     def create_port_pair_group(self, context, port_pair_group):
         with db_api.CONTEXT_WRITER.using(context):
-            portpairgroup_db = super(SfcPlugin, self).create_port_pair_group(
+            portpairgroup_db = super().create_port_pair_group(
                 context, port_pair_group)
             portpairgroup_context = sfc_ctx.PortPairGroupContext(
                 self, context, portpairgroup_db)
@@ -196,15 +194,12 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         return portpairgroup_db
 
     @log_helpers.log_method_call
-    def update_port_pair_group(
-        self, context, portpairgroup_id, port_pair_group
-    ):
+    def update_port_pair_group(self, context, id, port_pair_group):
         with db_api.CONTEXT_WRITER.using(context):
             original_portpairgroup = self.get_port_pair_group(
-                context, portpairgroup_id)
-            updated_portpairgroup = super(
-                SfcPlugin, self).update_port_pair_group(
-                context, portpairgroup_id, port_pair_group)
+                context, id)
+            updated_portpairgroup = super().update_port_pair_group(
+                context, id, port_pair_group)
             portpairgroup_context = sfc_ctx.PortPairGroupContext(
                 self, context, updated_portpairgroup,
                 original_portpairgroup=original_portpairgroup)
@@ -223,8 +218,8 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         return updated_portpairgroup
 
     @log_helpers.log_method_call
-    def delete_port_pair_group(self, context, portpairgroup_id):
-        portpairgroup = self.get_port_pair_group(context, portpairgroup_id)
+    def delete_port_pair_group(self, context, id):
+        portpairgroup = self.get_port_pair_group(context, id)
         portpairgroup_context = sfc_ctx.PortPairGroupContext(
             self, context, portpairgroup)
         try:
@@ -234,14 +229,13 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
             with excutils.save_and_reraise_exception():
                 LOG.error("Delete port pair group failed, "
                           "port_pair_group '%s'",
-                          portpairgroup_id)
+                          id)
 
         with db_api.CONTEXT_WRITER.using(context):
-            portpairgroup = self.get_port_pair_group(context, portpairgroup_id)
+            portpairgroup = self.get_port_pair_group(context, id)
             portpairgroup_context = sfc_ctx.PortPairGroupContext(
                 self, context, portpairgroup)
-            super(SfcPlugin, self).delete_port_pair_group(context,
-                                                          portpairgroup_id)
+            super().delete_port_pair_group(context, id)
             self.driver_manager.delete_port_pair_group_precommit(
                 portpairgroup_context)
         self.driver_manager.delete_port_pair_group_postcommit(
@@ -250,7 +244,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
     @log_helpers.log_method_call
     def create_service_graph(self, context, service_graph):
         with db_api.CONTEXT_WRITER.using(context):
-            service_graph_db = super(SfcPlugin, self).create_service_graph(
+            service_graph_db = super().create_service_graph(
                 context, service_graph)
             service_graph_db_context = sfc_ctx.ServiceGraphContext(
                 self, context, service_graph_db)
@@ -273,7 +267,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
     def update_service_graph(self, context, id, service_graph):
         with db_api.CONTEXT_WRITER.using(context):
             original_graph = self.get_service_graph(context, id)
-            updated_graph = super(SfcPlugin, self).update_service_graph(
+            updated_graph = super().update_service_graph(
                 context, id, service_graph)
             service_graph_db_context = sfc_ctx.ServiceGraphContext(
                 self, context, updated_graph,
@@ -296,7 +290,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
         with db_api.CONTEXT_WRITER.using(context):
             graph = self.get_service_graph(context, id)
             graph_context = sfc_ctx.ServiceGraphContext(self, context, graph)
-            super(SfcPlugin, self).delete_service_graph(context, id)
+            super().delete_service_graph(context, id)
             self.driver_manager.delete_service_graph_precommit(graph_context)
         try:
             self.driver_manager.delete_service_graph_postcommit(graph_context)
