@@ -86,9 +86,9 @@ class SfcAgentExtension(l2_extension.L2AgentExtension):
         """
         self.agent_api = agent_api
 
-    def handle_port(self, context, port):
+    def handle_port(self, context, data):
         """Handle agent SFC extension port add/update."""
-        port_id = port['port_id']
+        port_id = data['port_id']
         resync = False
         flowrule_status = []
         try:
@@ -113,9 +113,9 @@ class SfcAgentExtension(l2_extension.L2AgentExtension):
 
         return resync
 
-    def delete_port(self, context, port):
+    def delete_port(self, context, data):
         """Handle agent SFC extension port delete."""
-        port_id = port['port_id']
+        port_id = data['port_id']
         resync = False
         LOG.info("a device %s is removed", port_id)
         try:

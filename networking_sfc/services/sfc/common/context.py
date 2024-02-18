@@ -24,7 +24,7 @@ class PortChainContext(SfcPluginContext):
 
     def __init__(self, plugin, plugin_context, portchain,
                  original_portchain=None):
-        super(PortChainContext, self).__init__(plugin, plugin_context)
+        super().__init__(plugin, plugin_context)
         self._portchain = portchain
         self._original_portchain = original_portchain
 
@@ -40,7 +40,7 @@ class PortChainContext(SfcPluginContext):
 class FlowClassifierContext(SfcPluginContext):
     def __init__(self, plugin, plugin_context, flowclassifier,
                  original_flowclassifier=None):
-        super(FlowClassifierContext, self).__init__(plugin, plugin_context)
+        super().__init__(plugin, plugin_context)
         self._flowclassifier = flowclassifier
         self._original_flowclassifier = original_flowclassifier
 
@@ -56,7 +56,7 @@ class FlowClassifierContext(SfcPluginContext):
 class PortPairContext(SfcPluginContext):
     def __init__(self, plugin, plugin_context, portpair,
                  original_portpair=None):
-        super(PortPairContext, self).__init__(plugin, plugin_context)
+        super().__init__(plugin, plugin_context)
         self._portpair = portpair
         self._original_portpair = original_portpair
 
@@ -72,7 +72,7 @@ class PortPairContext(SfcPluginContext):
 class PortPairGroupContext(SfcPluginContext):
     def __init__(self, plugin, plugin_context, portpairgroup,
                  original_portpairgroup=None):
-        super(PortPairGroupContext, self).__init__(plugin, plugin_context)
+        super().__init__(plugin, plugin_context)
         self._portpairgroup = portpairgroup
         self._original_portpairgroup = original_portpairgroup
 
@@ -89,7 +89,7 @@ class ServiceGraphContext(SfcPluginContext):
 
     def __init__(self, plugin, plugin_context, service_graph,
                  original_graph=None):
-        super(ServiceGraphContext, self).__init__(plugin, plugin_context)
+        super().__init__(plugin, plugin_context)
         self._service_graph = service_graph
         self._original_graph = original_graph
 

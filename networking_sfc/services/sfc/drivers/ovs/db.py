@@ -179,16 +179,16 @@ class OVSSfcDriverDB():
     def _get_path_node(self, id):
         try:
             node = model_query.get_by_id(self.admin_context, PathNode, id)
-        except exc.NoResultFound:
-            raise NodeNotFound(node_id=id)
+        except exc.NoResultFound as no_res_found:
+            raise NodeNotFound(node_id=id) from no_res_found
         return node
 
     def _get_port_pair_detail(self, id):
         try:
             port = model_query.get_by_id(
                 self.admin_context, PortPairDetail, id)
-        except exc.NoResultFound:
-            raise PortPairDetailNotFound(port_id=id)
+        except exc.NoResultFound as no_res_found:
+            raise PortPairDetailNotFound(port_id=id) from no_res_found
         return port
 
     def create_port_pair_detail(self, port):

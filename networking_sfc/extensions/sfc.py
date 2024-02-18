@@ -459,9 +459,11 @@ class Sfc(extensions.ExtensionDescriptor):
     def get_updated(cls):
         return "2015-10-05T10:00:00-00:00"
 
-    def update_attributes_map(self, attributes):
-        super(Sfc, self).update_attributes_map(
-            attributes, extension_attrs_map=RESOURCE_ATTRIBUTE_MAP)
+    @classmethod
+    def update_attributes_map(cls, extended_attributes,
+                              extension_attrs_map=None):
+        super().update_attributes_map(
+            extended_attributes, extension_attrs_map=RESOURCE_ATTRIBUTE_MAP)
 
     @classmethod
     def get_resources(cls):

@@ -70,7 +70,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
     """
 
     def __init__(self):
-        super(SfcOVSAgentDriver, self).__init__()
+        super().__init__()
         self.agent_api = None
         self.br_int = None
         self.br_tun = None
@@ -583,11 +583,12 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             (hex(nsp), hex(nsi)))
 
     def _build_ingress_common_match_field(self, vif_port, vlan):
-        return dict(
-            table=INGRESS_TABLE,
-            priority=1,
-            dl_dst=vif_port.vif_mac,
-            dl_vlan=vlan)
+        return {
+            'table': INGRESS_TABLE,
+            'priority': 1,
+            'dl_dst': vif_port.vif_mac,
+            'dl_vlan': vlan
+        }
 
     def _build_ingress_match_field_sfc_mpls(self, flowrule, vif_port, vlan):
         match_field = self._build_ingress_common_match_field(vif_port, vlan)
@@ -706,7 +707,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             tap_action += self._build_push_mpls(item['nsp'], item['nsi'])
         tap_action += "mod_vlan_vid:%d," % vlan
         subnet_actions_list[0] = tap_action
-        ovs_rule = dict()
+        ovs_rule = {}
 
         self._get_eth_type(flowrule, item, ovs_rule)
         ovs_rule.update(table=TAP_CLASSIFIER_TABLE,

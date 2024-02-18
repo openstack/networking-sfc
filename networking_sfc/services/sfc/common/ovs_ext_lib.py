@@ -88,7 +88,7 @@ class SfcOVSBridgeExt():
 
     def get_bridge_ports(self):
         port_name_list = self.bridge.get_port_name_list()
-        of_portno_list = list()
+        of_portno_list = []
         for port_name in port_name_list:
             of_portno_list.append(self.bridge.get_port_ofport(port_name))
         return of_portno_list

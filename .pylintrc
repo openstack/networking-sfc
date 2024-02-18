@@ -22,41 +22,33 @@ disable=
  abstract-method,
  arguments-differ,
  attribute-defined-outside-init,
- bad-builtin,
+ bad-chained-comparison,
  bad-indentation,
  broad-except,
  dangerous-default-value,
- deprecated-lambda,
  expression-not-assigned,
  fixme,
  global-statement,
- no-init,
  non-parent-init-called,
  not-callable,
  protected-access,
  redefined-builtin,
  redefined-outer-name,
  signature-differs,
- star-args,
  super-init-not-called,
- super-on-old-class,
  unpacking-non-sequence,
  unused-argument,
  unused-import,
  unused-variable,
 # "C" Coding convention violations
- bad-continuation,
+ consider-using-f-string,
  invalid-name,
  missing-docstring,
  superfluous-parens,
 # "R" Refactor recommendations
- abstract-class-little-used,
- abstract-class-not-used,
  duplicate-code,
  inconsistent-return-statements,
- interface-not-implemented,
  no-else-return,
- no-self-use,
  too-few-public-methods,
  too-many-ancestors,
  too-many-arguments,
@@ -95,10 +87,6 @@ max-line-length=79
 # you should avoid to define new builtins when possible.
 # _ is used by our localization
 additional-builtins=_
-
-[CLASSES]
-# List of interface methods to ignore, separated by a comma.
-ignore-iface-methods=
 
 [IMPORTS]
 # Deprecated modules which should not be used, separated by a comma

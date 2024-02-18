@@ -37,17 +37,17 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
 
     def __init__(self):
         self.driver_manager = fc_driver.FlowClassifierDriverManager()
-        super(FlowClassifierPlugin, self).__init__()
+        super().__init__()
         self.driver_manager.initialize()
 
     def _get_port(self, context, id):
-        port = super(FlowClassifierPlugin, self)._get_port(context, id)
+        port = super()._get_port(context, id)
         return directory.get_plugin().get_port(context, port['id'])
 
     @log_helpers.log_method_call
     def create_flow_classifier(self, context, flow_classifier):
         with db_api.CONTEXT_WRITER.using(context):
-            fc_db = super(FlowClassifierPlugin, self).create_flow_classifier(
+            fc_db = super().create_flow_classifier(
                 context, flow_classifier)
             fc_db_context = fc_ctx.FlowClassifierContext(self, context, fc_db)
             self.driver_manager.create_flow_classifier_precommit(
@@ -69,9 +69,7 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
     def update_flow_classifier(self, context, id, flow_classifier):
         with db_api.CONTEXT_WRITER.using(context):
             original_flowclassifier = self.get_flow_classifier(context, id)
-            updated_fc = super(
-                FlowClassifierPlugin, self
-            ).update_flow_classifier(
+            updated_fc = super().update_flow_classifier(
                 context, id, flow_classifier)
             fc_db_context = fc_ctx.FlowClassifierContext(
                 self, context, updated_fc,
@@ -90,8 +88,8 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
         return updated_fc
 
     @log_helpers.log_method_call
-    def delete_flow_classifier(self, context, fc_id):
-        fc = self.get_flow_classifier(context, fc_id)
+    def delete_flow_classifier(self, context, id):
+        fc = self.get_flow_classifier(context, id)
         fc_context = fc_ctx.FlowClassifierContext(self, context, fc)
         try:
             self.driver_manager.delete_flow_classifier(fc_context)
@@ -99,13 +97,11 @@ class FlowClassifierPlugin(fc_db.FlowClassifierDbPlugin):
             LOG.exception(e)
             with excutils.save_and_reraise_exception():
                 LOG.error("Delete flow classifier failed, "
-                          "flow_classifier '%s'",
-                          fc_id)
+                          "flow_classifier '%s'", id)
 
         with db_api.CONTEXT_WRITER.using(context):
-            fc = self.get_flow_classifier(context, fc_id)
+            fc = self.get_flow_classifier(context, id)
             fc_context = fc_ctx.FlowClassifierContext(self, context, fc)
-            super(FlowClassifierPlugin, self).delete_flow_classifier(
-                context, fc_id)
+            super().delete_flow_classifier(context, id)
             self.driver_manager.delete_flow_classifier_precommit(fc_context)
         self.driver_manager.delete_flow_classifier_postcommit(fc_context)

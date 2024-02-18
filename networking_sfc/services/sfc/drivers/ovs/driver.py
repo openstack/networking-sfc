@@ -43,7 +43,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     """Sfc Driver Base Class."""
 
     def initialize(self):
-        super(OVSSfcDriver, self).initialize()
+        super().initialize()
         self.ovs_driver_rpc = ovs_sfc_rpc.SfcAgentRpcClient(
             sfc_topics.SFC_AGENT
         )
@@ -150,17 +150,16 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def _get_network_other_active_entry_count(self, host, remote_port_id):
         agent_active_ports = 0
         port_detail = self.get_port_detail_by_filter(
-            dict(ingress=remote_port_id))
+            {'ingress': remote_port_id})
         for assoc in port_detail['path_nodes']:
             node = self.get_path_node(assoc['pathnode_id'])
             if node['node_type'] != ovs_const.SRC_NODE:
-                filter = dict(nsp=node['nsp'],
-                              nsi=node['nsi'] + 1)
+                filter = {'nsp': node['nsp'], 'nsi': node['nsi'] + 1}
                 pre_node = self.get_path_node_by_filter(filter)
                 if not pre_node:
                     continue
                 for each in pre_node['portpair_details']:
-                    pre_port = self.get_port_detail_by_filter(dict(id=each))
+                    pre_port = self.get_port_detail_by_filter({'id': each})
                     if host == pre_port['host_id']:
                         agent_active_ports += 1
 
@@ -221,9 +220,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 filters.update({'egress': pp['egress']})
             pd = self.get_port_detail_by_filter(filters)
             if pd:
-                next_group_members.append(
-                    dict(portpair_id=pd['id'], weight=1,
-                         tap_enabled=tap_enabled))
+                next_group_members.append({
+                        'portpair_id': pd['id'],
+                        'weight': 1,
+                        'tap_enabled': tap_enabled
+                })
         if fwd_path is False:
             next_group_members.reverse()
         return group_intid, next_group_members
@@ -248,15 +249,15 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             # lookup the source port, when it's reverse path
             # set logical_destination_port to be source port
             if src_node['fwd_path'] is False:
-                src_pd_filter = dict(
-                    egress=fc['logical_destination_port'],
-                    project_id=project_id,
-                )
+                src_pd_filter = {
+                    'egress': fc['logical_destination_port'],
+                    'project_id': project_id,
+                }
             else:
-                src_pd_filter = dict(
-                    egress=fc['logical_source_port'],
-                    project_id=project_id,
-                )
+                src_pd_filter = {
+                    'egress': fc['logical_source_port'],
+                    'project_id': project_id,
+                }
             src_pd = self.get_port_detail_by_filter(src_pd_filter)
 
             if not src_pd:
@@ -286,15 +287,15 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             for fc in self._get_fcs_by_ids(fc_ids):
                 # delete source port detail
                 if src_node['fwd_path'] is False:
-                    src_pd_filter = dict(
-                        egress=fc['logical_destination_port'],
-                        project_id=project_id
-                    )
+                    src_pd_filter = {
+                        'egress': fc['logical_destination_port'],
+                        'project_id': project_id
+                    }
                 elif src_node['fwd_path']:
-                    src_pd_filter = dict(
-                        egress=fc['logical_source_port'],
-                        project_id=project_id
-                    )
+                    src_pd_filter = {
+                        'egress': fc['logical_source_port'],
+                        'project_id': project_id
+                    }
                 pds = self.get_port_details_by_filter(src_pd_filter)
                 if pds:
                     for pd in pds:
@@ -571,7 +572,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         if node['portpair_details'] is None:
             return
         for each in node['portpair_details']:
-            port = self.get_port_detail_by_filter(dict(id=each))
+            port = self.get_port_detail_by_filter({'id': each})
             if port:
                 self._delete_path_node_port_flowrule(
                     context, node, port, pc_corr, fc_ids)
@@ -579,7 +580,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     @log_helpers.log_method_call
     def _delete_portchain_path(self, context, port_chain):
         pds = self.get_path_nodes_by_filter(
-            dict(portchain_id=port_chain['id']))
+            {'portchain_id': port_chain['id']})
         src_nodes = []
         if pds:
             for pd in pds:
@@ -618,7 +619,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         for member in next_hops:
             detail = {}
             port_detail = self.get_port_detail_by_filter(
-                dict(id=member['portpair_id']))
+                {'id': member['portpair_id']})
             if not port_detail or not port_detail['host_id']:
                 continue
             detail['local_endpoint'] = port_detail['local_endpoint']
@@ -657,10 +658,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         # port_info.pop('host_id')
 
         # change egress port in src_nodes
-        if(
+        if (
             node_info['fwd_path'] is False and node_info['node_type'] ==
-            ovs_const.SRC_NODE
-        ):
+                ovs_const.SRC_NODE):
             if add_fc_ids is not None:
                 fcs = self._get_fcs_by_ids(add_fc_ids)
             elif del_fc_ids is not None:
@@ -797,7 +797,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             return
         updated_node = self._update_tap_enabled_node(node)
         for each in updated_node['portpair_details']:
-            port = self.get_port_detail_by_filter(dict(id=each))
+            port = self.get_port_detail_by_filter({'id': each})
             if port:
                 self._update_path_node_port_flowrules(
                     context, updated_node,
@@ -1182,10 +1182,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
     def delete_port_pair(self, context):
         port_pair = context.current
 
-        pd_filter = dict(ingress=port_pair.get('ingress', None),
-                         egress=port_pair.get('egress', None),
-                         project_id=port_pair['project_id']
-                         )
+        pd_filter = {
+            'ingress': port_pair.get('ingress', None),
+            'egress': port_pair.get('egress', None),
+            'project_id': port_pair['project_id']
+        }
         pds = self.get_port_details_by_filter(pd_filter)
         if pds:
             for pd in pds:
@@ -1204,21 +1205,21 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             port_detail_list = []
             # one port only may be in egress/ingress port once time.
             ingress_port = self.get_port_detail_by_filter(
-                dict(ingress=port_id))
+                {'ingress': port_id})
             egress_port = self.get_port_detail_by_filter(
-                dict(egress=port_id))
+                {'egress': port_id})
             if not ingress_port and not egress_port:
                 return None
             # SF migrate to other host
             if ingress_port:
                 port_detail_list.append(ingress_port)
                 if ingress_port['host_id'] != host:
-                    ingress_port.update(dict(host_id=host))
+                    ingress_port.update({'host_id': host})
 
             if egress_port:
                 port_detail_list.append(egress_port)
                 if egress_port['host_id'] != host:
-                    egress_port.update(dict(host_id=host))
+                    egress_port.update({'host_id': host})
 
             # Get ingress flow for Tap SF
             if self._is_tap_ports(port_detail_list):
@@ -1393,7 +1394,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                             group_refcnt += 1
 
             port_details = self.get_port_details_by_filter(
-                dict(host_id=flow_rule['host']))
+                {'host_id': flow_rule['host']})
             if port_details is not None:
                 for pd in port_details:
                     for path in pd['path_nodes']:
@@ -1414,7 +1415,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         dc_branch_info = {}
         for src_chain_id in service_graph['port_chains']:
             sc_nodes = self.get_path_nodes_by_filter(
-                dict(portchain_id=src_chain_id))
+                {'portchain_id': src_chain_id})
             sc_nodes = sorted(sc_nodes, key=lambda n: n['nsi'])
             # dst_node is ignored when linking a chain to another chain
             if sc_nodes[0]['node_type'] == 'dst_node':
@@ -1426,7 +1427,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             # for clarification: sc = source chain; dc = destination chain
             for dst_chain_id in service_graph['port_chains'][src_chain_id]:
                 dc_nodes = self.get_path_nodes_by_filter(
-                    dict(portchain_id=dst_chain_id))
+                    {'portchain_id': dst_chain_id})
                 if dst_chain_id not in dc_branch_info:
                     dc_branch_info[dst_chain_id] = {}
                     dc_branch_info[dst_chain_id]['matches'] = []
@@ -1442,7 +1443,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                         new_fcs = dst_chain['flow_classifiers']
                         for each in node['portpair_details']:
                             port = self.get_port_detail_by_filter(
-                                dict(id=each))
+                                {'id': each})
                             node_info = node.copy()
                             node_info.pop('project_id')
                             node_info.pop('portpair_details')
@@ -1490,7 +1491,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                     fc_ids = src_chain['flow_classifiers']
                     pc_corr = src_chain['chain_parameters']['correlation']
                     for each in node['portpair_details']:
-                        port = self.get_port_detail_by_filter(dict(id=each))
+                        port = self.get_port_detail_by_filter({'id': each})
                         node_info = node.copy()
                         port_info = port.copy()
                         flow_rule = self._build_bare_flow_rule(
@@ -1510,9 +1511,9 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 LOG.warning('Expected branch point did not get any branches.')
         # at this point we know about all chain links/matches
         # (including "joining" branches), so let's call the agent
-        for dst_chain_id in dc_branch_info:
-            branch_matches = dc_branch_info[dst_chain_id]['matches']
-            flow_rules = dc_branch_info[dst_chain_id]['flow_rules']
+        for dst_chain_id, value in dc_branch_info.items():
+            branch_matches = value['matches']
+            flow_rules = value['flow_rules']
             for _, flow_rule in flow_rules.items():
                 flow_rule = self._extend_sg_dst_chain_flow_rule(
                     flow_rule, create, branch_matches)
@@ -1580,7 +1581,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                         return
 
                     tap_pp = self.get_port_detail_by_filter(
-                        dict(id=next_hop['portpair_id']))
+                        {'id': next_hop['portpair_id']})
                     for t_node in tap_pp['path_nodes']:
                         tap_node = self.get_path_node(t_node['pathnode_id'])
                         tap_node = self._update_tap_enabled_node(tap_node)
@@ -1620,7 +1621,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                                                     pp_id1)
                 filter1 = {}
                 if pp1.get('ingress', None):
-                    filter1 = dict(dict(ingress=pp1['ingress']), **filter1)
+                    filter1 = {'ingress': pp1['ingress'], **filter1}
                     pd1 = self.get_port_detail_by_filter(filter1)
                     subnet2 = self._get_subnet_by_port(pd1['ingress'])
                     cidr2 = subnet2['cidr']
@@ -1640,7 +1641,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                 filter1 = {}
                 cidr3 = None
                 if pp1.get('egress', None):
-                    filter1 = dict(dict(egress=pp1['egress']), **filter1)
+                    filter1 = {'egress': pp1['egress'], **filter1}
                     pd1 = self.get_port_detail_by_filter(filter1)
                     subnet1 = self._get_subnet_by_port(pd1['egress'])
                     cidr3 = subnet1['cidr']
@@ -1650,7 +1651,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                         context._plugin_context, pp_id2)
                     filter2 = {}
                     if pp2.get('ingress', None):
-                        filter2 = dict(dict(ingress=pp2['ingress']), **filter2)
+                        filter2 = {'ingress': pp2['ingress'], **filter2}
                         pd2 = self.get_port_detail_by_filter(filter2)
                         subnet2 = self._get_subnet_by_port(pd2['ingress'])
                         cidr4 = subnet2['cidr']
@@ -1695,7 +1696,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         """
         if not node['tap_enabled']:
             return
-        flowrule_list = list()
+        flowrule_list = []
         # 'fwd_path' is always set to true. Call from this method to OVS agent
         # is made to either create/delete ingress flows explicitly. In ref.
         # sfc_driver.py - L134 swap ingress & egress flows if fwd_path set
@@ -1721,7 +1722,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                             tap_nh_node_type=ovs_const.SF_NODE)
 
         for each in node['prev_node']['portpair_details']:
-            port = self.get_port_detail_by_filter(dict(id=each))
+            port = self.get_port_detail_by_filter({'id': each})
             if not port:
                 continue
             if fwd_path:
@@ -1732,7 +1733,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
                                  port['mac_address']))
 
             for pp_id in node['tap_node']['portpair_details']:
-                _port = self.get_port_detail_by_filter(dict(id=pp_id))
+                _port = self.get_port_detail_by_filter({'id': pp_id})
                 if _port:
                     # when Tap is launched with single port
                     ingress_port = _port['ingress'] if fwd_path else (
@@ -1782,7 +1783,7 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
         # done to simplify the OVS driver configuration, with the various
         # combination of correlation parameters of port-pairs.
         tap_sf_in_chain = False
-        def_nodes, tap_nodes = list(), list()
+        def_nodes, tap_nodes = [], []
         node_list = [None] * len(nodes)
         for node in nodes:
             node_list[0xff - node['nsi']] = node
@@ -1799,11 +1800,11 @@ class OVSSfcDriver(driver_base.SfcDriverBase,
             for i, node in enumerate(def_nodes):
                 if i > 0:
                     node_list.append(self.update_path_node(
-                        node['id'], dict(nsi=def_nodes[0]['nsi'] - i)))
+                        node['id'], {'nsi': def_nodes[0]['nsi'] - i}))
             tap_nsi = def_nodes[0]['nsi'] - len(def_nodes)
             for node in tap_nodes:
                 node_list.append(self.update_path_node(node['id'],
-                                                       dict(nsi=tap_nsi)))
+                                                       {'nsi': tap_nsi}))
                 tap_nsi += 1
             return node_list
 

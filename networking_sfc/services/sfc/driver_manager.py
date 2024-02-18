@@ -37,10 +37,8 @@ class SfcDriverManager(NamedExtensionManager):
         # the order in which the drivers are called.
         self.ordered_drivers = []
         LOG.info("Configured SFC drivers: %s", names)
-        super(SfcDriverManager, self).__init__(namespace,
-                                               names,
-                                               invoke_on_load=True,
-                                               name_order=True)
+        super().__init__(namespace, names, invoke_on_load=True,
+                         name_order=True)
         LOG.info("Loaded SFC drivers: %s", self.names())
         self._register_drivers()
 

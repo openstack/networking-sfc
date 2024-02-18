@@ -273,7 +273,7 @@ class SfcDbPlugin(
             ppg = self._get_port_pair_group(context, ppg_id)
             for pp in ppg['port_pairs']:
                 pp_corr = pp['service_function_parameters']['correlation']
-                if pp_corr.value != 'null' and pp_corr.value != pc_corr:
+                if pp_corr.value not in ('null', pc_corr):
                     raise ext_sfc.PortChainInconsistentCorrelations(
                         ppg=ppg_id)
 
@@ -428,8 +428,8 @@ class SfcDbPlugin(
     def _get_port_chain(self, context, id):
         try:
             return model_query.get_by_id(context, PortChain, id)
-        except exc.NoResultFound:
-            raise ext_sfc.PortChainNotFound(id=id)
+        except exc.NoResultFound as no_res_found:
+            raise ext_sfc.PortChainNotFound(id=id) from no_res_found
 
     @log_helpers.log_method_call
     def delete_port_chain(self, context, id):
@@ -567,14 +567,14 @@ class SfcDbPlugin(
     def _get_port_pair(self, context, id):
         try:
             return model_query.get_by_id(context, PortPair, id)
-        except exc.NoResultFound:
-            raise ext_sfc.PortPairNotFound(id=id)
+        except exc.NoResultFound as no_res_found:
+            raise ext_sfc.PortPairNotFound(id=id) from no_res_found
 
     def _get_port(self, context, id):
         try:
             return model_query.get_by_id(context, models_v2.Port, id)
-        except exc.NoResultFound:
-            raise ext_sfc.PortPairPortNotFound(id=id)
+        except exc.NoResultFound as no_res_found:
+            raise ext_sfc.PortPairPortNotFound(id=id) from no_res_found
 
     @log_helpers.log_method_call
     def update_port_pair(self, context, id, port_pair):
@@ -705,15 +705,15 @@ class SfcDbPlugin(
     def _get_port_pair_group(self, context, id):
         try:
             return model_query.get_by_id(context, PortPairGroup, id)
-        except exc.NoResultFound:
-            raise ext_sfc.PortPairGroupNotFound(id=id)
+        except exc.NoResultFound as no_res_found:
+            raise ext_sfc.PortPairGroupNotFound(id=id) from no_res_found
 
     @db_api.CONTEXT_READER
     def _get_flow_classifier(self, context, id):
         try:
             return model_query.get_by_id(context, fc_db.FlowClassifier, id)
-        except exc.NoResultFound:
-            raise ext_fc.FlowClassifierNotFound(id=id)
+        except exc.NoResultFound as no_res_found:
+            raise ext_fc.FlowClassifierNotFound(id=id) from no_res_found
 
     @log_helpers.log_method_call
     def update_port_pair_group(self, context, id, port_pair_group):
@@ -887,7 +887,7 @@ class SfcDbPlugin(
                 # detect duplicate FCs, consequently branching ambiguity
                 for i, fc1 in enumerate(fcs_for_src_chain):
                     for fc2 in fcs_for_src_chain[i + 1:]:
-                        if(fc_cls.flowclassifier_basic_conflict(fc1, fc2)):
+                        if fc_cls.flowclassifier_basic_conflict(fc1, fc2):
                             raise ext_sg.\
                                 ServiceGraphFlowClassifierInConflict(
                                     fc1_id=fc1['id'], fc2_id=fc2['id'])
@@ -966,8 +966,8 @@ class SfcDbPlugin(
     def _get_service_graph(self, context, id):
         try:
             return model_query.get_by_id(context, ServiceGraph, id)
-        except exc.NoResultFound:
-            raise ext_sg.ServiceGraphNotFound(id=id)
+        except exc.NoResultFound as no_res_found:
+            raise ext_sg.ServiceGraphNotFound(id=id) from no_res_found
 
     @log_helpers.log_method_call
     def update_service_graph(self, context, id, service_graph):
