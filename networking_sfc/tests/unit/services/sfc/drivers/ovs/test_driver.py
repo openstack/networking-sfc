@@ -89,6 +89,10 @@ class OVSSfcDriverTestCase(
             'delete_src_node_flow_rules': []
         }
 
+    def assertDictContainsSubset(self, a, b):
+        """Check whether dict a is a subset of dict b."""
+        self.assertEqual(b, {**b, **a})
+
     def setUp(self):
         sfc_plugin = test_sfc_db.DB_SFC_PLUGIN_CLASS
         flowclassifier_plugin = (
