@@ -20,7 +20,7 @@ from oslo_utils import uuidutils
 
 import sqlalchemy as sa
 from sqlalchemy import orm
-from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.orm.collections import attribute_keyed_dict
 from sqlalchemy.orm import exc
 
 from neutron_lib import constants as const
@@ -70,7 +70,7 @@ class FlowClassifier(model_base.BASEV2, model_base.HasId,
         sa.ForeignKey('ports.id', ondelete='RESTRICT'))
     l7_parameters = orm.relationship(
         L7Parameter,
-        collection_class=attribute_mapped_collection('keyword'),
+        collection_class=attribute_keyed_dict('keyword'),
         cascade='all, delete-orphan')
 
 
@@ -210,7 +210,7 @@ class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase):
         fc = flow_classifier['flow_classifier']
         project_id = fc['project_id']
         l7_parameters = {
-            key: L7Parameter(key, val)
+            key: L7Parameter(keyword=key, value=val)
             for key, val in fc['l7_parameters'].items()}
         ethertype = fc['ethertype']
         protocol = fc['protocol']

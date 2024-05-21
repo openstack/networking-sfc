@@ -22,7 +22,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy import orm
 from sqlalchemy.orm import backref
-from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.orm.collections import attribute_keyed_dict
 from sqlalchemy.orm import exc
 
 from neutron.db import models_v2
@@ -118,7 +118,7 @@ class PortPair(model_base.BASEV2, model_base.HasId, model_base.HasProject):
         sa.ForeignKey('sfc_port_pair_groups.id', ondelete='RESTRICT'))
     service_function_parameters = orm.relationship(
         ServiceFunctionParam,
-        collection_class=attribute_mapped_collection('keyword'),
+        collection_class=attribute_keyed_dict('keyword'),
         cascade='all, delete-orphan')
 
     __table_args__ = (
@@ -159,7 +159,7 @@ class PortPairGroup(model_base.BASEV2, model_base.HasId,
     )
     port_pair_group_parameters = orm.relationship(
         PortPairGroupParam,
-        collection_class=attribute_mapped_collection('keyword'),
+        collection_class=attribute_keyed_dict('keyword'),
         cascade='all, delete-orphan')
     chain_group_associations = orm.relationship(
         ChainGroupAssoc,
@@ -184,7 +184,7 @@ class PortChain(model_base.BASEV2, model_base.HasId, model_base.HasProject):
         cascade='all, delete-orphan')
     chain_parameters = orm.relationship(
         ChainParameter,
-        collection_class=attribute_mapped_collection('keyword'),
+        collection_class=attribute_keyed_dict('keyword'),
         cascade='all, delete-orphan')
 
 
