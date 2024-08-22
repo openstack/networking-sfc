@@ -119,7 +119,7 @@ class SfcAgentExtension(l2_extension.L2AgentExtension):
         resync = False
         LOG.info("a device %s is removed", port_id)
         try:
-            self._delete_ports_flowrules_by_id(context, port_id)
+            self._delete_port_flowrules_by_id(context, port_id)
         except Exception as e:
             LOG.exception(e)
             LOG.error(
@@ -181,23 +181,23 @@ class SfcAgentExtension(l2_extension.L2AgentExtension):
             self.topic,
             consumers)
 
-    def _delete_ports_flowrules_by_id(self, context, ports_id):
+    def _delete_port_flowrules_by_id(self, context, port_id):
         flowrule_status = []
+        if not port_id:
+            return
         try:
-            LOG.debug("delete_port_id_flows received, ports_id= %s", ports_id)
-            count = 0
-            if ports_id:
-                for port_id in ports_id:
-                    flowrule = (
-                        self.sfc_plugin_rpc.get_flowrules_by_host_portid(
-                            context, port_id
-                        )
-                    )
-                    if flowrule:
-                        self.sfc.driver.delete_flow_rule(
-                            flowrule, flowrule_status)
-            LOG.debug(
-                "_delete_ports_flowrules_by_id received, count= %s", count)
+            LOG.debug("delete_port_flowrules_by_id for port_id= %s",
+                      port_id)
+            flowrule = (
+                self.sfc_plugin_rpc.get_flowrules_by_host_portid(
+                    context, port_id
+                )
+            )
+            if flowrule:
+                self.sfc.driver.delete_flow_rule(
+                    flowrule, flowrule_status)
+            LOG.debug("_delete_port_flowrules_by_id for port_id= %s finished",
+                      port_id)
         except Exception as e:
             LOG.exception(e)
             LOG.error("delete_port_id_flows failed")
