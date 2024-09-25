@@ -17,16 +17,13 @@
         - openstack-tox-py312:
             required-projects:
               - openstack/neutron
-        - openstack-tox-py311:
-            required-projects:
-              - openstack/neutron
-        - openstack-tox-py310-with-oslo-master:
+        - openstack-tox-py312-with-oslo-master:
             required-projects:
               - openstack/neutron
         - networking-sfc-functional
         - networking-sfc-tempest
     experimental:
       jobs:
-        - openstack-tox-py310-with-oslo-master:
+        - openstack-tox-py312-with-oslo-master:
             required-projects:
               - openstack/neutron
