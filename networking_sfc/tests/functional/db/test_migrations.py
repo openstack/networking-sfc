@@ -25,7 +25,9 @@ EXTERNAL_TABLES = set(external.TABLES)
 VERSION_TABLE = 'alembic_version_sfc'
 
 
-class _TestModelsMigrationsSFC(test_migrations._TestModelsMigrations):
+class TestModelsMigrationsSFC(test_migrations.TestModelsMigrations,
+                              testlib_api.MySQLTestCaseMixin,
+                              testlib_api.SqlTestCaseLight):
 
     def db_sync(self, engine):
         cfg.CONF.set_override(
@@ -48,15 +50,3 @@ class _TestModelsMigrationsSFC(test_migrations._TestModelsMigrations):
         if type_ == 'index' and reflected and name.startswith("idx_autoinc_"):
             return False
         return True
-
-
-class TestModelsMigrationsMysql(testlib_api.MySQLTestCaseMixin,
-                                _TestModelsMigrationsSFC,
-                                testlib_api.SqlTestCaseLight):
-    pass
-
-
-class TestModelsMigrationsPostgresql(testlib_api.PostgreSQLTestCaseMixin,
-                                     _TestModelsMigrationsSFC,
-                                     testlib_api.SqlTestCaseLight):
-    pass
