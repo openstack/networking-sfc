@@ -538,6 +538,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
             # install br-int flow rule on table 0 for ingress traffic
             # install an SFC Proxy if the port pair doesn't support the
             # SFC encapsulation (pc_corr) specified in the chain
+            match_field = {}
             if pc_corr == 'mpls':
                 if flowrule.get('tap_enabled'):
                     return self._add_tap_ingress_flow(flowrule, vif_port, vlan)

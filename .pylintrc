@@ -18,6 +18,7 @@ disable=
  no-member,
  no-method-argument,
  no-self-argument,
+ possibly-used-before-assignment,
 # "W" Warnings for stylistic problems or minor programming issues
  abstract-method,
  arguments-differ,
