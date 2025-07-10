@@ -15,7 +15,6 @@
 
 from unittest import mock
 
-from eventlet import greenthread
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron.plugins.ml2.drivers import type_vxlan
@@ -70,9 +69,6 @@ class OVSSfcDriverTestCase(
 
     def ask_agent_to_delete_src_node_flow_rules(self, context, flows):
         self.record_rpc('delete_src_node_flow_rules', flows)
-
-    def spawn(self, function, *args, **kwargs):
-        self.threads.append(self.backup_spawn(function, *args, **kwargs))
 
     def wait(self):
         for thread in self.threads:
@@ -148,9 +144,6 @@ class OVSSfcDriverTestCase(
         n_rpc.Connection = mock.Mock()
         n_rpc.Connection.return_value = mock.Mock()
         self.threads = []
-        self.backup_spawn = greenthread.spawn
-        greenthread.spawn = mock.Mock(
-            side_effect=self.spawn)
         self.host_endpoint_mapping = {}
         self.backup_get_endpoint_by_host = (
             type_vxlan.VxlanTypeDriver.get_endpoint_by_host)
@@ -162,7 +155,6 @@ class OVSSfcDriverTestCase(
     def tearDown(self):
         rpc.SfcAgentRpcClient = self.backup_notifier_creator
         n_rpc.Connection = self.backup_conn_creator
-        greenthread.spawn = self.backup_spawn
         type_vxlan.VxlanTypeDriver.get_endpoint_by_host = (
             self.backup_get_endpoint_by_host)
         self.init_rpc_calls()

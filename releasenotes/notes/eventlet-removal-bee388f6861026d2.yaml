@@ -1,0 +1,4 @@
+---
+other:
+  - |
+    This project no longer imports and uses ``eventlet`` library.

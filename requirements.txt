@@ -4,7 +4,6 @@
 
 pbr>=4.0.0 # Apache-2.0
 
-eventlet>=0.27.0 # MIT
 netaddr>=0.7.18 # BSD
 python-neutronclient>=10.0.0 # Apache-2.0
 SQLAlchemy>=2.0.0 # MIT
@@ -17,7 +16,7 @@ oslo.messaging>=12.4.0 # Apache-2.0
 oslo.serialization>=2.25.0 # Apache-2.0
 oslo.utils>=4.5.0 # Apache-2.0
 neutron-lib>=2.19.0 # Apache-2.0
-neutron>=23.0.0.0b2 # Apache-2.0
+neutron>=27.0.0.0b1 # Apache-2.0
 
 # The comment below indicates this project repo is current with neutron-lib
 # and should receive neutron-lib consumption patches as they are released
