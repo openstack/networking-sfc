@@ -23,64 +23,78 @@ class TestEventletBan(unittest.TestCase):
         """Test that eventlet imports are detected and banned."""
         # Test direct import
         result = checks.check_no_eventlet_import("import eventlet")
-        self.assertEqual(result, (0, "H999: eventlet must not be imported."))
+        self.assertEqual(next(result),
+                         (0, "H999: eventlet must not be imported."))
 
         # Test from import
         result = checks.check_no_eventlet_import(
             "from eventlet import greenthread")
-        self.assertEqual(result, (0, "H999: eventlet must not be imported."))
+        self.assertEqual(next(result),
+                         (0, "H999: eventlet must not be imported."))
 
         # Test with whitespace
         result = checks.check_no_eventlet_import("    import eventlet")
-        self.assertEqual(result, (0, "H999: eventlet must not be imported."))
+        self.assertEqual(next(result),
+                         (0, "H999: eventlet must not be imported."))
 
         result = checks.check_no_eventlet_import(
             "  from eventlet import something")
-        self.assertEqual(result, (0, "H999: eventlet must not be imported."))
+        self.assertEqual(next(result),
+                         (0, "H999: eventlet must not be imported."))
 
     def test_eventlet_import_variations(self):
         """Test various eventlet import variations."""
         # Test submodule imports
         result = checks.check_no_eventlet_import(
             "from eventlet.green import socket")
-        self.assertEqual(result, (0, "H999: eventlet must not be imported."))
+        self.assertEqual(next(result),
+                         (0, "H999: eventlet must not be imported."))
 
         result = checks.check_no_eventlet_import(
             "import eventlet.greenthread")
-        self.assertEqual(result, (0, "H999: eventlet must not be imported."))
+        self.assertEqual(next(result),
+                         (0, "H999: eventlet must not be imported."))
 
     def test_allowed_imports(self):
         """Test that non-eventlet imports are allowed."""
         # Test other imports that should be allowed
         result = checks.check_no_eventlet_import("import os")
-        self.assertIsNone(result)
+        with self.assertRaises(StopIteration):
+            next(result)
 
         result = checks.check_no_eventlet_import(
             "from neutron import context")
-        self.assertIsNone(result)
+        with self.assertRaises(StopIteration):
+            next(result)
 
         result = checks.check_no_eventlet_import("import threading")
-        self.assertIsNone(result)
+        with self.assertRaises(StopIteration):
+            next(result)
 
         # Test imports that contain 'eventlet' but aren't eventlet imports
         result = checks.check_no_eventlet_import("import my_eventlet_utils")
-        self.assertIsNone(result)
+        with self.assertRaises(StopIteration):
+            next(result)
 
         result = checks.check_no_eventlet_import(
             "from some_module import eventlet_func")
-        self.assertIsNone(result)
+        with self.assertRaises(StopIteration):
+            next(result)
 
     def test_comments_and_strings(self):
         """Test that eventlet in comments and strings is ignored."""
         # Comments should be ignored by the logical line processor
         result = checks.check_no_eventlet_import("# This is about eventlet")
-        self.assertIsNone(result)
+        with self.assertRaises(StopIteration):
+            next(result)
 
         # String literals should be ignored
         result = checks.check_no_eventlet_import(
             'print("eventlet is removed")')
-        self.assertIsNone(result)
+        with self.assertRaises(StopIteration):
+            next(result)
 
         result = checks.check_no_eventlet_import(
             "'eventlet import should be banned'")
-        self.assertIsNone(result)
+        with self.assertRaises(StopIteration):
+            next(result)

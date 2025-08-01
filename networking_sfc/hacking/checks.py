@@ -14,10 +14,14 @@
 
 import re
 
+from hacking import core
+
+
 # Regular expression to match eventlet imports
 EVENTLET_IMPORT_RE = re.compile(r'^\s*(import|from)\s+eventlet')
 
 
+@core.flake8ext
 def check_no_eventlet_import(logical_line):
     """Check that eventlet is not imported.
 
@@ -27,7 +31,7 @@ def check_no_eventlet_import(logical_line):
     H999 - eventlet must not be imported.
     """
     if EVENTLET_IMPORT_RE.search(logical_line):
-        return (0, "H999: eventlet must not be imported.")
+        yield 0, "H999: eventlet must not be imported."
 
 
 def factory(register):
