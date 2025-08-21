@@ -2,16 +2,9 @@
 Service Function Chaining Extension for OpenStack Networking
 ============================================================
 
-Team and repository tags
-------------------------
-
 .. image:: https://governance.openstack.org/tc/badges/networking-sfc.svg
-    :target: https://governance.openstack.org/tc/reference/tags/index.html
 
 .. Change things from this point on
-
-Service Function Chaining API
------------------------------
 
 This project provides APIs and implementations to support
 Service Function Chaining in Neutron.
