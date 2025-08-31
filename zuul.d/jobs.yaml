@@ -15,7 +15,7 @@
 - job:
     name: networking-sfc-tempest-multinode
     parent: networking-sfc-tempest
-    nodeset: openstack-two-node-jammy
+    nodeset: openstack-two-node-noble
     pre-run: playbooks/multinode-scenario-pre-run.yaml
     roles:
       - zuul: openstack/devstack
