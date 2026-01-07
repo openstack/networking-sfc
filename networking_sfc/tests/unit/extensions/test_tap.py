@@ -54,10 +54,9 @@ class SFCTapExtensionTestCase(test_sfc_ext.SfcExtensionTestCase):
 
     def test_create_port_pair_group_with_default_fields(self):
         portpairgroup_id = _uuid()
-        tenant_id = _uuid()
+        project_id = _uuid()
         data = {'port_pair_group': {
-            'tenant_id': tenant_id,
-            'project_id': tenant_id,
+            'project_id': project_id,
         }}
         expected_data = self._get_expected_port_pair_group(data)
         return_value = copy.copy(expected_data['port_pair_group'])
@@ -79,14 +78,13 @@ class SFCTapExtensionTestCase(test_sfc_ext.SfcExtensionTestCase):
 
     def test_create_port_pair_group_with_tap_enabled(self):
         portpairgroup_id = _uuid()
-        tenant_id = _uuid()
         data = {'port_pair_group': {
             'description': 'desc',
             'name': 'test1',
             'port_pairs': [],
             'port_pair_group_parameters': {},
             'tap_enabled': True,
-            'tenant_id': tenant_id, 'project_id': tenant_id
+            'project_id': _uuid(),
         }}
         expected_data = self._get_expected_port_pair_group(data)
         return_value = copy.copy(expected_data['port_pair_group'])
@@ -105,11 +103,10 @@ class SFCTapExtensionTestCase(test_sfc_ext.SfcExtensionTestCase):
         self.assertEqual(True, res['port_pair_group']['tap_enabled'])
 
     def test_create_port_pair_group_invalid_tap_enabled_value(self):
-        tenant_id = _uuid()
         data = {'port_pair_group': {
             'port_pairs': [_uuid()],
             'tap_enabled': 'two',
-            'tenant_id': tenant_id, 'project_id': tenant_id
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,

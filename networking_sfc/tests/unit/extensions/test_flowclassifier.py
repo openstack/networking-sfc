@@ -86,7 +86,7 @@ class FlowClassifierExtensionTestCase(
         return {'flow_classifier': {
             'name': data['flow_classifier'].get('name') or '',
             'description': data['flow_classifier'].get('description') or '',
-            'tenant_id': data['flow_classifier']['tenant_id'],
+            'tenant_id': data['flow_classifier']['project_id'],
             'project_id': data['flow_classifier']['project_id'],
             'source_port_range_min': source_port_range_min,
             'source_port_range_max': source_port_range_max,
@@ -110,10 +110,10 @@ class FlowClassifierExtensionTestCase(
 
     def test_create_flow_classifier(self):
         flowclassifier_id = _uuid()
-        tenant_id = _uuid()
+        project_id = _uuid()
         data = {'flow_classifier': {
             'logical_source_port': _uuid(),
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': project_id,
         }}
         expected_data = self._get_expected_flow_classifier(data)
         return_value = copy.copy(expected_data['flow_classifier'])
@@ -136,12 +136,11 @@ class FlowClassifierExtensionTestCase(
         for source_port_range_min in [None, 100, '100']:
             for source_port_range_max in [None, 200, '200']:
                 flowclassifier_id = _uuid()
-                tenant_id = _uuid()
                 data = {'flow_classifier': {
                     'source_port_range_min': source_port_range_min,
                     'source_port_range_max': source_port_range_max,
                     'logical_source_port': _uuid(),
-                    'tenant_id': tenant_id, 'project_id': tenant_id,
+                    'project_id': _uuid(),
                 }}
                 expected_data = self._get_expected_flow_classifier(data)
                 return_value = copy.copy(expected_data['flow_classifier'])
@@ -164,12 +163,11 @@ class FlowClassifierExtensionTestCase(
         for destination_port_range_min in [None, 100, '100']:
             for destination_port_range_max in [None, 200, '200']:
                 flowclassifier_id = _uuid()
-                tenant_id = _uuid()
                 data = {'flow_classifier': {
                     'destination_port_range_min': destination_port_range_min,
                     'destination_port_range_max': destination_port_range_max,
                     'logical_source_port': _uuid(),
-                    'tenant_id': tenant_id, 'project_id': tenant_id,
+                    'project_id': _uuid(),
                 }}
                 expected_data = self._get_expected_flow_classifier(data)
                 return_value = copy.copy(expected_data['flow_classifier'])
@@ -193,11 +191,10 @@ class FlowClassifierExtensionTestCase(
             None, '10.0.0.0/8'
         ]:
             flowclassifier_id = _uuid()
-            tenant_id = _uuid()
             data = {'flow_classifier': {
                 'source_ip_prefix': logical_source_ip_prefix,
                 'logical_source_port': _uuid(),
-                'tenant_id': tenant_id, 'project_id': tenant_id,
+                'project_id': _uuid(),
             }}
             expected_data = self._get_expected_flow_classifier(data)
             return_value = copy.copy(expected_data['flow_classifier'])
@@ -221,11 +218,10 @@ class FlowClassifierExtensionTestCase(
             None, '10.0.0.0/8'
         ]:
             flowclassifier_id = _uuid()
-            tenant_id = _uuid()
             data = {'flow_classifier': {
                 'destination_ip_prefix': logical_destination_ip_prefix,
                 'logical_source_port': _uuid(),
-                'tenant_id': tenant_id, 'project_id': tenant_id,
+                'project_id': _uuid(),
             }}
             expected_data = self._get_expected_flow_classifier(data)
             return_value = copy.copy(expected_data['flow_classifier'])
@@ -249,10 +245,9 @@ class FlowClassifierExtensionTestCase(
             None, _uuid()
         ]:
             flowclassifier_id = _uuid()
-            tenant_id = _uuid()
             data = {'flow_classifier': {
                 'logical_source_port': logical_source_port,
-                'tenant_id': tenant_id, 'project_id': tenant_id,
+                'project_id': _uuid(),
             }}
             expected_data = self._get_expected_flow_classifier(data)
             return_value = copy.copy(expected_data['flow_classifier'])
@@ -276,10 +271,9 @@ class FlowClassifierExtensionTestCase(
             None, _uuid()
         ]:
             flowclassifier_id = _uuid()
-            tenant_id = _uuid()
             data = {'flow_classifier': {
                 'logical_destination_port': logical_destination_port,
-                'tenant_id': tenant_id, 'project_id': tenant_id,
+                'project_id': _uuid(),
             }}
             expected_data = self._get_expected_flow_classifier(data)
             return_value = copy.copy(expected_data['flow_classifier'])
@@ -301,10 +295,9 @@ class FlowClassifierExtensionTestCase(
     def test_create_flow_classifier_l7_parameters(self):
         for l7_parameters in [None, {}]:
             flowclassifier_id = _uuid()
-            tenant_id = _uuid()
             data = {'flow_classifier': {
                 'logical_source_port': _uuid(),
-                'tenant_id': tenant_id, 'project_id': tenant_id,
+                'project_id': _uuid(),
                 'l7_parameters': l7_parameters
             }}
             expected_data = self._get_expected_flow_classifier(data)
@@ -327,10 +320,9 @@ class FlowClassifierExtensionTestCase(
     def test_create_flow_classifier_ethertype(self):
         for ethertype in [None, 'IPv4', 'IPv6']:
             flowclassifier_id = _uuid()
-            tenant_id = _uuid()
             data = {'flow_classifier': {
                 'logical_source_port': _uuid(),
-                'tenant_id': tenant_id, 'project_id': tenant_id,
+                'project_id': _uuid(),
                 'ethertype': ethertype
             }}
             expected_data = self._get_expected_flow_classifier(data)
@@ -356,10 +348,9 @@ class FlowClassifierExtensionTestCase(
             const.PROTO_NAME_ICMP
         ]:
             flowclassifier_id = _uuid()
-            tenant_id = _uuid()
             data = {'flow_classifier': {
                 'logical_source_port': _uuid(),
-                'tenant_id': tenant_id, 'project_id': tenant_id,
+                'project_id': _uuid(),
                 'protocol': protocol
             }}
             expected_data = self._get_expected_flow_classifier(data)
@@ -381,11 +372,10 @@ class FlowClassifierExtensionTestCase(
 
     def test_create_flow_classifier_all_fields(self):
         flowclassifier_id = _uuid()
-        tenant_id = _uuid()
         data = {'flow_classifier': {
             'name': 'test1',
             'description': 'desc',
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
             'source_port_range_min': 100,
             'source_port_range_max': 200,
             'destination_port_range_min': 100,
@@ -416,11 +406,10 @@ class FlowClassifierExtensionTestCase(
         self.assertEqual(return_value, res['flow_classifier'])
 
     def test_create_flow_classifier_invalid_l7_parameters(self):
-        tenant_id = _uuid()
         data = {'flow_classifier': {
             'logical_source_port': _uuid(),
             'l7_parameters': {'abc': 'def'},
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -430,11 +419,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_create_flow_classifier_invalid_protocol(self):
-        tenant_id = _uuid()
         data = {'flow_classifier': {
             'logical_source_port': _uuid(),
             'protocol': 'unknown',
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -444,11 +432,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_create_flow_classifier_invalid_ethertype(self):
-        tenant_id = _uuid()
         data = {'flow_classifier': {
             'logical_source_port': _uuid(),
             'ethertype': 'unknown',
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -458,11 +445,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_create_flow_classifier_port_small(self):
-        tenant_id = _uuid()
         data = {'flow_classifier': {
             'logical_source_port': _uuid(),
             'source_port_range_min': -1,
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -472,11 +458,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_create_flow_classifier_port_large(self):
-        tenant_id = _uuid()
         data = {'flow_classifier': {
             'logical_source_port': _uuid(),
             'source_port_range_min': 65536,
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -486,11 +471,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_create_flow_classifier_ip_prefix_no_cidr(self):
-        tenant_id = _uuid()
         data = {'flow_classifier': {
             'source_ip_prefix': '10.0.0.0',
             'logical_source_port': _uuid(),
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -500,11 +484,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_create_flow_classifier_ip_prefix_invalid_cidr(self):
-        tenant_id = _uuid()
         data = {'flow_classifier': {
             'source_ip_prefix': '10.0.0.0/33',
             'logical_source_port': _uuid(),
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -514,10 +497,9 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_create_flow_classifier_port_id_nouuid(self):
-        tenant_id = _uuid()
         data = {'flow_classifier': {
             'logical_source_port': 'unknown',
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -527,10 +509,9 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_flow_classifier_list(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         return_value = [{
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
             'id': flowclassifier_id
         }]
         instance = self.plugin.return_value
@@ -550,7 +531,6 @@ class FlowClassifierExtensionTestCase(
         self.assertEqual(return_value, res['flow_classifiers'])
 
     def test_flow_classifier_list_all_fields(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         return_value = [{
             'name': 'abc',
@@ -566,7 +546,7 @@ class FlowClassifierExtensionTestCase(
             'logical_source_port': _uuid(),
             'logical_destination_port': _uuid(),
             'l7_parameters': {},
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
             'id': flowclassifier_id
         }]
         instance = self.plugin.return_value
@@ -584,12 +564,11 @@ class FlowClassifierExtensionTestCase(
         self.assertEqual(return_value, res['flow_classifiers'])
 
     def test_flow_classifier_list_unknown_fields(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         return_value = [{
             'logical_source_port': _uuid(),
             'new_key': 'value',
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
             'id': flowclassifier_id
         }]
         expected_return = copy.copy(return_value)
@@ -610,11 +589,10 @@ class FlowClassifierExtensionTestCase(
         self.assertEqual(expected_return, res['flow_classifiers'])
 
     def test_flow_classifier_get(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         return_value = {
             'logical_source_port': _uuid(),
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
             'id': flowclassifier_id
         }
         instance = self.plugin.return_value
@@ -636,14 +614,13 @@ class FlowClassifierExtensionTestCase(
         self.assertEqual(return_value, res['flow_classifier'])
 
     def test_flow_classifier_update(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         update_data = {'flow_classifier': {
             'name': 'new_name',
             'description': 'new_desc',
         }}
         return_value = {
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
             'id': flowclassifier_id
         }
 
@@ -664,11 +641,10 @@ class FlowClassifierExtensionTestCase(
         self.assertEqual(return_value, res['flow_classifier'])
 
     def test_flow_classifier_update_source_port_range_min(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
             'source_port_range_min': 100,
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -679,11 +655,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_flow_classifier_update_source_port_range_max(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
             'source_port_range_max': 100,
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -694,11 +669,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_flow_classifier_update_destination_port_range_min(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
             'destination_port_range_min': 100,
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -709,11 +683,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_flow_classifier_update_destination_port_range_max(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
             'destination_port_range_max': 100,
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -724,11 +697,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_flow_classifier_update_source_ip_prefix(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
             'source_ip_prefix': '10.0.0.0/8',
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -739,11 +711,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_flow_classifier_update_destination_ip_prefix(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
             'destination_ip_prefix': '10.0.0.0/8',
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -754,11 +725,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_flow_classifier_update_logical_source_port(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
             'logical_source_port': _uuid(),
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -769,11 +739,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_flow_classifier_update_logical_destination_port(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
             'logical_destination_port': _uuid(),
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -784,11 +753,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_flow_classifier_update_ethertype(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
             'ethertype': None,
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -799,11 +767,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_flow_classifier_update_protocol(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
             'protococol': None,
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,
@@ -814,11 +781,10 @@ class FlowClassifierExtensionTestCase(
             content_type='application/%s' % self.fmt)
 
     def test_flow_classifier_update_l7_parameters(self):
-        tenant_id = _uuid()
         flowclassifier_id = _uuid()
         data = {'flow_classifier': {
             'l7_parameters': {},
-            'tenant_id': tenant_id, 'project_id': tenant_id,
+            'project_id': _uuid(),
         }}
         self.assertRaises(
             webtest.app.AppError,

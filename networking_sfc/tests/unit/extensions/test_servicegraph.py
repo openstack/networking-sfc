@@ -68,16 +68,15 @@ class ServiceGraphExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             'description': service_graph.get('description') or '',
             'name': service_graph.get('name') or '',
             'port_chains': service_graph['port_chains'],
+            'project_id': service_graph['project_id'],
             'tenant_id': service_graph['project_id'],
-            'project_id': service_graph['project_id']
         }}
         return ret
 
     def _test_create_service_graph(self, **kwargs):
-        tenant_id = _uuid()
         graph_data = {
             'port_chains': {_uuid(): [_uuid()]},
-            'project_id': tenant_id
+            'project_id': _uuid(),
         }
         graph_data.update(kwargs)
         data = {'service_graph': graph_data}
@@ -109,9 +108,9 @@ class ServiceGraphExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
 
     def test_list_service_graph(self):
         service_graph_id = _uuid()
-        tenant_id = _uuid()
+        project_id = _uuid()
         return_value = [{
-            'project_id': tenant_id,
+            'project_id': project_id,
             'id': service_graph_id
         }]
         instance = self.plugin.return_value
@@ -131,9 +130,9 @@ class ServiceGraphExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
 
     def test_get_service_graph(self):
         service_graph_id = _uuid()
-        tenant_id = _uuid()
+        project_id = _uuid()
         return_value = {
-            'project_id': tenant_id,
+            'project_id': project_id,
             'id': service_graph_id
         }
 
@@ -155,13 +154,13 @@ class ServiceGraphExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
 
     def test_update_service_graph(self):
         service_graph_id = _uuid()
-        tenant_id = _uuid()
+        project_id = _uuid()
         update_data = {'service_graph': {
             'name': 'new_name',
             'description': 'new_desc'
         }}
         return_value = {
-            'project_id': tenant_id,
+            'project_id': project_id,
             'id': service_graph_id
         }
 

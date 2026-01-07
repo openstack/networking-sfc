@@ -42,10 +42,10 @@ class FlowClassifierDbPluginTestCaseBase(base.BaseTestCase):
         self, fmt, flow_classifier=None, expected_res_status=None, **kwargs
     ):
         ctx = kwargs.get('context', None)
-        tenant_id = kwargs.get('tenant_id', self._tenant_id)
+        project_id = kwargs.get('project_id', self._project_id)
         data = {'flow_classifier': flow_classifier or {}}
         if ctx is None:
-            data['flow_classifier'].update({'tenant_id': tenant_id})
+            data['flow_classifier'].update({'project_id': project_id})
         req = self.new_create_request(
             'flow_classifiers', data, fmt, context=ctx
         )

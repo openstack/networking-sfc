@@ -59,7 +59,7 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
             plugin=plugin,
             service_plugins=service_plugins
         )
-        self._tenant_id = uuidutils.generate_uuid()
+        self._project_id = uuidutils.generate_uuid()
         self._network = self._make_network(
             self.fmt, 'net1',
             True)

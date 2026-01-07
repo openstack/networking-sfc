@@ -56,10 +56,10 @@ class SfcDbPluginTestCaseBase(
         self, fmt, port_chain=None, expected_res_status=None, **kwargs
     ):
         ctx = kwargs.get('context', None)
-        tenant_id = kwargs.get('tenant_id', self._tenant_id)
+        project_id = kwargs.get('project_id', self._project_id)
         data = {'port_chain': port_chain or {}}
         if ctx is None:
-            data['port_chain'].update({'tenant_id': tenant_id})
+            data['port_chain'].update({'project_id': project_id})
         req = self.new_create_request(
             'port_chains', data, fmt, context=ctx
         )
@@ -85,10 +85,10 @@ class SfcDbPluginTestCaseBase(
         self, fmt, port_pair_group=None, expected_res_status=None, **kwargs
     ):
         ctx = kwargs.get('context', None)
-        tenant_id = kwargs.get('tenant_id', self._tenant_id)
+        project_id = kwargs.get('project_id', self._project_id)
         data = {'port_pair_group': port_pair_group or {}}
         if ctx is None:
-            data['port_pair_group'].update({'tenant_id': tenant_id})
+            data['port_pair_group'].update({'project_id': project_id})
         req = self.new_create_request(
             'port_pair_groups', data, fmt, context=ctx
         )
@@ -118,10 +118,10 @@ class SfcDbPluginTestCaseBase(
         self, fmt, port_pair=None, expected_res_status=None, **kwargs
     ):
         ctx = kwargs.get('context', None)
-        tenant_id = kwargs.get('tenant_id', self._tenant_id)
+        project_id = kwargs.get('project_id', self._project_id)
         data = {'port_pair': port_pair or {}}
         if ctx is None:
-            data['port_pair'].update({'tenant_id': tenant_id})
+            data['port_pair'].update({'project_id': project_id})
         req = self.new_create_request(
             'port_pairs', data, fmt, context=ctx
         )
@@ -147,7 +147,7 @@ class SfcDbPluginTestCaseBase(
         self, fmt, service_graph=None, expected_res_status=None, **kwargs
     ):
         ctx = kwargs.get('context', None)
-        project_id = kwargs.get('project_id', self._tenant_id)
+        project_id = kwargs.get('project_id', self._project_id)
         data = {'service_graph': service_graph or {}}
         if ctx is None:
             data['service_graph'].update({'project_id': project_id})
