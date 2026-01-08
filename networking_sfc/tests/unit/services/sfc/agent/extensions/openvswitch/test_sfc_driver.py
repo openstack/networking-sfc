@@ -411,15 +411,13 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
     def _assert_update_flow_rules_sf_node_many_hops_no_proxy_mpls(self):
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:ab:cd',
                 'eth_type': 34887,
                 'priority': 0,
@@ -463,15 +461,13 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
     def _assert_update_flow_rules_sf_node_many_hops_no_proxy_nsh(self):
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
                 'table': 5
             }, {
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:ab:cd',
                 'eth_type': 35151,
                 'priority': 0,
@@ -1063,8 +1059,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
                                                                   pp_corr_nh)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
+                'actions': (',output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -1773,8 +1768,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
                                                                   pp_corr_nh)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
+                'actions': (',output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -1819,8 +1813,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
                                                                   pp_corr_nh)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
+                'actions': (',output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -1868,8 +1861,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls', 'mpls', pp_corr_nh)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -1913,8 +1905,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'nsh', 'nsh', pp_corr_nh)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -2571,7 +2562,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,'
-                    'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
+                    'set_mpls_ttl:255,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
                 'priority': 0,
@@ -2613,8 +2604,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
                 'actions': (
                     "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(ethernet),"
-                    'mod_vlan_vid:0,,output:2'),
+                    "encap(ethernet),,output:2"),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
                 'priority': 0,
@@ -2653,8 +2643,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls', None, 'mpls')
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
+                'actions': (',output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -2695,8 +2684,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'nsh', None, 'nsh')
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
+                'actions': (',output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -2741,7 +2729,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,'
-                    'set_mpls_ttl:255,mod_vlan_vid:0,,resubmit(,10)'),
+                    'set_mpls_ttl:255,,resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
                 'priority': 0,
@@ -2783,8 +2771,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
                 'actions': (
                     "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(ethernet),"
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                    "encap(ethernet),,resubmit(,10)"),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
                 'priority': 0,
@@ -2824,8 +2811,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls', 'mpls')
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -2867,8 +2853,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'nsh', 'nsh')
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -2913,7 +2898,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,'
-                    'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
+                    'set_mpls_ttl:255,,output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
                 'priority': 0,
@@ -2963,8 +2948,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
                 'actions': (
                     "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(ethernet),"
-                    'mod_vlan_vid:0,,output:2'),
+                    "encap(ethernet),,output:2"),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
                 'priority': 0,
@@ -3016,8 +3000,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls', None, 'mpls')
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
+                'actions': (',output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -3066,8 +3049,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'nsh', None, 'nsh')
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
+                'actions': (',output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -3143,7 +3125,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             [{
                 'actions': (
                     'push_mpls:0x8847,set_mpls_label:65791,set_mpls_ttl:255,'
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                    ',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
                 'priority': 0,
@@ -3193,8 +3175,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
                 'actions': (
                     "encap(nsh,prop(class=nsh,type=md_type,val=1)),"
                     "set_field:0x100->nsh_spi,set_field:0xff->nsh_si,"
-                    "encap(ethernet),"
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                    "encap(ethernet),,resubmit(,10)"),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 2048,
                 'priority': 0,
@@ -3247,8 +3228,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls', None, 'mpls')
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -3298,8 +3278,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'nsh', None, 'nsh')
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -3375,8 +3354,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls', '10.0.0.1', True)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -3436,8 +3414,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'nsh', '10.0.0.1', True)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -3499,8 +3476,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls', '10.0.0.2', True)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
+                'actions': (',output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -3560,8 +3536,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'nsh', '10.0.0.2', True)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
+                'actions': (',output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -3717,8 +3692,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls', '10.0.0.1', True)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -3791,8 +3765,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'nsh', '10.0.0.1', True)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -3880,15 +3853,13 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
 
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
                 'table': 5
             }, {
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:ab:cd',
                 'eth_type': 34887,
                 'priority': 0,
@@ -3941,15 +3912,13 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
 
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
                 'table': 5
             }, {
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:ab:cd',
                 'eth_type': 35151,
                 'priority': 0,
@@ -4008,8 +3977,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls', '10.0.0.1', False)  # notice on_add=False
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -4069,8 +4037,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'nsh', '10.0.0.1', False)  # notice on_add=False
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -4226,8 +4193,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls', '10.0.0.2', False)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
+                'actions': (',output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -4287,8 +4253,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'nsh', '10.0.0.2', False)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,output:2'),
+                'actions': (',output:2'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -4350,8 +4315,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls', '10.0.0.1', False)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 34887,
                 'priority': 0,
@@ -4417,13 +4381,40 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             self.deleted_groups
         )
 
+    def test_setup_egress_flow_rules_with_vlan_zero(self):
+        with mock.patch.object(
+            self.sfc_driver,
+            '_get_vlan_by_port',
+            return_value=0
+        ):
+            self._prepare_update_flow_rules_src_node_next_hops_add_fcs(
+                'mpls', None, 'mpls')
+            for flow in self.added_flows:
+                if 'actions' in flow:
+                    self.assertNotIn('mod_vlan_vid:', flow['actions'])
+
+    def test_setup_egress_flow_rules_with_vlan_set(self):
+        with mock.patch.object(
+            self.sfc_driver,
+            '_get_vlan_by_port',
+            return_value=100
+        ):
+            self._prepare_update_flow_rules_src_node_next_hops_add_fcs(
+                'mpls', None, 'mpls')
+            found_vlan_action = False
+            for flow in self.added_flows:
+                if ('actions' in flow and
+                        'mod_vlan_vid:100,' in flow['actions']):
+                    found_vlan_action = True
+                    break
+            self.assertTrue(found_vlan_action)
+
     def test_reverse_ufr_src_node_graph_dependent_join_same_h_nsh(self):
         self._prepare_update_flow_rules_src_node_graph_dependent_join(
             'nsh', '10.0.0.1', False)
         self.assertEqual(
             [{
-                'actions': (
-                    'mod_vlan_vid:0,,resubmit(,10)'),
+                'actions': (',resubmit(,10)'),
                 'dl_dst': '12:34:56:78:cf:23',
                 'eth_type': 35151,
                 'priority': 0,
@@ -5060,7 +5051,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
         )
         self.assertEqual([{
             'actions': ('push_mpls:0x8847,set_mpls_label:65791,'
-                        'set_mpls_ttl:255,mod_vlan_vid:0,,output:2'),
+                        'set_mpls_ttl:255,,output:2'),
             'dl_dst': '12:34:56:78:cf:23',
             'eth_type': 2048,
             'priority': 0,
@@ -5103,7 +5094,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls'
         )
         self.assertEqual([{
-            'actions': 'mod_vlan_vid:0,,output:2',
+            'actions': ',output:2',
             'dl_dst': '12:34:56:78:cf:23',
             'eth_type': 34887,
             'priority': 0,
@@ -5210,7 +5201,7 @@ class SfcAgentDriverTestCase(ovs_test_base.OVSOSKenTestBase):
             'mpls'
         )
         self.assertEqual([{
-            'actions': 'mod_vlan_vid:0,,output:2',
+            'actions': ',output:2',
             'dl_dst': '12:34:56:78:cf:23',
             'eth_type': 34887,
             'priority': 0,

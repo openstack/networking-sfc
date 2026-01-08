@@ -397,7 +397,7 @@ class SfcOVSAgentDriver(sfc.SfcAgentDriver):
                 buckets.append(bucket)
                 subnet_actions_list = []
 
-                across_flow = "mod_vlan_vid:%d," % vlan
+                across_flow = "mod_vlan_vid:%d," % vlan if vlan else ""
                 # the classic encapsulation of packets in ACROSS_SUBNET_TABLE
                 # is kept unchanged for the same scenarios, i.e. when the next
                 # hops don't support encapsulation and neither the current one.
