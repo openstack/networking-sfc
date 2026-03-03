@@ -34,3 +34,13 @@ subunit.log
 !/.stestr.conf
 !/.zuul.yaml
 .stestr/
+
+# pbr generates these
+AUTHORS
+ChangeLog
+
+# Files created by releasenotes build
+releasenotes/build
+RELEASENOTES.rst
+releasenotes/notes/reno.cache
+
