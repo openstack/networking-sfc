@@ -19,6 +19,7 @@ from neutron.agent import securitygroups_rpc as sg_rpc
 from neutron.api import extensions as api_ext
 from neutron.api.rpc.agentnotifiers import dhcp_rpc_agent_api as dhcp_rpc_log
 from neutron.api.v2 import resource as api_res_log
+from neutron.conf.plugins.ml2 import config as ml2_conf
 from neutron import manager
 from neutron.notifiers import nova as nova_log
 from neutron.plugins.ml2 import db as ml2_db
@@ -47,9 +48,10 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
     def setUp(self, plugin=None, service_plugins=None, ext_mgr=None):
         self._mock_unnecessary_logging()
 
+        ml2_conf.register_ml2_plugin_opts(cfg=cfg.CONF)
         if not plugin:
             plugin = 'neutron.plugins.ml2.plugin.Ml2Plugin'
-        cfg.CONF.set_override('tenant_network_types', ['vxlan'], group='ml2')
+        cfg.CONF.set_override('project_network_types', ['vxlan'], group='ml2')
         cfg.CONF.set_override(
             'vni_ranges', ['1:1000'], group='ml2_type_vxlan')
         cfg.CONF.set_override(
