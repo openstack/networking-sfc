@@ -39,6 +39,7 @@ class SfcPlugin(sfc_db.SfcDbPlugin):
     supported_extension_aliases = [sfc_ext.SFC_EXT, sg_ext.SG_EXT,
                                    tap_ext.TAP_EXT]
     path_prefix = sfc_ext.SFC_PREFIX
+    _filter_validation_support = False
 
     def __init__(self):
         self.driver_manager = sfc_driver.SfcDriverManager()

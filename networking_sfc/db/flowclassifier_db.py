@@ -75,6 +75,7 @@ class FlowClassifier(model_base.BASEV2, model_base.HasId,
 
 
 class FlowClassifierDbPlugin(fc_ext.FlowClassifierPluginBase):
+    _filter_validation_support = False
 
     @classmethod
     def _check_port_range_valid(cls, port_range_min,
