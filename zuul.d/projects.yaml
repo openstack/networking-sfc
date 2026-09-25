@@ -14,16 +14,16 @@
         - networking-sfc-tempest-periodic
     periodic-weekly:
       jobs:
-        - openstack-tox-py312:
+        - openstack-tox-py314:
             required-projects:
               - openstack/neutron
-        - openstack-tox-py312-with-oslo-master:
+        - openstack-tox-py314-with-oslo-master:
             required-projects:
               - openstack/neutron
         - networking-sfc-functional
         - networking-sfc-tempest
     experimental:
       jobs:
-        - openstack-tox-py312-with-oslo-master:
+        - openstack-tox-py314-with-oslo-master:
             required-projects:
               - openstack/neutron
